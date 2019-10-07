@@ -26,14 +26,14 @@ type Opts struct {
 }
 
 // New initializes a new Client
-func New(db *gorm.DB, opts Opts) Client {
+func New(db *gorm.DB, opts Opts) (Client, error) {
 	if opts.Logger == nil {
 		opts.Logger = zap.NewNop()
 	}
 	return &client{
 		db:   db,
 		opts: opts,
-	}
+	}, nil
 }
 
 func (c *client) Close() error {
