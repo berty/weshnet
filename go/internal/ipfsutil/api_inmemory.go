@@ -9,8 +9,6 @@ import (
 	ipfs_datastore "github.com/ipfs/go-datastore"
 	ipfs_datastoresync "github.com/ipfs/go-datastore/sync"
 	ipfs_cfg "github.com/ipfs/go-ipfs-config"
-	ipfs_core "github.com/ipfs/go-ipfs/core"
-	ipfs_coreapi "github.com/ipfs/go-ipfs/core/coreapi"
 	ipfs_node "github.com/ipfs/go-ipfs/core/node"
 	ipfs_libp2p "github.com/ipfs/go-ipfs/core/node/libp2p"
 	ipfs_repo "github.com/ipfs/go-ipfs/repo"
@@ -26,12 +24,7 @@ func NewInMemoryCoreAPI(ctx context.Context) (ipfs_interface.CoreAPI, error) {
 		return nil, errcode.TODO.Wrap(err)
 	}
 
-	node, err := ipfs_core.NewNode(ctx, cfg)
-	if err != nil {
-		return nil, errcode.TODO.Wrap(err)
-	}
-
-	return ipfs_coreapi.NewCoreAPI(node)
+	return NewConfigurableCoreAPI(ctx, cfg)
 }
 
 func createBuildConfig() (*ipfs_node.BuildCfg, error) {
@@ -51,6 +44,9 @@ func createBuildConfig() (*ipfs_node.BuildCfg, error) {
 		Routing:                     routing,
 		Host:                        hostopts,
 		Repo:                        repo,
+		ExtraOpts: map[string]bool{
+			"pubsub": true,
+		},
 	}, nil
 }
 
