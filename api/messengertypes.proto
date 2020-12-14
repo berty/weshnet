@@ -3,9 +3,9 @@ syntax = "proto3";
 package berty.messenger.v1;
 
 import "gogoproto/gogo.proto";
-import "bertytypes.proto";
+import "protocoltypes.proto";
 
-option go_package = "berty.tech/berty/go/pkg/bertymessenger";
+option go_package = "berty.tech/berty/go/pkg/messengertypes";
 option (gogoproto.goproto_unkeyed_all) = false;
 option (gogoproto.goproto_unrecognized_all) = false;
 option (gogoproto.goproto_sizecache_all) = false;
@@ -59,7 +59,7 @@ service MessengerService {
   rpc ConversationClose(ConversationClose.Request) returns (ConversationClose.Reply);
 
   // ServicesTokenList Retrieves the list of service server tokens
-  rpc ServicesTokenList(types.v1.ServicesTokenList.Request) returns (stream types.v1.ServicesTokenList.Reply);
+  rpc ServicesTokenList(protocol.v1.ServicesTokenList.Request) returns (stream protocol.v1.ServicesTokenList.Reply);
 
   // ReplicationServiceRegisterGroup Asks a replication service to distribute a group contents
   rpc ReplicationServiceRegisterGroup(ReplicationServiceRegisterGroup.Request) returns (ReplicationServiceRegisterGroup.Reply);
@@ -75,6 +75,12 @@ service MessengerService {
 
   // InstanceExportData exports instance data
   rpc InstanceExportData (InstanceExportData.Request) returns (stream InstanceExportData.Reply);
+
+  // MediaPrepare allows to upload a file and returns a cid to attach to messages
+  rpc MediaPrepare (stream MediaPrepare.Request) returns (MediaPrepare.Reply);
+
+  // MediaRetrieve allows to download a file attached to a message
+  rpc MediaRetrieve (MediaRetrieve.Request) returns (stream MediaRetrieve.Reply);
 }
 
 message ConversationOpen {
@@ -106,6 +112,8 @@ message InstanceShareableBertyID {
     // reset will regenerate a new link
     bool reset = 1;
     string display_name = 2;
+    // optional passphase to encrypt the link
+    bytes passphrase = 3;
   }
   message Reply {
     BertyLink link = 1;
@@ -138,6 +146,8 @@ message DevShareInstanceBertyID {
 message ParseDeepLink {
   message Request {
     string link = 1;
+    // optional passphase to decrypt the link
+    bytes passphrase = 2;
   }
   message Reply {
     BertyLink link = 1;
@@ -147,13 +157,45 @@ message ParseDeepLink {
 message BertyLink {
   Kind kind = 1;
   BertyID berty_id = 2 [(gogoproto.customname) = "BertyID"];
-  BertyGroup berty_group = 3 [(gogoproto.customname) = "BertyGroup"];
-  // bool enc = 4;
+  BertyGroup berty_group = 3;
+  Encrypted encrypted = 4;
+
+  // Encrypted is a clear structure containing clear and encrypted fields.
+  //
+  // We prefer to use a clear struct with encrypted fields instead of a simple
+  // encrypted struct, to improves chances of having a valid structure even
+  // with an invalid passphase. This will force an attacker to have more resources
+  // to test more false-positive guesses.
+  message Encrypted {
+    // kind is a clear representation of the unencrypted link type.
+    Kind kind = 1;
+    // nonce is a clear field used by scrypt as "salt" to derive the passphrase and
+    // also used by cipher.NewCTR as "iv" to initialize a stream cipher.
+    bytes nonce = 2;
+    // display_name is an optional clear representation of the display name.
+    string display_name = 3;
+
+    // contact_v1: all bytes fields are encrypted
+
+    bytes contact_public_rendezvous_seed = 10;
+    bytes contact_account_pk = 11 [(gogoproto.customname) = "ContactAccountPK"];
+    bytes contact_display_name = 12;
+
+    // group_v1: all bytes fields are encrypted
+
+    bytes group_public_key = 20;
+    bytes group_secret = 21;
+    bytes group_secret_sig = 22;
+    berty.protocol.v1.GroupType group_type = 23; // clear
+    bytes group_sign_pub = 24;
+    bytes group_display_name = 25;
+  }
 
   enum Kind {
     UnknownKind = 0;
     ContactInviteV1Kind = 1;
     GroupV1Kind = 2;
+    EncryptedV1Kind = 3;
   }
 }
 
@@ -197,14 +239,16 @@ message BertyID {
 }
 
 message BertyGroup {
-  berty.types.v1.Group group = 1;
+  berty.protocol.v1.Group group = 1;
   string display_name = 2;
 }
 
+// AppMessage is the app layer format
 message AppMessage {
   Type type = 1;
   bytes payload = 2;
   int64 sent_date = 3 [(gogoproto.jsontag) = "sentDate"];
+  repeated Media medias = 4;
 
   enum Type {
     Undefined = 0;
@@ -215,7 +259,9 @@ message AppMessage {
     TypeSetUserInfo = 5;
     TypeAcknowledge = 6;
     TypeReplyOptions = 7;
-    TypeMonitorMetadata = 8;
+
+    // these shouldn't be sent on the network
+    TypeMonitorMetadata = 100;
   }
   message UserMessage {
     string body = 1;
@@ -242,7 +288,7 @@ message AppMessage {
     repeated ReplyOption options = 1;
   }
   message MonitorMetadata {
-    berty.types.v1.MonitorGroup.EventMonitor event = 1;
+    berty.protocol.v1.MonitorGroup.EventMonitor event = 1;
   }
 }
 
@@ -254,12 +300,12 @@ message ReplyOption {
 message SystemInfo {
   message Request {}
   message Reply {
-    berty.types.v1.SystemInfo.Reply protocol = 1;
+    berty.protocol.v1.SystemInfo.Reply protocol = 1;
     Messenger messenger = 2;
   }
 
   message Messenger {
-    berty.types.v1.SystemInfo.Process process = 1;
+    berty.protocol.v1.SystemInfo.Process process = 1;
     repeated string warns = 2;
     bool protocol_in_same_process = 3;
     DB db = 4 [(gogoproto.customname) = "DB"];
@@ -281,6 +327,8 @@ message SystemInfo {
 message ConversationJoin {
   message Request {
     string link = 1;
+    // optional passphase to decrypt the link
+    bytes passphrase = 2;
   }
   message Reply {}
 }
@@ -319,6 +367,32 @@ message Interaction {
   int64 sent_date = 9;
   bool acknowledged = 10;
   string target_cid = 13 [(gogoproto.moretags) = "gorm:\"index;column:target_cid\"", (gogoproto.customname) = "TargetCID"];
+  repeated Media medias = 15;
+}
+
+message Media {
+  string cid = 1 [(gogoproto.moretags) = "gorm:\"primaryKey;column:cid\"", (gogoproto.customname) = "CID"];
+  string mime_type = 2;
+  string filename = 3;
+  string display_name = 4;
+
+  // these should not be sent on the bertyprotocol layer
+  string interaction_cid = 100 [(gogoproto.moretags) = "gorm:\"index;column:interaction_cid\"", (gogoproto.customname) = "InteractionCID"];
+  State state = 103;
+  enum State {
+    StateUnknown = 0;
+
+    // specific to media received
+    StateNeverDownloaded = 1;
+    StatePartiallyDownloaded = 2;
+    StateDownloaded = 3;
+    StateInCache = 4;
+    StateInvalidCrypto = 5;
+
+    // specific to media sent
+    StatePrepared = 100;
+    StateAttached = 101;
+  }
 }
 
 message Contact {
@@ -419,6 +493,7 @@ message StreamEvent {
     TypeMemberUpdated = 8;
     TypeDeviceUpdated = 9;
     TypeNotified = 10;
+    TypeMediaUpdated = 11;
   }
   message ConversationUpdated {
     Conversation conversation = 1;
@@ -445,6 +520,9 @@ message StreamEvent {
     Device device = 1;
   }
   message ListEnded {}
+  message MediaUpdated {
+    Media media = 1;
+  }
   message Notified {
     Type type = 1;
     string title = 3;
@@ -520,6 +598,8 @@ message AccountUpdate {
 message ContactRequest {
   message Request {
     string link = 1;
+    // optional passphase to decrypt the link
+    bytes passphrase = 2;
   }
   message Reply {}
 }
@@ -536,6 +616,7 @@ message Interact {
     AppMessage.Type type = 1;
     bytes payload = 2;
     string conversation_public_key = 3;
+    repeated string media_cids = 4;
   }
   message Reply {
     // TODO: return cid
@@ -595,4 +676,37 @@ message LocalConversationState {
   int32 unread_count = 2;
   bool is_open = 3;
   Conversation.Type type = 4;
+}
+
+message MediaPrepare {
+  message Request {
+    bytes block = 1;
+
+    /* Header data:
+    ** IMPORTANT: The first request must contain the header data and no block. Header data in following requests will be ignored
+    */
+
+    Media info = 2;
+    string uri = 3;
+  }
+
+  message Reply  {
+    string cid = 1;
+  }
+}
+
+message MediaRetrieve {
+  message Request {
+    string cid = 1;
+  }
+
+  message Reply {
+    bytes block = 1;
+
+    /* Header data:
+    ** IMPORTANT: The first reply will contain the header data and no block. Header data in following replies will be empty
+    */
+
+    Media info = 2;
+  }
 }
