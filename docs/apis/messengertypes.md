@@ -3,7 +3,7 @@
 
 ## Table of Contents
 
-- [bertymessenger.proto](#bertymessenger.proto)
+- [messengertypes.proto](#messengertypes.proto)
     - [Account](#berty.messenger.v1.Account)
     - [AccountGet](#berty.messenger.v1.AccountGet)
     - [AccountGet.Reply](#berty.messenger.v1.AccountGet.Reply)
@@ -26,6 +26,7 @@
     - [BertyGroup](#berty.messenger.v1.BertyGroup)
     - [BertyID](#berty.messenger.v1.BertyID)
     - [BertyLink](#berty.messenger.v1.BertyLink)
+    - [BertyLink.Encrypted](#berty.messenger.v1.BertyLink.Encrypted)
     - [Contact](#berty.messenger.v1.Contact)
     - [ContactAccept](#berty.messenger.v1.ContactAccept)
     - [ContactAccept.Reply](#berty.messenger.v1.ContactAccept.Reply)
@@ -76,6 +77,13 @@
     - [Interaction](#berty.messenger.v1.Interaction)
     - [LocalConversationState](#berty.messenger.v1.LocalConversationState)
     - [LocalDatabaseState](#berty.messenger.v1.LocalDatabaseState)
+    - [Media](#berty.messenger.v1.Media)
+    - [MediaPrepare](#berty.messenger.v1.MediaPrepare)
+    - [MediaPrepare.Reply](#berty.messenger.v1.MediaPrepare.Reply)
+    - [MediaPrepare.Request](#berty.messenger.v1.MediaPrepare.Request)
+    - [MediaRetrieve](#berty.messenger.v1.MediaRetrieve)
+    - [MediaRetrieve.Reply](#berty.messenger.v1.MediaRetrieve.Reply)
+    - [MediaRetrieve.Request](#berty.messenger.v1.MediaRetrieve.Request)
     - [Member](#berty.messenger.v1.Member)
     - [ParseDeepLink](#berty.messenger.v1.ParseDeepLink)
     - [ParseDeepLink.Reply](#berty.messenger.v1.ParseDeepLink.Reply)
@@ -112,6 +120,7 @@
     - [StreamEvent.InteractionDeleted](#berty.messenger.v1.StreamEvent.InteractionDeleted)
     - [StreamEvent.InteractionUpdated](#berty.messenger.v1.StreamEvent.InteractionUpdated)
     - [StreamEvent.ListEnded](#berty.messenger.v1.StreamEvent.ListEnded)
+    - [StreamEvent.MediaUpdated](#berty.messenger.v1.StreamEvent.MediaUpdated)
     - [StreamEvent.MemberUpdated](#berty.messenger.v1.StreamEvent.MemberUpdated)
     - [StreamEvent.Notified](#berty.messenger.v1.StreamEvent.Notified)
     - [StreamEvent.Notified.Basic](#berty.messenger.v1.StreamEvent.Notified.Basic)
@@ -128,6 +137,7 @@
     - [BertyLink.Kind](#berty.messenger.v1.BertyLink.Kind)
     - [Contact.State](#berty.messenger.v1.Contact.State)
     - [Conversation.Type](#berty.messenger.v1.Conversation.Type)
+    - [Media.State](#berty.messenger.v1.Media.State)
     - [StreamEvent.Notified.Type](#berty.messenger.v1.StreamEvent.Notified.Type)
     - [StreamEvent.Type](#berty.messenger.v1.StreamEvent.Type)
   
@@ -135,10 +145,10 @@
   
 - [Scalar Value Types](#scalar-value-types)
 
-<a name="bertymessenger.proto"></a>
+<a name="messengertypes.proto"></a>
 <p align="right"><a href="#top">Top</a></p>
 
-## bertymessenger.proto
+## messengertypes.proto
 
 <a name="berty.messenger.v1.Account"></a>
 
@@ -189,12 +199,14 @@
 <a name="berty.messenger.v1.AppMessage"></a>
 
 ### AppMessage
+AppMessage is the app layer format
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | type | [AppMessage.Type](#berty.messenger.v1.AppMessage.Type) |  |  |
 | payload | [bytes](#bytes) |  |  |
 | sent_date | [int64](#int64) |  |  |
+| medias | [Media](#berty.messenger.v1.Media) | repeated |  |
 
 <a name="berty.messenger.v1.AppMessage.Acknowledge"></a>
 
@@ -218,7 +230,7 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| event | [berty.types.v1.MonitorGroup.EventMonitor](#berty.types.v1.MonitorGroup.EventMonitor) |  |  |
+| event | [berty.protocol.v1.MonitorGroup.EventMonitor](#berty.protocol.v1.MonitorGroup.EventMonitor) |  |  |
 
 <a name="berty.messenger.v1.AppMessage.ReplyOptions"></a>
 
@@ -290,7 +302,7 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| group | [berty.types.v1.Group](#berty.types.v1.Group) |  |  |
+| group | [berty.protocol.v1.Group](#berty.protocol.v1.Group) |  |  |
 | display_name | [string](#string) |  |  |
 
 <a name="berty.messenger.v1.BertyID"></a>
@@ -311,7 +323,33 @@
 | ----- | ---- | ----- | ----------- |
 | kind | [BertyLink.Kind](#berty.messenger.v1.BertyLink.Kind) |  |  |
 | berty_id | [BertyID](#berty.messenger.v1.BertyID) |  |  |
-| berty_group | [BertyGroup](#berty.messenger.v1.BertyGroup) |  | bool enc = 4; |
+| berty_group | [BertyGroup](#berty.messenger.v1.BertyGroup) |  |  |
+| encrypted | [BertyLink.Encrypted](#berty.messenger.v1.BertyLink.Encrypted) |  |  |
+
+<a name="berty.messenger.v1.BertyLink.Encrypted"></a>
+
+### BertyLink.Encrypted
+Encrypted is a clear structure containing clear and encrypted fields.
+
+We prefer to use a clear struct with encrypted fields instead of a simple
+encrypted struct, to improves chances of having a valid structure even
+with an invalid passphase. This will force an attacker to have more resources
+to test more false-positive guesses.
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| kind | [BertyLink.Kind](#berty.messenger.v1.BertyLink.Kind) |  | kind is a clear representation of the unencrypted link type. |
+| nonce | [bytes](#bytes) |  | nonce is a clear field used by scrypt as &#34;salt&#34; to derive the passphrase and also used by cipher.NewCTR as &#34;iv&#34; to initialize a stream cipher. |
+| display_name | [string](#string) |  | display_name is an optional clear representation of the display name. |
+| contact_public_rendezvous_seed | [bytes](#bytes) |  |  |
+| contact_account_pk | [bytes](#bytes) |  |  |
+| contact_display_name | [bytes](#bytes) |  |  |
+| group_public_key | [bytes](#bytes) |  |  |
+| group_secret | [bytes](#bytes) |  |  |
+| group_secret_sig | [bytes](#bytes) |  |  |
+| group_type | [berty.protocol.v1.GroupType](#berty.protocol.v1.GroupType) |  | clear |
+| group_sign_pub | [bytes](#bytes) |  |  |
+| group_display_name | [bytes](#bytes) |  |  |
 
 <a name="berty.messenger.v1.Contact"></a>
 
@@ -369,6 +407,7 @@
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | link | [string](#string) |  |  |
+| passphrase | [bytes](#bytes) |  | optional passphase to decrypt link |
 
 <a name="berty.messenger.v1.Conversation"></a>
 
@@ -446,6 +485,7 @@
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | link | [string](#string) |  |  |
+| passphrase | [bytes](#bytes) |  | optional passphase to decrypt link |
 
 <a name="berty.messenger.v1.ConversationOpen"></a>
 
@@ -637,6 +677,7 @@ TODO: return cid
 | type | [AppMessage.Type](#berty.messenger.v1.AppMessage.Type) |  |  |
 | payload | [bytes](#bytes) |  |  |
 | conversation_public_key | [string](#string) |  |  |
+| media_cids | [string](#string) | repeated |  |
 
 <a name="berty.messenger.v1.Interaction"></a>
 
@@ -656,6 +697,7 @@ TODO: return cid
 | sent_date | [int64](#int64) |  |  |
 | acknowledged | [bool](#bool) |  |  |
 | target_cid | [string](#string) |  |  |
+| medias | [Media](#berty.messenger.v1.Media) | repeated |  |
 
 <a name="berty.messenger.v1.LocalConversationState"></a>
 
@@ -679,6 +721,62 @@ TODO: return cid
 | replicate_flag | [bool](#bool) |  |  |
 | local_conversations_state | [LocalConversationState](#berty.messenger.v1.LocalConversationState) | repeated |  |
 | account_link | [string](#string) |  |  |
+
+<a name="berty.messenger.v1.Media"></a>
+
+### Media
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| cid | [string](#string) |  |  |
+| mime_type | [string](#string) |  |  |
+| filename | [string](#string) |  |  |
+| display_name | [string](#string) |  |  |
+| interaction_cid | [string](#string) |  | these should not be sent on the bertyprotocol layer |
+| state | [Media.State](#berty.messenger.v1.Media.State) |  |  |
+
+<a name="berty.messenger.v1.MediaPrepare"></a>
+
+### MediaPrepare
+
+<a name="berty.messenger.v1.MediaPrepare.Reply"></a>
+
+### MediaPrepare.Reply
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| cid | [string](#string) |  |  |
+
+<a name="berty.messenger.v1.MediaPrepare.Request"></a>
+
+### MediaPrepare.Request
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| block | [bytes](#bytes) |  |  |
+| info | [Media](#berty.messenger.v1.Media) |  |  |
+| uri | [string](#string) |  |  |
+
+<a name="berty.messenger.v1.MediaRetrieve"></a>
+
+### MediaRetrieve
+
+<a name="berty.messenger.v1.MediaRetrieve.Reply"></a>
+
+### MediaRetrieve.Reply
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| block | [bytes](#bytes) |  |  |
+| info | [Media](#berty.messenger.v1.Media) |  |  |
+
+<a name="berty.messenger.v1.MediaRetrieve.Request"></a>
+
+### MediaRetrieve.Request
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| cid | [string](#string) |  |  |
 
 <a name="berty.messenger.v1.Member"></a>
 
@@ -714,6 +812,7 @@ Composite primary key
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | link | [string](#string) |  |  |
+| passphrase | [bytes](#bytes) |  | optional passphase to decrypt link |
 
 <a name="berty.messenger.v1.ReplicationServiceRegisterGroup"></a>
 
@@ -931,6 +1030,14 @@ Composite primary key
 
 ### StreamEvent.ListEnded
 
+<a name="berty.messenger.v1.StreamEvent.MediaUpdated"></a>
+
+### StreamEvent.MediaUpdated
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| media | [Media](#berty.messenger.v1.Media) |  |  |
+
 <a name="berty.messenger.v1.StreamEvent.MemberUpdated"></a>
 
 ### StreamEvent.MemberUpdated
@@ -1005,7 +1112,7 @@ Composite primary key
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| process | [berty.types.v1.SystemInfo.Process](#berty.types.v1.SystemInfo.Process) |  |  |
+| process | [berty.protocol.v1.SystemInfo.Process](#berty.protocol.v1.SystemInfo.Process) |  |  |
 | warns | [string](#string) | repeated |  |
 | protocol_in_same_process | [bool](#bool) |  |  |
 | db | [SystemInfo.DB](#berty.messenger.v1.SystemInfo.DB) |  |  |
@@ -1016,7 +1123,7 @@ Composite primary key
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| protocol | [berty.types.v1.SystemInfo.Reply](#berty.types.v1.SystemInfo.Reply) |  |  |
+| protocol | [berty.protocol.v1.SystemInfo.Reply](#berty.protocol.v1.SystemInfo.Reply) |  |  |
 | messenger | [SystemInfo.Messenger](#berty.messenger.v1.SystemInfo.Messenger) |  |  |
 
 <a name="berty.messenger.v1.SystemInfo.Request"></a>
@@ -1039,7 +1146,7 @@ Composite primary key
 | TypeSetUserInfo | 5 |  |
 | TypeAcknowledge | 6 |  |
 | TypeReplyOptions | 7 |  |
-| TypeMonitorMetadata | 8 |  |
+| TypeMonitorMetadata | 100 | these shouldn&#39;t be sent on the network |
 
 <a name="berty.messenger.v1.BertyLink.Kind"></a>
 
@@ -1050,6 +1157,7 @@ Composite primary key
 | UnknownKind | 0 |  |
 | ContactInviteV1Kind | 1 |  |
 | GroupV1Kind | 2 |  |
+| EncryptedV1Kind | 3 |  |
 
 <a name="berty.messenger.v1.Contact.State"></a>
 
@@ -1073,6 +1181,21 @@ Composite primary key
 | AccountType | 1 |  |
 | ContactType | 2 |  |
 | MultiMemberType | 3 |  |
+
+<a name="berty.messenger.v1.Media.State"></a>
+
+### Media.State
+
+| Name | Number | Description |
+| ---- | ------ | ----------- |
+| StateUnknown | 0 |  |
+| StateNeverDownloaded | 1 | specific to media received |
+| StatePartiallyDownloaded | 2 |  |
+| StateDownloaded | 3 |  |
+| StateInCache | 4 |  |
+| StateInvalidCrypto | 5 |  |
+| StatePrepared | 100 | specific to media sent |
+| StateAttached | 101 |  |
 
 <a name="berty.messenger.v1.StreamEvent.Notified.Type"></a>
 
@@ -1103,6 +1226,7 @@ Composite primary key
 | TypeMemberUpdated | 8 |  |
 | TypeDeviceUpdated | 9 |  |
 | TypeNotified | 10 |  |
+| TypeMediaUpdated | 11 |  |
 
  
 
@@ -1137,12 +1261,14 @@ Today, most of the Berty Messenger logic is implemented directly in the applicat
 | Interact | [Interact.Request](#berty.messenger.v1.Interact.Request) | [Interact.Reply](#berty.messenger.v1.Interact.Reply) |  |
 | ConversationOpen | [ConversationOpen.Request](#berty.messenger.v1.ConversationOpen.Request) | [ConversationOpen.Reply](#berty.messenger.v1.ConversationOpen.Reply) |  |
 | ConversationClose | [ConversationClose.Request](#berty.messenger.v1.ConversationClose.Request) | [ConversationClose.Reply](#berty.messenger.v1.ConversationClose.Reply) |  |
-| ServicesTokenList | [.berty.types.v1.ServicesTokenList.Request](#berty.types.v1.ServicesTokenList.Request) | [.berty.types.v1.ServicesTokenList.Reply](#berty.types.v1.ServicesTokenList.Reply) stream | ServicesTokenList Retrieves the list of service server tokens |
+| ServicesTokenList | [.berty.protocol.v1.ServicesTokenList.Request](#berty.protocol.v1.ServicesTokenList.Request) | [.berty.protocol.v1.ServicesTokenList.Reply](#berty.protocol.v1.ServicesTokenList.Reply) stream | ServicesTokenList Retrieves the list of service server tokens |
 | ReplicationServiceRegisterGroup | [ReplicationServiceRegisterGroup.Request](#berty.messenger.v1.ReplicationServiceRegisterGroup.Request) | [ReplicationServiceRegisterGroup.Reply](#berty.messenger.v1.ReplicationServiceRegisterGroup.Reply) | ReplicationServiceRegisterGroup Asks a replication service to distribute a group contents |
 | ReplicationSetAutoEnable | [ReplicationSetAutoEnable.Request](#berty.messenger.v1.ReplicationSetAutoEnable.Request) | [ReplicationSetAutoEnable.Reply](#berty.messenger.v1.ReplicationSetAutoEnable.Reply) | ReplicationSetAutoEnable Sets whether new groups should be replicated automatically or not |
 | BannerQuote | [BannerQuote.Request](#berty.messenger.v1.BannerQuote.Request) | [BannerQuote.Reply](#berty.messenger.v1.BannerQuote.Reply) | BannerQuote returns the quote of the day. |
 | GetUsername | [GetUsername.Request](#berty.messenger.v1.GetUsername.Request) | [GetUsername.Reply](#berty.messenger.v1.GetUsername.Reply) | GetUsername returns the name of the device/user using Android/iOS/universal API |
 | InstanceExportData | [InstanceExportData.Request](#berty.messenger.v1.InstanceExportData.Request) | [InstanceExportData.Reply](#berty.messenger.v1.InstanceExportData.Reply) stream | InstanceExportData exports instance data |
+| MediaPrepare | [MediaPrepare.Request](#berty.messenger.v1.MediaPrepare.Request) stream | [MediaPrepare.Reply](#berty.messenger.v1.MediaPrepare.Reply) | MediaPrepare allows to upload a file and returns a cid to attach to messages |
+| MediaRetrieve | [MediaRetrieve.Request](#berty.messenger.v1.MediaRetrieve.Request) | [MediaRetrieve.Reply](#berty.messenger.v1.MediaRetrieve.Reply) stream | MediaRetrieve allows to download a file attached to a message |
 
  
 
