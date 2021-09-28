@@ -1,4 +1,4 @@
-package bertyprotocol
+package cryptoutil
 
 import (
 	"bytes"
@@ -14,7 +14,6 @@ import (
 	"golang.org/x/crypto/nacl/secretbox"
 	"golang.org/x/crypto/sha3"
 
-	"berty.tech/berty/v2/go/internal/cryptoutil"
 	"berty.tech/berty/v2/go/internal/streamutil"
 	"berty.tech/berty/v2/go/pkg/errcode"
 	"berty.tech/berty/v2/go/pkg/protocoltypes"
@@ -62,7 +61,7 @@ func attachmentNewCipher(sk libp2pcrypto.PrivKey) (*attachmentCipher, error) {
 
 var bigOne = big.NewInt(1)
 
-func attachmentSealer(plaintext io.Reader, l *zap.Logger) (libp2pcrypto.PrivKey, *io.PipeReader, error) {
+func AttachmentSealer(plaintext io.Reader, l *zap.Logger) (libp2pcrypto.PrivKey, *io.PipeReader, error) {
 	sk, _, err := libp2pcrypto.GenerateKeyPair(libp2pcrypto.Ed25519, 0)
 	if err != nil {
 		return nil, nil, errcode.ErrCryptoKeyGeneration.Wrap(err)
@@ -83,7 +82,7 @@ func attachmentSealer(plaintext io.Reader, l *zap.Logger) (libp2pcrypto.PrivKey,
 	}), nil
 }
 
-func attachmentOpener(ciphertext io.Reader, sk libp2pcrypto.PrivKey, l *zap.Logger) (*io.PipeReader, error) {
+func AttachmentOpener(ciphertext io.Reader, sk libp2pcrypto.PrivKey, l *zap.Logger) (*io.PipeReader, error) {
 	ac, err := attachmentNewCipher(sk)
 	if err != nil {
 		return nil, errcode.ErrCryptoCipherInit.Wrap(err)
@@ -129,10 +128,10 @@ func attachmentKeyUnmarshal(s []byte) (libp2pcrypto.PrivKey, error) {
 
 // - CID ENCRYPTION
 
-func attachmentCIDEncryptionKey(source *[cryptoutil.KeySize]byte) (*[cryptoutil.KeySize]byte, error) {
+func attachmentCIDEncryptionKey(source *[KeySize]byte) (*[KeySize]byte, error) {
 	hkdf := hkdf.New(sha3.New256, source[:], nil, []byte("cid encryption v0"))
 
-	var key [cryptoutil.KeySize]byte
+	var key [KeySize]byte
 	if _, err := io.ReadFull(hkdf, key[:]); err != nil {
 		return nil, errcode.ErrStreamRead.Wrap(err)
 	}
@@ -140,8 +139,8 @@ func attachmentCIDEncryptionKey(source *[cryptoutil.KeySize]byte) (*[cryptoutil.
 	return &key, nil
 }
 
-func attachmentCIDEncrypt(sk *[cryptoutil.KeySize]byte, cid []byte) ([]byte, error) {
-	nonce, err := cryptoutil.GenerateNonce()
+func attachmentCIDEncrypt(sk *[KeySize]byte, cid []byte) ([]byte, error) {
+	nonce, err := GenerateNonce()
 	if err != nil {
 		return nil, errcode.ErrCryptoNonceGeneration.Wrap(err)
 	}
@@ -149,15 +148,15 @@ func attachmentCIDEncrypt(sk *[cryptoutil.KeySize]byte, cid []byte) ([]byte, err
 	return append(nonce[:], secretbox.Seal(nil, cid, nonce, sk)...), nil
 }
 
-func attachmentCIDDecrypt(sk *[cryptoutil.KeySize]byte, eCID []byte) ([]byte, error) {
-	if len(eCID) <= cryptoutil.NonceSize {
-		return nil, errcode.ErrInvalidInput.Wrap(fmt.Errorf("encrypted cid too small, got %v, expected to be > %v", len(eCID), cryptoutil.NonceSize))
+func attachmentCIDDecrypt(sk *[KeySize]byte, eCID []byte) ([]byte, error) {
+	if len(eCID) <= NonceSize {
+		return nil, errcode.ErrInvalidInput.Wrap(fmt.Errorf("encrypted cid too small, got %v, expected to be > %v", len(eCID), NonceSize))
 	}
 
-	var nonce [cryptoutil.NonceSize]byte
-	_ = copy(nonce[:], eCID[:cryptoutil.NonceSize])
+	var nonce [NonceSize]byte
+	_ = copy(nonce[:], eCID[:NonceSize])
 
-	cid, ok := secretbox.Open(nil, eCID[cryptoutil.NonceSize:], &nonce, sk)
+	cid, ok := secretbox.Open(nil, eCID[NonceSize:], &nonce, sk)
 	if !ok {
 		return nil, errcode.ErrCryptoDecrypt
 	}
@@ -165,7 +164,7 @@ func attachmentCIDDecrypt(sk *[cryptoutil.KeySize]byte, eCID []byte) ([]byte, er
 	return cid, nil
 }
 
-func attachmentCIDSliceEncrypt(g *protocoltypes.Group, cids [][]byte) ([][]byte, error) {
+func AttachmentCIDSliceEncrypt(g *protocoltypes.Group, cids [][]byte) ([][]byte, error) {
 	sk, err := attachmentCIDEncryptionKey(g.GetSharedSecret())
 	if err != nil {
 		return nil, errcode.ErrCryptoKeyDerivation.Wrap(err)
@@ -173,7 +172,7 @@ func attachmentCIDSliceEncrypt(g *protocoltypes.Group, cids [][]byte) ([][]byte,
 	return mapBufArray(cids, func(cid []byte) ([]byte, error) { return attachmentCIDEncrypt(sk, cid) })
 }
 
-func attachmentCIDSliceDecrypt(g *protocoltypes.Group, eCIDs [][]byte) ([][]byte, error) {
+func AttachmentCIDSliceDecrypt(g *protocoltypes.Group, eCIDs [][]byte) ([][]byte, error) {
 	sk, err := attachmentCIDEncryptionKey(g.GetSharedSecret())
 	if err != nil {
 		return nil, errcode.ErrCryptoKeyDerivation.Wrap(err)

@@ -1,4 +1,4 @@
-package ipfsutil
+package datastoreutil
 
 import (
 	ds "github.com/ipfs/go-datastore"

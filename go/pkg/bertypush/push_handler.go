@@ -1,28 +1,33 @@
-package bertyprotocol
+package bertypush
 
 import (
 	"context"
 	"fmt"
 	"time"
 
-	"github.com/ipfs/go-datastore"
+	ds "github.com/ipfs/go-datastore"
+	ds_sync "github.com/ipfs/go-datastore/sync"
 	"github.com/libp2p/go-libp2p-core/crypto"
 	"go.uber.org/zap"
 	"golang.org/x/crypto/curve25519"
+	"golang.org/x/crypto/nacl/box"
 	"golang.org/x/crypto/nacl/secretbox"
 
+	"berty.tech/berty/v2/go/internal/accountutils"
 	"berty.tech/berty/v2/go/internal/cryptoutil"
+	"berty.tech/berty/v2/go/internal/datastoreutil"
 	"berty.tech/berty/v2/go/pkg/errcode"
 	"berty.tech/berty/v2/go/pkg/protocoltypes"
+	"berty.tech/berty/v2/go/pkg/pushtypes"
 )
 
 type pushHandler struct {
 	logger          *zap.Logger
 	pushSK          *[cryptoutil.KeySize]byte
 	pushPK          *[cryptoutil.KeySize]byte
-	groupDatastore  GroupDatastoreReadOnly
-	messageKeystore *messageKeystore
-	accountCache    datastore.Datastore
+	groupDatastore  cryptoutil.GroupDatastoreReadOnly
+	messageKeystore *cryptoutil.MessageKeystore
+	accountCache    ds.Datastore
 }
 
 func (s *pushHandler) UpdatePushServer(server *protocoltypes.PushServer) error {
@@ -31,7 +36,7 @@ func (s *pushHandler) UpdatePushServer(server *protocoltypes.PushServer) error {
 		return errcode.ErrSerialization.Wrap(fmt.Errorf("unable to marshal PushServer: %w", err))
 	}
 
-	err = s.accountCache.Put(datastore.NewKey(AccountCacheDatastorePushServerPK), cachePayload)
+	err = s.accountCache.Put(ds.NewKey(datastoreutil.AccountCacheDatastorePushServerPK), cachePayload)
 	if err != nil {
 		return errcode.ErrInternal.Wrap(fmt.Errorf("unable to cache push server info: %s", err))
 	}
@@ -56,7 +61,49 @@ type PushHandler interface {
 
 var _ PushHandler = (*pushHandler)(nil)
 
-func NewPushHandler(opts *Opts) (PushHandler, error) {
+type PushHandlerOpts struct {
+	Logger          *zap.Logger
+	PushKey         *[cryptoutil.KeySize]byte
+	DatastoreDir    string
+	RootDatastore   ds.Datastore
+	GroupDatastore  *cryptoutil.GroupDatastore
+	MessageKeystore *cryptoutil.MessageKeystore
+	AccountCache    ds.Datastore
+}
+
+func (opts *PushHandlerOpts) applyPushDefaults() error {
+	if opts.Logger == nil {
+		opts.Logger = zap.NewNop()
+	}
+
+	if opts.RootDatastore == nil {
+		if opts.DatastoreDir == "" || opts.DatastoreDir == accountutils.InMemoryDir {
+			opts.RootDatastore = ds_sync.MutexWrap(ds.NewMapDatastore())
+		} else {
+			opts.RootDatastore = nil
+		}
+	}
+
+	if opts.GroupDatastore == nil {
+		var err error
+		opts.GroupDatastore, err = cryptoutil.NewGroupDatastore(opts.RootDatastore)
+		if err != nil {
+			return err
+		}
+	}
+
+	if opts.AccountCache == nil {
+		opts.AccountCache = datastoreutil.NewNamespacedDatastore(opts.RootDatastore, ds.NewKey(datastoreutil.NamespaceAccountCacheDatastore))
+	}
+
+	if opts.MessageKeystore == nil {
+		opts.MessageKeystore = cryptoutil.NewMessageKeystore(datastoreutil.NewNamespacedDatastore(opts.RootDatastore, ds.NewKey(datastoreutil.NamespaceMessageKeystore)))
+	}
+
+	return nil
+}
+
+func NewPushHandler(opts *PushHandlerOpts) (PushHandler, error) {
 	if opts.PushKey == nil {
 		return nil, errcode.ErrInvalidInput.Wrap(fmt.Errorf("no cross account push key specified"))
 	}
@@ -85,12 +132,12 @@ func (s *pushHandler) PushReceive(payload []byte) (*protocoltypes.PushReceive_Re
 		return nil, errcode.ErrPushUnableToDecrypt.Wrap(err)
 	}
 
-	oosBytes, err := decryptPushDataFromServer(payload, pushServerPK, s.pushSK)
+	oosBytes, err := DecryptPushDataFromServer(payload, pushServerPK, s.pushSK)
 	if err != nil {
 		return nil, errcode.ErrPushUnableToDecrypt.Wrap(err)
 	}
 
-	oosMessageEnv := &protocoltypes.OutOfStoreMessageEnvelope{}
+	oosMessageEnv := &pushtypes.OutOfStoreMessageEnvelope{}
 	if err := oosMessageEnv.Unmarshal(oosBytes); err != nil {
 		return nil, errcode.ErrDeserialization.Wrap(err)
 	}
@@ -100,7 +147,7 @@ func (s *pushHandler) PushReceive(payload []byte) (*protocoltypes.PushReceive_Re
 		return nil, errcode.ErrDeserialization.Wrap(err)
 	}
 
-	oosMessage, err := decryptOutOfStoreMessageEnv(s.groupDatastore, oosMessageEnv, gPK)
+	oosMessage, err := DecryptOutOfStoreMessageEnv(s.groupDatastore, oosMessageEnv, gPK)
 	if err != nil {
 		return nil, errcode.ErrCryptoDecrypt.Wrap(err)
 	}
@@ -117,7 +164,7 @@ func (s *pushHandler) PushReceive(payload []byte) (*protocoltypes.PushReceive_Re
 	}, nil
 }
 
-func decryptOutOfStoreMessageEnv(gd GroupDatastoreReadOnly, env *protocoltypes.OutOfStoreMessageEnvelope, groupPK crypto.PubKey) (*protocoltypes.OutOfStoreMessage, error) {
+func DecryptOutOfStoreMessageEnv(gd cryptoutil.GroupDatastoreReadOnly, env *pushtypes.OutOfStoreMessageEnvelope, groupPK crypto.PubKey) (*protocoltypes.OutOfStoreMessage, error) {
 	nonce, err := cryptoutil.NonceSliceToArray(env.Nonce)
 	if err != nil {
 		return nil, errcode.ErrInvalidInput.Wrap(err)
@@ -144,7 +191,7 @@ func decryptOutOfStoreMessageEnv(gd GroupDatastoreReadOnly, env *protocoltypes.O
 }
 
 func (s *pushHandler) getServerPushPubKey() (*[cryptoutil.KeySize]byte, error) {
-	serverBytes, err := s.accountCache.Get(datastore.NewKey(AccountCacheDatastorePushServerPK))
+	serverBytes, err := s.accountCache.Get(ds.NewKey(datastoreutil.AccountCacheDatastorePushServerPK))
 	if err != nil {
 		return nil, errcode.ErrInternal.Wrap(fmt.Errorf("missing push server data: %w", err))
 	}
@@ -205,4 +252,31 @@ func NewPushHandlerViaProtocol(ctx context.Context, serviceClient protocoltypes.
 		serviceClient: serviceClient,
 		ctx:           ctx,
 	}
+}
+
+func DecryptPushDataFromServer(data []byte, serverPK, ownSK *[32]byte) ([]byte, error) {
+	if serverPK == nil {
+		return nil, errcode.ErrPushUnableToDecrypt.Wrap(fmt.Errorf("no push server public key provided"))
+	}
+
+	if ownSK == nil {
+		return nil, errcode.ErrPushUnableToDecrypt.Wrap(fmt.Errorf("no push receiver secret key provided"))
+	}
+
+	pushEnv := &pushtypes.PushExposedData{}
+	if err := pushEnv.Unmarshal(data); err != nil {
+		return nil, errcode.ErrPushInvalidPayload.Wrap(err)
+	}
+
+	nonce, err := cryptoutil.NonceSliceToArray(pushEnv.Nonce)
+	if err != nil {
+		return nil, errcode.ErrPushInvalidPayload.Wrap(err)
+	}
+
+	msgBytes, ok := box.Open(nil, pushEnv.Box, nonce, serverPK, ownSK)
+	if !ok {
+		return nil, errcode.ErrPushUnableToDecrypt.Wrap(fmt.Errorf("box.Open failed"))
+	}
+
+	return msgBytes, nil
 }
