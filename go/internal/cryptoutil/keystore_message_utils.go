@@ -1,4 +1,4 @@
-package bertyprotocol
+package cryptoutil
 
 import (
 	"crypto/sha256"
@@ -15,12 +15,11 @@ import (
 	"golang.org/x/crypto/hkdf"
 	"golang.org/x/crypto/nacl/secretbox"
 
-	"berty.tech/berty/v2/go/internal/cryptoutil"
 	"berty.tech/berty/v2/go/pkg/errcode"
 	"berty.tech/berty/v2/go/pkg/protocoltypes"
 )
 
-func sealPayload(payload []byte, ds *protocoltypes.DeviceSecret, deviceSK crypto.PrivKey, g *protocoltypes.Group) ([]byte, []byte, error) {
+func SealPayload(payload []byte, ds *protocoltypes.DeviceSecret, deviceSK crypto.PrivKey, g *protocoltypes.Group) ([]byte, []byte, error) {
 	var (
 		msgKey [32]byte
 		err    error
@@ -38,8 +37,8 @@ func sealPayload(payload []byte, ds *protocoltypes.DeviceSecret, deviceSK crypto
 	return secretbox.Seal(nil, payload, uint64AsNonce(ds.Counter+1), &msgKey), sig, nil
 }
 
-func sealEnvelopeInternal(payload []byte, ds *protocoltypes.DeviceSecret, deviceSK crypto.PrivKey, g *protocoltypes.Group, attachmentsCIDs [][]byte) ([]byte, error) {
-	encryptedPayload, sig, err := sealPayload(payload, ds, deviceSK, g)
+func SealEnvelope(payload []byte, ds *protocoltypes.DeviceSecret, deviceSK crypto.PrivKey, g *protocoltypes.Group, attachmentsCIDs [][]byte) ([]byte, error) {
+	encryptedPayload, sig, err := SealPayload(payload, ds, deviceSK, g)
 	if err != nil {
 		return nil, errcode.ErrCryptoEncrypt.Wrap(err)
 	}
@@ -60,14 +59,14 @@ func sealEnvelopeInternal(payload []byte, ds *protocoltypes.DeviceSecret, device
 		return nil, errcode.ErrSerialization.Wrap(err)
 	}
 
-	nonce, err := cryptoutil.GenerateNonce()
+	nonce, err := GenerateNonce()
 	if err != nil {
 		return nil, errcode.ErrCryptoNonceGeneration.Wrap(err)
 	}
 
 	encryptedHeaders := secretbox.Seal(nil, headers, nonce, g.GetSharedSecret())
 
-	encryptedAttachmentsCIDs, err := attachmentCIDSliceEncrypt(g, attachmentsCIDs)
+	encryptedAttachmentsCIDs, err := AttachmentCIDSliceEncrypt(g, attachmentsCIDs)
 	if err != nil {
 		return nil, errcode.ErrCryptoEncrypt.Wrap(err)
 	}
@@ -85,14 +84,14 @@ func sealEnvelopeInternal(payload []byte, ds *protocoltypes.DeviceSecret, device
 	return env, nil
 }
 
-func openEnvelopeHeaders(data []byte, g *protocoltypes.Group) (*protocoltypes.MessageEnvelope, *protocoltypes.MessageHeaders, error) {
+func OpenEnvelopeHeaders(data []byte, g *protocoltypes.Group) (*protocoltypes.MessageEnvelope, *protocoltypes.MessageHeaders, error) {
 	env := &protocoltypes.MessageEnvelope{}
 	err := env.Unmarshal(data)
 	if err != nil {
 		return nil, nil, errcode.ErrDeserialization.Wrap(err)
 	}
 
-	nonce, err := cryptoutil.NonceSliceToArray(env.Nonce)
+	nonce, err := NonceSliceToArray(env.Nonce)
 	if err != nil {
 		return nil, nil, errcode.ErrSerialization.Wrap(err)
 	}
