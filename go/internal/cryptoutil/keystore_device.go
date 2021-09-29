@@ -1,4 +1,4 @@
-package bertyprotocol
+package cryptoutil
 
 import (
 	"crypto/ed25519"
@@ -15,7 +15,6 @@ import (
 	keystore "github.com/ipfs/go-ipfs-keystore"
 	"github.com/libp2p/go-libp2p-core/crypto"
 
-	"berty.tech/berty/v2/go/internal/cryptoutil"
 	"berty.tech/berty/v2/go/pkg/errcode"
 	"berty.tech/berty/v2/go/pkg/protocoltypes"
 )
@@ -25,7 +24,7 @@ type DeviceKeystore interface {
 	AccountProofPrivKey() (crypto.PrivKey, error)
 	DevicePrivKey() (crypto.PrivKey, error)
 	ContactGroupPrivKey(pk crypto.PubKey) (crypto.PrivKey, error)
-	MemberDeviceForGroup(g *protocoltypes.Group) (*ownMemberDevice, error)
+	MemberDeviceForGroup(g *protocoltypes.Group) (*OwnMemberDevice, error)
 	RestoreAccountKeys(accountKey crypto.PrivKey, accountProofKey crypto.PrivKey) error
 
 	AttachmentPrivKey(cid []byte) (crypto.PrivKey, error)
@@ -66,7 +65,7 @@ func (a *deviceKeystore) AccountProofPrivKey() (crypto.PrivKey, error) {
 	return a.getOrGenerateNamedKey(keyAccountProof)
 }
 
-// DevicePrivKey returns the current device private key
+// DevicePrivKey returns the current Device private key
 func (a *deviceKeystore) DevicePrivKey() (crypto.PrivKey, error) {
 	a.mu.Lock()
 	defer a.mu.Unlock()
@@ -84,8 +83,8 @@ func (a *deviceKeystore) ContactGroupPrivKey(pk crypto.PubKey) (crypto.PrivKey, 
 	return a.getOrComputeECDH(keyContactGroup, pk, accountSK)
 }
 
-// memberDeviceForMultiMemberGroup retrieves the device signing key associated with the supplied group pub key
-func (a *deviceKeystore) memberDeviceForMultiMemberGroup(groupPK crypto.PubKey) (*ownMemberDevice, error) {
+// memberDeviceForMultiMemberGroup retrieves the Device signing key associated with the supplied group pub key
+func (a *deviceKeystore) memberDeviceForMultiMemberGroup(groupPK crypto.PubKey) (*OwnMemberDevice, error) {
 	memberSK, err := a.getOrComputeDeviceKeyForGroupMember(groupPK)
 	if err != nil {
 		return nil, err
@@ -96,13 +95,13 @@ func (a *deviceKeystore) memberDeviceForMultiMemberGroup(groupPK crypto.PubKey) 
 		return nil, err
 	}
 
-	return &ownMemberDevice{
+	return &OwnMemberDevice{
 		member: memberSK,
 		device: deviceSK,
 	}, nil
 }
 
-func (a *deviceKeystore) MemberDeviceForGroup(g *protocoltypes.Group) (*ownMemberDevice, error) {
+func (a *deviceKeystore) MemberDeviceForGroup(g *protocoltypes.Group) (*OwnMemberDevice, error) {
 	pk, err := g.GetPubKey()
 	if err != nil {
 		return nil, errcode.ErrInvalidInput.Wrap(err)
@@ -120,7 +119,7 @@ func (a *deviceKeystore) MemberDeviceForGroup(g *protocoltypes.Group) (*ownMembe
 			return nil, err
 		}
 
-		return &ownMemberDevice{
+		return &OwnMemberDevice{
 			member: memberSK,
 			device: deviceSK,
 		}, nil
@@ -184,7 +183,7 @@ func (a *deviceKeystore) getOrComputeECDH(nameSpace string, pk crypto.PubKey, ow
 		return nil, err
 	}
 
-	skB, pkB, err := cryptoutil.EdwardsToMontgomery(ownSK, pk)
+	skB, pkB, err := EdwardsToMontgomery(ownSK, pk)
 	if err != nil {
 		return nil, err
 	}
@@ -341,26 +340,41 @@ func (a *deviceKeystore) AttachmentSecretSlicePut(cids, secrets [][]byte) error 
 	return nil
 }
 
-// ownMemberDevice is own local device part of a group
-type ownMemberDevice struct {
+// OwnMemberDevice is own local Device part of a group
+type OwnMemberDevice struct {
 	member crypto.PrivKey
 	device crypto.PrivKey
 }
 
-func (d *ownMemberDevice) Public() *memberDevice {
-	return &memberDevice{
-		member: d.member.GetPublic(),
-		device: d.device.GetPublic(),
+func (d *OwnMemberDevice) PrivateMember() crypto.PrivKey {
+	return d.member
+}
+
+func (d *OwnMemberDevice) PrivateDevice() crypto.PrivKey {
+	return d.device
+}
+
+func (d *OwnMemberDevice) Public() *MemberDevice {
+	return &MemberDevice{
+		Member: d.member.GetPublic(),
+		Device: d.device.GetPublic(),
 	}
 }
 
-// memberDevice is a remote device part of a group
-type memberDevice struct {
-	member crypto.PubKey
-	device crypto.PubKey
+func NewOwnMemberDevice(member crypto.PrivKey, device crypto.PrivKey) *OwnMemberDevice {
+	return &OwnMemberDevice{
+		member: member,
+		device: device,
+	}
 }
 
-func newDeviceSecret() (*protocoltypes.DeviceSecret, error) {
+// MemberDevice is a remote Device part of a group
+type MemberDevice struct {
+	Member crypto.PubKey
+	Device crypto.PubKey
+}
+
+func NewDeviceSecret() (*protocoltypes.DeviceSecret, error) {
 	counter, err := crand.Int(crand.Reader, big.NewInt(0).SetUint64(math.MaxUint64))
 	if err != nil {
 		return nil, errcode.ErrCryptoRandomGeneration.Wrap(err)
@@ -378,7 +392,7 @@ func newDeviceSecret() (*protocoltypes.DeviceSecret, error) {
 	}, nil
 }
 
-// New creates a new deviceKeystore instance, if the keystore does not hold an deviceKeystore key, one will be created when required
+// NewDeviceKeystore creates a new deviceKeystore instance, if the keystore does not hold an deviceKeystore key, one will be created when required
 func NewDeviceKeystore(ks keystore.Keystore) DeviceKeystore {
 	return &deviceKeystore{
 		ks: ks,
