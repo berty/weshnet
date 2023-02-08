@@ -1,20 +1,18 @@
-# Berty `go/pkg/bertyprotocol`
+# Wesh Network Protocol
 
-[![go.dev reference](https://img.shields.io/badge/go.dev-reference-007d9c?logo=go&logoColor=white)](https://pkg.go.dev/berty.tech/berty/v2/go/pkg/bertyprotocol)
-
-__Please, read the main [`README.md`](../../../README.md) file first.__
+[![go.dev reference](https://img.shields.io/badge/go.dev-reference-007d9c?logo=go&logoColor=white)](https://pkg.go.dev/berty.tech/weshnet)
 
 ## Usage
 
 ```go
-import "berty.tech/berty/v2/go/pkg/bertyprotocol"
+import "berty.tech/weshnet"
 ```
 
 ## Get the code
 
 ```
-git clone https://github.com/berty/berty
-cd berty/go/pkg/bertyprotocol
+git clone https://github.com/berty/weshnet
+cd weshnet
 
 <!--
 ## Examples
