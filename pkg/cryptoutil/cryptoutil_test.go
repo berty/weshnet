@@ -8,7 +8,7 @@ import (
 	"github.com/libp2p/go-libp2p/core/crypto"
 	"github.com/stretchr/testify/require"
 
-	"berty.tech/berty/v2/go/pkg/errcode"
+	"berty.tech/weshnet/pkg/errcode"
 )
 
 func TestSeedFromEd25519PrivateKey(t *testing.T) {

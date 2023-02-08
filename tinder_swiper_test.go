@@ -1,4 +1,4 @@
-package bertyprotocol
+package weshnet
 
 import (
 	"context"
@@ -10,9 +10,9 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"berty.tech/berty/v2/go/internal/ipfsutil"
-	"berty.tech/berty/v2/go/internal/rendezvous"
-	"berty.tech/berty/v2/go/internal/testutil"
+	"berty.tech/weshnet/pkg/ipfsutil"
+	"berty.tech/weshnet/pkg/rendezvous"
+	"berty.tech/berty/v2/go/pkg/testutil"
 )
 
 func TestAnnounceWatchForPeriod(t *testing.T) {

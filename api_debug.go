@@ -1,4 +1,4 @@
-package bertyprotocol
+package weshnet
 
 import (
 	"context"
@@ -13,11 +13,11 @@ import (
 	"go.uber.org/multierr"
 	"go.uber.org/zap"
 
-	"berty.tech/berty/v2/go/internal/cryptoutil"
-	"berty.tech/berty/v2/go/internal/sysutil"
-	"berty.tech/berty/v2/go/pkg/errcode"
-	"berty.tech/berty/v2/go/pkg/protocoltypes"
 	"berty.tech/go-orbit-db/stores/operation"
+	"berty.tech/weshnet/pkg/cryptoutil"
+	"berty.tech/weshnet/internal/sysutil"
+	"berty.tech/weshnet/pkg/errcode"
+	"berty.tech/weshnet/pkg/protocoltypes"
 )
 
 func (s *service) DebugListGroups(req *protocoltypes.DebugListGroups_Request, srv protocoltypes.ProtocolService_DebugListGroupsServer) error {

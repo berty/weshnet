@@ -14,8 +14,8 @@ import (
 	p2p_peer "github.com/libp2p/go-libp2p/core/peer"
 	"github.com/pkg/errors"
 
-	"berty.tech/berty/v2/go/pkg/errcode"
 	encrepo "berty.tech/go-ipfs-repo-encrypted"
+	"berty.tech/weshnet/pkg/errcode"
 )
 
 // defaultConnMgrHighWater is the default value for the connection managers

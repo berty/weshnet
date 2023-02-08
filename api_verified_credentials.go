@@ -1,4 +1,4 @@
-package bertyprotocol
+package weshnet
 
 import (
 	"bytes"
@@ -12,8 +12,8 @@ import (
 	libp2p_ci "github.com/libp2p/go-libp2p/core/crypto"
 
 	"berty.tech/berty/v2/go/pkg/bertyvcissuer"
-	"berty.tech/berty/v2/go/pkg/errcode"
-	"berty.tech/berty/v2/go/pkg/protocoltypes"
+	"berty.tech/weshnet/pkg/errcode"
+	"berty.tech/weshnet/pkg/protocoltypes"
 )
 
 type signerWrapper struct {

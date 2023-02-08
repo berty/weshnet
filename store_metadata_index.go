@@ -1,4 +1,4 @@
-package bertyprotocol
+package weshnet
 
 import (
 	"bytes"
@@ -10,11 +10,11 @@ import (
 	"github.com/libp2p/go-libp2p/core/crypto"
 	"go.uber.org/zap"
 
-	"berty.tech/berty/v2/go/internal/cryptoutil"
-	"berty.tech/berty/v2/go/pkg/errcode"
-	"berty.tech/berty/v2/go/pkg/protocoltypes"
 	ipfslog "berty.tech/go-ipfs-log"
 	"berty.tech/go-orbit-db/iface"
+	"berty.tech/weshnet/pkg/cryptoutil"
+	"berty.tech/weshnet/pkg/errcode"
+	"berty.tech/weshnet/pkg/protocoltypes"
 )
 
 // FIXME: replace members, devices, sentSecrets, contacts and groups by a circular buffer to avoid an attack by RAM saturation

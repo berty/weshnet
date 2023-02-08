@@ -1,4 +1,4 @@
-package bertyprotocol
+package weshnet
 
 import (
 	"context"
@@ -10,11 +10,11 @@ import (
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
 
-	"berty.tech/berty/v2/go/pkg/errcode"
 	logac "berty.tech/go-ipfs-log/accesscontroller"
 	"berty.tech/go-ipfs-log/identityprovider"
 	"berty.tech/go-orbit-db/accesscontroller"
 	"berty.tech/go-orbit-db/iface"
+	"berty.tech/weshnet/pkg/errcode"
 )
 
 type simpleAccessController struct {

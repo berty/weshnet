@@ -8,7 +8,7 @@ import (
 	"github.com/libp2p/go-libp2p/core/peer"
 	ma "github.com/multiformats/go-multiaddr"
 
-	"berty.tech/berty/v2/go/internal/notify"
+	"berty.tech/weshnet/internal/notify"
 )
 
 type PeersUpdate map[peer.ID]time.Time

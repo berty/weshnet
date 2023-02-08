@@ -13,7 +13,7 @@ import (
 	"golang.org/x/crypto/ed25519"
 	"golang.org/x/crypto/scrypt"
 
-	"berty.tech/berty/v2/go/pkg/errcode"
+	"berty.tech/weshnet/pkg/errcode"
 )
 
 const (

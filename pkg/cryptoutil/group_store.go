@@ -13,9 +13,9 @@ import (
 	"github.com/libp2p/go-libp2p/core/crypto"
 	"golang.org/x/crypto/hkdf"
 
-	"berty.tech/berty/v2/go/internal/datastoreutil"
-	"berty.tech/berty/v2/go/pkg/errcode"
-	"berty.tech/berty/v2/go/pkg/protocoltypes"
+	"berty.tech/weshnet/internal/datastoreutil"
+	"berty.tech/weshnet/pkg/errcode"
+	"berty.tech/weshnet/pkg/protocoltypes"
 )
 
 const NamespaceGroupDatastore = "account_groups_datastore"

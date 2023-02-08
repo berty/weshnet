@@ -1,4 +1,4 @@
-package bertyprotocol
+package weshnet
 
 import (
 	"context"
@@ -7,8 +7,8 @@ import (
 
 	"github.com/libp2p/go-libp2p/core/crypto"
 
-	"berty.tech/berty/v2/go/pkg/errcode"
 	"berty.tech/go-ipfs-log/keystore"
+	"berty.tech/weshnet/pkg/errcode"
 )
 
 type BertySignedKeyStore struct {

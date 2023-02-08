@@ -1,11 +1,11 @@
-package bertyprotocol
+package weshnet
 
 import (
 	"bytes"
 	"errors"
 
-	"berty.tech/berty/v2/go/pkg/errcode"
 	ipliface "berty.tech/go-ipfs-log/iface"
+	"berty.tech/weshnet/pkg/errcode"
 )
 
 func getEntriesInRange(entries []ipliface.IPFSLogEntry, since, until []byte) ([]ipliface.IPFSLogEntry, error) {

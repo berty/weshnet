@@ -1,4 +1,4 @@
-package bertyprotocol
+package weshnet
 
 import (
 	"archive/tar"
@@ -13,13 +13,13 @@ import (
 	"github.com/libp2p/go-libp2p/core/crypto"
 	"github.com/stretchr/testify/require"
 
-	"berty.tech/berty/v2/go/internal/cryptoutil"
-	"berty.tech/berty/v2/go/internal/datastoreutil"
-	"berty.tech/berty/v2/go/internal/ipfsutil"
-	"berty.tech/berty/v2/go/internal/testutil"
-	"berty.tech/berty/v2/go/pkg/protocoltypes"
 	orbitdb "berty.tech/go-orbit-db"
 	"berty.tech/go-orbit-db/pubsub/pubsubraw"
+	"berty.tech/weshnet/pkg/cryptoutil"
+	"berty.tech/weshnet/internal/datastoreutil"
+	"berty.tech/weshnet/pkg/ipfsutil"
+	"berty.tech/berty/v2/go/pkg/testutil"
+	"berty.tech/weshnet/pkg/protocoltypes"
 )
 
 func Test_service_exportAccountKey(t *testing.T) {

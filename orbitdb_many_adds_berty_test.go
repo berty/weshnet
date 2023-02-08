@@ -1,4 +1,4 @@
-package bertyprotocol
+package weshnet
 
 import (
 	"context"
@@ -15,11 +15,10 @@ import (
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap"
 
-	"berty.tech/berty/v2/go/internal/accountutils"
-	"berty.tech/berty/v2/go/internal/ipfsutil"
-	"berty.tech/berty/v2/go/internal/testutil"
-	"berty.tech/berty/v2/go/pkg/protocoltypes"
 	"berty.tech/go-orbit-db/iface"
+	"berty.tech/weshnet/pkg/ipfsutil"
+	"berty.tech/berty/v2/go/pkg/testutil"
+	"berty.tech/weshnet/pkg/protocoltypes"
 )
 
 func testAddBerty(ctx context.Context, t *testing.T, node ipfsutil.CoreAPIMock, g *protocoltypes.Group, pathBase string, storageKey []byte, storageSalt []byte, amountToAdd, amountCurrentlyPresent int) {
@@ -37,11 +36,10 @@ func testAddBerty(ctx context.Context, t *testing.T, node ipfsutil.CoreAPIMock, 
 
 	defer lock.Unlock()
 
-	baseDS, err := accountutils.GetRootDatastoreForPath(pathBase, storageKey, storageSalt, zap.NewNop())
+	baseDS, err := GetRootDatastoreForPath(pathBase, storageKey, storageSalt, zap.NewNop())
 	require.NoError(t, err)
 
 	baseDS = sync_ds.MutexWrap(baseDS)
-
 	defer testutil.Close(t, baseDS)
 
 	odb, err := NewBertyOrbitDB(ctx, api, &NewOrbitDBOptions{

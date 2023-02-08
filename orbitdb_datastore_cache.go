@@ -1,4 +1,4 @@
-package bertyprotocol
+package weshnet
 
 import (
 	"context"
@@ -6,9 +6,9 @@ import (
 	datastore "github.com/ipfs/go-datastore"
 	"github.com/ipfs/go-datastore/query"
 
-	"berty.tech/berty/v2/go/internal/datastoreutil"
 	"berty.tech/go-orbit-db/address"
 	"berty.tech/go-orbit-db/cache"
+	"berty.tech/weshnet/internal/datastoreutil"
 )
 
 type datastoreCache struct {

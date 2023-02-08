@@ -14,13 +14,13 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"berty.tech/berty/v2/go/internal/cryptoutil"
-	"berty.tech/berty/v2/go/internal/testutil"
-	"berty.tech/berty/v2/go/pkg/bertyprotocol"
-	"berty.tech/berty/v2/go/pkg/protocoltypes"
+	"berty.tech/weshnet"
+	"berty.tech/weshnet/pkg/cryptoutil"
+	"berty.tech/berty/v2/go/pkg/testutil"
+	"berty.tech/weshnet/pkg/protocoltypes"
 )
 
-func addDummyMemberInMetadataStore(ctx context.Context, t testing.TB, ms *bertyprotocol.MetadataStore, g *protocoltypes.Group, memberPK crypto.PubKey, join bool) (crypto.PubKey, *protocoltypes.DeviceSecret) {
+func addDummyMemberInMetadataStore(ctx context.Context, t testing.TB, ms *weshnet.MetadataStore, g *protocoltypes.Group, memberPK crypto.PubKey, join bool) (crypto.PubKey, *protocoltypes.DeviceSecret) {
 	t.Helper()
 
 	acc := cryptoutil.NewDeviceKeystore(keystore.NewMemKeystore(), nil)
@@ -31,11 +31,11 @@ func addDummyMemberInMetadataStore(ctx context.Context, t testing.TB, ms *bertyp
 	assert.NoError(t, err)
 
 	if join {
-		_, err = bertyprotocol.MetadataStoreAddDeviceToGroup(ctx, ms, g, md)
+		_, err = weshnet.MetadataStoreAddDeviceToGroup(ctx, ms, g, md)
 		assert.NoError(t, err)
 	}
 
-	_, err = bertyprotocol.MetadataStoreSendSecret(ctx, ms, g, md, memberPK, ds)
+	_, err = weshnet.MetadataStoreSendSecret(ctx, ms, g, md, memberPK, ds)
 	assert.NoError(t, err)
 
 	return md.PrivateDevice().GetPublic(), ds
@@ -77,7 +77,7 @@ func Test_EncryptMessagePayload(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	g, gSK, err := bertyprotocol.NewGroupMultiMember()
+	g, gSK, err := weshnet.NewGroupMultiMember()
 	assert.NoError(t, err)
 
 	_ = gSK
@@ -106,8 +106,8 @@ func Test_EncryptMessagePayload(t *testing.T) {
 	mkh2, cleanup := cryptoutil.NewInMemMessageKeystore()
 	defer cleanup()
 
-	gc1 := bertyprotocol.NewContextGroup(g, nil, nil, mkh1, omd1, nil)
-	gc2 := bertyprotocol.NewContextGroup(g, nil, nil, mkh2, omd2, nil)
+	gc1 := weshnet.NewContextGroup(g, nil, nil, mkh1, omd1, nil)
+	gc2 := weshnet.NewContextGroup(g, nil, nil, mkh2, omd2, nil)
 
 	err = mkh1.RegisterChainKey(ctx, g, gc1.DevicePubKey(), ds1, true)
 	assert.NoError(t, err)
@@ -266,7 +266,7 @@ func Test_EncryptMessageEnvelope(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	g, _, err := bertyprotocol.NewGroupMultiMember()
+	g, _, err := weshnet.NewGroupMultiMember()
 	assert.NoError(t, err)
 
 	acc1 := cryptoutil.NewDeviceKeystore(keystore.NewMemKeystore(), nil)
@@ -276,9 +276,9 @@ func Test_EncryptMessageEnvelope(t *testing.T) {
 	omd1, err := acc1.MemberDeviceForGroup(g)
 	assert.NoError(t, err)
 
-	gc1 := bertyprotocol.NewContextGroup(g, nil, nil, mkh1, omd1, nil)
+	gc1 := weshnet.NewContextGroup(g, nil, nil, mkh1, omd1, nil)
 
-	ds1, err := bertyprotocol.NewDeviceSecret()
+	ds1, err := weshnet.NewDeviceSecret()
 	assert.NoError(t, err)
 
 	err = mkh1.RegisterChainKey(ctx, g, gc1.DevicePubKey(), ds1, true)
@@ -321,7 +321,7 @@ func Test_EncryptMessageEnvelopeAndDerive(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	g, _, err := bertyprotocol.NewGroupMultiMember()
+	g, _, err := weshnet.NewGroupMultiMember()
 	assert.NoError(t, err)
 
 	acc1 := cryptoutil.NewDeviceKeystore(keystore.NewMemKeystore(), nil)
@@ -348,7 +348,7 @@ func Test_EncryptMessageEnvelopeAndDerive(t *testing.T) {
 	gPK, err := g.GetPubKey()
 	assert.NoError(t, err)
 
-	gc1 := bertyprotocol.NewContextGroup(g, nil, nil, mkh1, omd1, nil)
+	gc1 := weshnet.NewContextGroup(g, nil, nil, mkh1, omd1, nil)
 
 	ds2, err := cryptoutil.NewDeviceSecret()
 	assert.NoError(t, err)
@@ -404,7 +404,7 @@ func testMessageKeyHolderCatchUp(t *testing.T, expectedNewDevices int, isSlow bo
 	dir := path.Join(os.TempDir(), fmt.Sprintf("%d", os.Getpid()), "MessageKeyHolderCatchUp")
 	defer os.RemoveAll(dir)
 
-	peers, _, cleanup := bertyprotocol.CreatePeersWithGroupTest(ctx, t, dir, 1, 1)
+	peers, _, cleanup := weshnet.CreatePeersWithGroupTest(ctx, t, dir, 1, 1)
 	defer cleanup()
 
 	peer := peers[0]
@@ -465,7 +465,7 @@ func testMessageKeyHolderSubscription(t *testing.T, expectedNewDevices int, isSl
 	dir := path.Join(os.TempDir(), fmt.Sprintf("%d", os.Getpid()), "MessageKeyHolderSubscription")
 	defer os.RemoveAll(dir)
 
-	peers, gSK, cleanup := bertyprotocol.CreatePeersWithGroupTest(ctx, t, dir, 1, 1)
+	peers, gSK, cleanup := weshnet.CreatePeersWithGroupTest(ctx, t, dir, 1, 1)
 	defer cleanup()
 
 	peer := peers[0]

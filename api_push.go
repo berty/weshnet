@@ -1,4 +1,4 @@
-package bertyprotocol
+package weshnet
 
 import (
 	"bytes"
@@ -19,11 +19,11 @@ import (
 	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/credentials/insecure"
 
-	"berty.tech/berty/v2/go/internal/cryptoutil"
-	"berty.tech/berty/v2/go/internal/logutil"
-	"berty.tech/berty/v2/go/pkg/errcode"
-	"berty.tech/berty/v2/go/pkg/protocoltypes"
-	"berty.tech/berty/v2/go/pkg/pushtypes"
+	"berty.tech/weshnet/pkg/cryptoutil"
+	"berty.tech/berty/v2/go/pkg/logutil"
+	"berty.tech/weshnet/pkg/errcode"
+	"berty.tech/weshnet/pkg/protocoltypes"
+	"berty.tech/weshnet/pkg/pushtypes"
 )
 
 func PushSealTokenForServer(receiver *protocoltypes.PushServiceReceiver, server *protocoltypes.PushServer) (*protocoltypes.PushMemberTokenUpdate, error) {

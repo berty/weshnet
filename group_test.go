@@ -1,4 +1,4 @@
-package bertyprotocol
+package weshnet
 
 import (
 	crand "crypto/rand"
@@ -7,8 +7,8 @@ import (
 	"github.com/libp2p/go-libp2p/core/crypto"
 	"github.com/stretchr/testify/require"
 
-	"berty.tech/berty/v2/go/internal/cryptoutil"
-	"berty.tech/berty/v2/go/pkg/protocoltypes"
+	"berty.tech/weshnet/pkg/cryptoutil"
+	"berty.tech/weshnet/pkg/protocoltypes"
 )
 
 func TestGetGroupForContact(t *testing.T) {

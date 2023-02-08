@@ -15,7 +15,7 @@ import (
 	"go.uber.org/multierr"
 	"go.uber.org/zap"
 
-	"berty.tech/berty/v2/go/internal/logutil"
+	"berty.tech/berty/v2/go/pkg/logutil"
 )
 
 func ParseAndResolveIpfsAddr(ctx context.Context, addr string) (*peer.AddrInfo, error) {

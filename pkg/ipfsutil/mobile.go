@@ -17,7 +17,7 @@ import (
 	p2p_peer "github.com/libp2p/go-libp2p/core/peer"
 	p2p_routing "github.com/libp2p/go-libp2p/core/routing"
 
-	ipfs_mobile "berty.tech/berty/v2/go/internal/ipfsutil/mobile"
+	ipfs_mobile "berty.tech/weshnet/pkg/ipfsutil/mobile"
 )
 
 type DHTNetworkMode int

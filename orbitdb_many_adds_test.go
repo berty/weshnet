@@ -1,4 +1,4 @@
-package bertyprotocol
+package weshnet
 
 import (
 	"context"
@@ -9,10 +9,10 @@ import (
 
 	"github.com/libp2p/go-libp2p/core/crypto"
 
-	"berty.tech/berty/v2/go/internal/cryptoutil"
-	"berty.tech/berty/v2/go/internal/ipfsutil"
-	"berty.tech/berty/v2/go/pkg/protocoltypes"
 	orbitdb "berty.tech/go-orbit-db"
+	"berty.tech/weshnet/pkg/cryptoutil"
+	"berty.tech/weshnet/pkg/ipfsutil"
+	"berty.tech/weshnet/pkg/protocoltypes"
 )
 
 func TestAdd(t *testing.T) {

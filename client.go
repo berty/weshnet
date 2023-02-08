@@ -1,13 +1,13 @@
-package bertyprotocol
+package weshnet
 
 import (
 	"context"
 
 	"google.golang.org/grpc"
 
-	"berty.tech/berty/v2/go/internal/grpcutil"
-	"berty.tech/berty/v2/go/pkg/errcode"
-	"berty.tech/berty/v2/go/pkg/protocoltypes"
+	"berty.tech/weshnet/internal/grpcutil"
+	"berty.tech/weshnet/pkg/errcode"
+	"berty.tech/weshnet/pkg/protocoltypes"
 )
 
 const ClientBufferSize = 4 * 1024 * 1024

@@ -6,7 +6,7 @@ import (
 
 	"go.uber.org/zap"
 
-	"berty.tech/berty/v2/go/internal/logutil"
+	"berty.tech/berty/v2/go/pkg/logutil"
 )
 
 // RingBufferMap is a map of string:ringBuffer(aka circular buffer)

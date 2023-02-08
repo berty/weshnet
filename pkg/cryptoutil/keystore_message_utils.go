@@ -15,8 +15,8 @@ import (
 	"golang.org/x/crypto/hkdf"
 	"golang.org/x/crypto/nacl/secretbox"
 
-	"berty.tech/berty/v2/go/pkg/errcode"
-	"berty.tech/berty/v2/go/pkg/protocoltypes"
+	"berty.tech/weshnet/pkg/errcode"
+	"berty.tech/weshnet/pkg/protocoltypes"
 )
 
 func SealPayload(payload []byte, ds *protocoltypes.DeviceSecret, deviceSK crypto.PrivKey, g *protocoltypes.Group) ([]byte, []byte, error) {

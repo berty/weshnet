@@ -6,8 +6,8 @@ import (
 	keystore "github.com/ipfs/go-ipfs-keystore"
 	"github.com/stretchr/testify/assert"
 
-	"berty.tech/berty/v2/go/internal/cryptoutil"
-	"berty.tech/berty/v2/go/pkg/bertyprotocol"
+	"berty.tech/weshnet"
+	"berty.tech/weshnet/pkg/cryptoutil"
 )
 
 func Test_New_AccountPrivKey_AccountProofPrivKey(t *testing.T) {
@@ -149,7 +149,7 @@ func Test_MemberDeviceForGroup_multimember(t *testing.T) {
 	assert.NoError(t, err)
 	assert.NotNil(t, acc2)
 
-	g, _, err := bertyprotocol.NewGroupMultiMember()
+	g, _, err := weshnet.NewGroupMultiMember()
 	assert.NoError(t, err)
 
 	omd1, err := acc1.MemberDeviceForGroup(g)

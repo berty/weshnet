@@ -1,12 +1,12 @@
-package bertyprotocol
+package weshnet
 
 import (
 	"context"
 
 	"github.com/libp2p/go-libp2p/core/crypto"
 
-	"berty.tech/berty/v2/go/pkg/errcode"
 	"berty.tech/go-ipfs-log/identityprovider"
+	"berty.tech/weshnet/pkg/errcode"
 )
 
 const (

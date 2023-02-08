@@ -1,4 +1,4 @@
-package bertyprotocol
+package weshnet
 
 import (
 	"container/heap"
@@ -7,8 +7,8 @@ import (
 	"github.com/ipfs/go-cid"
 	"github.com/libp2p/go-libp2p/core/crypto"
 
-	"berty.tech/berty/v2/go/pkg/protocoltypes"
 	"berty.tech/go-orbit-db/stores/operation"
+	"berty.tech/weshnet/pkg/protocoltypes"
 )
 
 // An Item is something we manage in a priority queue.

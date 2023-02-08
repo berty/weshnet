@@ -1,11 +1,11 @@
-package bertyprotocol
+package weshnet
 
 import (
 	"github.com/gogo/protobuf/proto"
 	"github.com/libp2p/go-libp2p/core/crypto"
 
-	"berty.tech/berty/v2/go/pkg/errcode"
-	"berty.tech/berty/v2/go/pkg/protocoltypes"
+	"berty.tech/weshnet/pkg/errcode"
+	"berty.tech/weshnet/pkg/protocoltypes"
 )
 
 type sigChecker func(g *protocoltypes.Group, metadata *protocoltypes.GroupMetadata, message proto.Message) error
