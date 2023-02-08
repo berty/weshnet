@@ -1,4 +1,4 @@
-package bertyprotocol
+package weshnet
 
 import (
 	"context"
@@ -14,9 +14,9 @@ import (
 	"go.uber.org/zap"
 	"moul.io/srand"
 
-	"berty.tech/berty/v2/go/internal/logutil"
-	"berty.tech/berty/v2/go/internal/rendezvous"
-	tinder "berty.tech/berty/v2/go/internal/tinder"
+	"berty.tech/berty/v2/go/pkg/logutil"
+	"berty.tech/weshnet/pkg/rendezvous"
+	tinder "berty.tech/weshnet/pkg/tinder"
 	"berty.tech/berty/v2/go/pkg/tyber"
 )
 

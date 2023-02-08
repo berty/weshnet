@@ -6,7 +6,7 @@ package androidnearby
 import (
 	"go.uber.org/zap"
 
-	proximity "berty.tech/berty/v2/go/internal/proximitytransport"
+	proximity "berty.tech/weshnet/pkg/proximitytransport"
 )
 
 const Supported = false

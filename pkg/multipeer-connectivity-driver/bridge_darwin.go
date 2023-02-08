@@ -6,8 +6,8 @@ package mc
 import (
 	"go.uber.org/zap"
 
-	native "berty.tech/berty/v2/go/internal/multipeer-connectivity-driver/driver"
-	proximity "berty.tech/berty/v2/go/internal/proximitytransport"
+	native "berty.tech/weshnet/pkg/multipeer-connectivity-driver/driver"
+	proximity "berty.tech/weshnet/pkg/proximitytransport"
 )
 
 const Supported = true

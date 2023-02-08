@@ -1,4 +1,4 @@
-package bertyprotocol_test
+package weshnet_test
 
 import (
 	"context"
@@ -8,10 +8,10 @@ import (
 	keystore "github.com/ipfs/go-ipfs-keystore"
 	"github.com/stretchr/testify/assert"
 
-	"berty.tech/berty/v2/go/internal/cryptoutil"
-	"berty.tech/berty/v2/go/internal/testutil"
-	"berty.tech/berty/v2/go/pkg/bertyprotocol"
-	"berty.tech/berty/v2/go/pkg/protocoltypes"
+	"berty.tech/weshnet"
+	"berty.tech/weshnet/pkg/cryptoutil"
+	"berty.tech/berty/v2/go/pkg/testutil"
+	"berty.tech/weshnet/pkg/protocoltypes"
 )
 
 func TestTestingClient_impl(t *testing.T) {
@@ -21,7 +21,7 @@ func TestTestingClient_impl(t *testing.T) {
 	logger, cleanup := testutil.Logger(t)
 	defer cleanup()
 
-	client, cleanup := bertyprotocol.TestingService(ctx, t, bertyprotocol.Opts{
+	client, cleanup := weshnet.TestingService(ctx, t, weshnet.Opts{
 		Logger:         logger,
 		DeviceKeystore: cryptoutil.NewDeviceKeystore(keystore.NewMemKeystore(), nil),
 	})
@@ -30,7 +30,7 @@ func TestTestingClient_impl(t *testing.T) {
 	// test service
 	_, _ = client.InstanceGetConfiguration(ctx, &protocoltypes.InstanceGetConfiguration_Request{})
 	status := client.Status()
-	expected := bertyprotocol.Status{}
+	expected := weshnet.Status{}
 	assert.Equal(t, expected, status)
 }
 
@@ -38,7 +38,7 @@ func ExampleNew_basic() {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	client, err := bertyprotocol.New(bertyprotocol.Opts{})
+	client, err := weshnet.New(weshnet.Opts{})
 	if err != nil {
 		panic(err)
 	}

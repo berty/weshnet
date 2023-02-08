@@ -8,7 +8,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"berty.tech/berty/v2/go/internal/rendezvous"
+	"berty.tech/weshnet/pkg/rendezvous"
 )
 
 func TestRoundTimePeriod_Next(t *testing.T) {

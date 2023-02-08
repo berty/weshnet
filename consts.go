@@ -1,4 +1,4 @@
-package bertyprotocol
+package weshnet
 
 import (
 	"berty.tech/go-orbit-db/cache/cacheleveldown"

@@ -1,4 +1,4 @@
-package bertyprotocol
+package weshnet
 
 import (
 	"context"
@@ -23,20 +23,20 @@ import (
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
 
-	"berty.tech/berty/v2/go/internal/cryptoutil"
-	"berty.tech/berty/v2/go/internal/datastoreutil"
-	"berty.tech/berty/v2/go/internal/ipfsutil"
-	ipfs_mobile "berty.tech/berty/v2/go/internal/ipfsutil/mobile"
-	tinder "berty.tech/berty/v2/go/internal/tinder"
-	"berty.tech/berty/v2/go/pkg/bertypush"
-	"berty.tech/berty/v2/go/pkg/bertyvcissuer"
-	"berty.tech/berty/v2/go/pkg/bertyversion"
-	"berty.tech/berty/v2/go/pkg/errcode"
-	"berty.tech/berty/v2/go/pkg/protocoltypes"
-	"berty.tech/berty/v2/go/pkg/tyber"
 	"berty.tech/go-orbit-db/baseorbitdb"
 	"berty.tech/go-orbit-db/iface"
 	"berty.tech/go-orbit-db/pubsub/directchannel"
+	"berty.tech/weshnet/pkg/cryptoutil"
+	"berty.tech/weshnet/internal/datastoreutil"
+	"berty.tech/weshnet/pkg/ipfsutil"
+	ipfs_mobile "berty.tech/weshnet/pkg/ipfsutil/mobile"
+	tinder "berty.tech/weshnet/pkg/tinder"
+	"berty.tech/berty/v2/go/pkg/bertypush"
+	"berty.tech/berty/v2/go/pkg/bertyvcissuer"
+	"berty.tech/weshnet/internal/bertyversion"
+	"berty.tech/weshnet/pkg/errcode"
+	"berty.tech/weshnet/pkg/protocoltypes"
+	"berty.tech/berty/v2/go/pkg/tyber"
 )
 
 var _ Service = (*service)(nil)
@@ -79,6 +79,8 @@ type service struct {
 	accountEventBus        event.Bus
 	contactRequestsManager *contactRequestsManager
 	vcClient               *bertyvcissuer.Client
+
+	protocoltypes.UnimplementedProtocolServiceServer
 }
 
 // Opts contains optional configuration flags for building a new Client

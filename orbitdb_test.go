@@ -1,4 +1,4 @@
-package bertyprotocol
+package weshnet
 
 import (
 	"context"
@@ -15,12 +15,11 @@ import (
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap"
 
-	"berty.tech/berty/v2/go/internal/accountutils"
-	"berty.tech/berty/v2/go/internal/datastoreutil"
-	"berty.tech/berty/v2/go/internal/ipfsutil"
-	"berty.tech/berty/v2/go/internal/testutil"
-	"berty.tech/berty/v2/go/internal/tinder"
-	"berty.tech/berty/v2/go/pkg/protocoltypes"
+	"berty.tech/berty/v2/go/pkg/testutil"
+	"berty.tech/weshnet/internal/datastoreutil"
+	"berty.tech/weshnet/pkg/ipfsutil"
+	"berty.tech/weshnet/pkg/protocoltypes"
+	"berty.tech/weshnet/pkg/tinder"
 )
 
 func TestDifferentStores(t *testing.T) {
@@ -47,7 +46,7 @@ func TestDifferentStores(t *testing.T) {
 
 	require.NoError(t, mn.ConnectAllButSelf())
 
-	baseDS, err := accountutils.GetRootDatastoreForPath(pathBase, nil, nil, zap.NewNop())
+	baseDS, err := GetRootDatastoreForPath(pathBase, nil, nil, zap.NewNop())
 	require.NoError(t, err)
 
 	baseDS = sync_ds.MutexWrap(baseDS)

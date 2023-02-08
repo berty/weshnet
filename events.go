@@ -1,4 +1,4 @@
-package bertyprotocol
+package weshnet
 
 import (
 	"fmt"
@@ -7,10 +7,10 @@ import (
 	cid "github.com/ipfs/go-cid"
 	"golang.org/x/crypto/nacl/secretbox"
 
-	"berty.tech/berty/v2/go/internal/cryptoutil"
-	"berty.tech/berty/v2/go/pkg/errcode"
-	"berty.tech/berty/v2/go/pkg/protocoltypes"
 	ipfslog "berty.tech/go-ipfs-log"
+	"berty.tech/weshnet/pkg/cryptoutil"
+	"berty.tech/weshnet/pkg/errcode"
+	"berty.tech/weshnet/pkg/protocoltypes"
 )
 
 var eventTypesMapper = map[protocoltypes.EventType]struct {

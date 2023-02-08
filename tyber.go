@@ -1,4 +1,4 @@
-package bertyprotocol
+package weshnet
 
 const (
 	TyberEventTinderPeerFound  = "Tinder peer found"

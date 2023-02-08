@@ -1,4 +1,4 @@
-package bertyprotocol
+package weshnet
 
 import (
 	"encoding/json"
@@ -9,12 +9,12 @@ import (
 	"github.com/libp2p/go-libp2p/core/crypto"
 	peer "github.com/libp2p/go-libp2p/core/peer"
 
-	"berty.tech/berty/v2/go/internal/cryptoutil"
-	"berty.tech/berty/v2/go/internal/rendezvous"
-	"berty.tech/berty/v2/go/pkg/protocoltypes"
 	"berty.tech/go-ipfs-log/enc"
 	"berty.tech/go-ipfs-log/entry"
 	"berty.tech/go-orbit-db/iface"
+	"berty.tech/weshnet/pkg/cryptoutil"
+	"berty.tech/weshnet/pkg/rendezvous"
+	"berty.tech/weshnet/pkg/protocoltypes"
 )
 
 type PeerDeviceGroup struct {

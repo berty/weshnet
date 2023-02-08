@@ -1,4 +1,4 @@
-package bertyprotocol
+package weshnet
 
 import (
 	"context"
@@ -6,7 +6,7 @@ import (
 
 	peer "github.com/libp2p/go-libp2p/core/peer"
 
-	"berty.tech/berty/v2/go/internal/notify"
+	"berty.tech/weshnet/internal/notify"
 )
 
 type ConnectednessType int

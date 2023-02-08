@@ -1,4 +1,4 @@
-package bertyprotocol_test
+package weshnet_test
 
 import (
 	"context"
@@ -10,10 +10,11 @@ import (
 	libp2p_mocknet "github.com/libp2p/go-libp2p/p2p/net/mock"
 	"github.com/stretchr/testify/require"
 
-	"berty.tech/berty/v2/go/internal/testutil"
-	"berty.tech/berty/v2/go/internal/tinder"
-	"berty.tech/berty/v2/go/pkg/bertyprotocol"
-	"berty.tech/berty/v2/go/pkg/protocoltypes"
+	"berty.tech/berty/v2/go/pkg/testutil"
+	"berty.tech/weshnet"
+	"berty.tech/weshnet/pkg/ipfsutil"
+	"berty.tech/weshnet/pkg/protocoltypes"
+	"berty.tech/weshnet/pkg/tinder"
 )
 
 func TestReactivateAccountGroup(t *testing.T) {
@@ -30,7 +31,7 @@ func TestReactivateAccountGroup(t *testing.T) {
 
 	// Setup 3 nodes
 	dsA := dsync.MutexWrap(ds.NewMapDatastore())
-	nodeA, closeNodeA := bertyprotocol.NewTestingProtocol(ctx, t, &bertyprotocol.TestingOpts{
+	nodeA, closeNodeA := weshnet.NewTestingProtocol(ctx, t, &weshnet.TestingOpts{
 		Logger:          logger.Named("nodeA"),
 		Mocknet:         mn,
 		DiscoveryServer: msrv,
@@ -38,7 +39,7 @@ func TestReactivateAccountGroup(t *testing.T) {
 	defer closeNodeA()
 
 	dsB := dsync.MutexWrap(ds.NewMapDatastore())
-	nodeB, closeNodeB := bertyprotocol.NewTestingProtocol(ctx, t, &bertyprotocol.TestingOpts{
+	nodeB, closeNodeB := weshnet.NewTestingProtocol(ctx, t, &weshnet.TestingOpts{
 		Logger:          logger.Named("nodeB"),
 		Mocknet:         mn,
 		DiscoveryServer: msrv,
@@ -46,7 +47,7 @@ func TestReactivateAccountGroup(t *testing.T) {
 	defer closeNodeB()
 
 	dsC := dsync.MutexWrap(ds.NewMapDatastore())
-	nodeC, closeNodeC := bertyprotocol.NewTestingProtocol(ctx, t, &bertyprotocol.TestingOpts{
+	nodeC, closeNodeC := weshnet.NewTestingProtocol(ctx, t, &weshnet.TestingOpts{
 		Logger:          logger.Named("nodeC"),
 		Mocknet:         mn,
 		DiscoveryServer: msrv,
@@ -61,7 +62,7 @@ func TestReactivateAccountGroup(t *testing.T) {
 	require.NoError(t, err)
 
 	// test communication between nodeA and nodeB
-	nodes := []*bertyprotocol.TestingProtocol{nodeA, nodeB}
+	nodes := []*weshnet.TestingProtocol{nodeA, nodeB}
 	addAsContact(ctx, t, nodes, nodes)
 	sendMessageToContact(ctx, t, []string{"pre-deactivate nodeA-nodeB"}, nodes)
 
@@ -81,7 +82,7 @@ func TestReactivateAccountGroup(t *testing.T) {
 	require.NoError(t, err)
 
 	// test communication between nodeA and nodeC
-	nodes = []*bertyprotocol.TestingProtocol{nodeA, nodeC}
+	nodes = []*weshnet.TestingProtocol{nodeA, nodeC}
 
 	addAsContact(ctx, t, nodes, nodes)
 	sendMessageToContact(ctx, t, []string{"post reactivate nodeA-nodeC"}, nodes)
@@ -103,7 +104,7 @@ func TestRaceReactivateAccountGroup(t *testing.T) {
 
 	// Setup 2 nodes
 	dsA := dsync.MutexWrap(ds.NewMapDatastore())
-	nodeA, closeNodeA := bertyprotocol.NewTestingProtocol(ctx, t, &bertyprotocol.TestingOpts{
+	nodeA, closeNodeA := weshnet.NewTestingProtocol(ctx, t, &weshnet.TestingOpts{
 		Logger:          logger.Named("nodeA"),
 		Mocknet:         mn,
 		DiscoveryServer: msrv,
@@ -111,7 +112,7 @@ func TestRaceReactivateAccountGroup(t *testing.T) {
 	defer closeNodeA()
 
 	dsB := dsync.MutexWrap(ds.NewMapDatastore())
-	nodeB, closeNodeB := bertyprotocol.NewTestingProtocol(ctx, t, &bertyprotocol.TestingOpts{
+	nodeB, closeNodeB := weshnet.NewTestingProtocol(ctx, t, &weshnet.TestingOpts{
 		Logger:          logger.Named("nodeB"),
 		Mocknet:         mn,
 		DiscoveryServer: msrv,
@@ -152,7 +153,7 @@ func TestRaceReactivateAccountGroup(t *testing.T) {
 
 	// test communication between nodeA and nodeB
 	time.Sleep(3 * time.Second)
-	nodes := []*bertyprotocol.TestingProtocol{nodeA, nodeB}
+	nodes := []*weshnet.TestingProtocol{nodeA, nodeB}
 	t.Log("addAsContact")
 	addAsContact(ctx, t, nodes, nodes)
 	t.Log("sendMessageToContact")
@@ -166,13 +167,13 @@ func TestReactivateContactGroup(t *testing.T) {
 	logger, cleanup := testutil.Logger(t)
 	defer cleanup()
 
-	opts := bertyprotocol.TestingOpts{
+	opts := weshnet.TestingOpts{
 		Mocknet:     libp2p_mocknet.New(),
 		Logger:      logger,
-		ConnectFunc: bertyprotocol.ConnectAll,
+		ConnectFunc: weshnet.ConnectAll,
 	}
 
-	nodes, cleanup := bertyprotocol.NewTestingProtocolWithMockedPeers(ctx, t, &opts, nil, 2)
+	nodes, cleanup := weshnet.NewTestingProtocolWithMockedPeers(ctx, t, &opts, nil, 2)
 	defer cleanup()
 
 	addAsContact(ctx, t, nodes, nodes)
@@ -208,13 +209,13 @@ func TestRaceReactivateContactGroup(t *testing.T) {
 	logger, cleanup := testutil.Logger(t)
 	defer cleanup()
 
-	opts := bertyprotocol.TestingOpts{
+	opts := weshnet.TestingOpts{
 		Mocknet:     libp2p_mocknet.New(),
 		Logger:      logger,
-		ConnectFunc: bertyprotocol.ConnectAll,
+		ConnectFunc: weshnet.ConnectAll,
 	}
 
-	nodes, cleanup := bertyprotocol.NewTestingProtocolWithMockedPeers(ctx, t, &opts, nil, 2)
+	nodes, cleanup := weshnet.NewTestingProtocolWithMockedPeers(ctx, t, &opts, nil, 2)
 	defer cleanup()
 
 	t.Log("addAsContact")
@@ -262,17 +263,17 @@ func TestReactivateMultimemberGroup(t *testing.T) {
 	logger, cleanup := testutil.Logger(t)
 	defer cleanup()
 
-	opts := bertyprotocol.TestingOpts{
+	opts := weshnet.TestingOpts{
 		Mocknet:     libp2p_mocknet.New(),
 		Logger:      logger,
-		ConnectFunc: bertyprotocol.ConnectAll,
+		ConnectFunc: weshnet.ConnectAll,
 	}
 
-	nodes, cleanup := bertyprotocol.NewTestingProtocolWithMockedPeers(ctx, t, &opts, nil, 2)
+	nodes, cleanup := weshnet.NewTestingProtocolWithMockedPeers(ctx, t, &opts, nil, 2)
 	defer cleanup()
 
 	// Create MultiMember Group
-	group := createMultiMemberGroupInstance(ctx, t, nodes[0], nodes[1])
+	group := weshnet.CreateMultiMemberGroupInstance(ctx, t, nodes[0], nodes[1])
 
 	// Send message before deactivation
 	sendMessageOnGroup(ctx, t, nodes, nodes, group.PublicKey, []string{"pre-deactivate"})

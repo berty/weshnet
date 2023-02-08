@@ -1,4 +1,4 @@
-package bertyprotocol
+package weshnet
 
 import (
 	"bytes"
@@ -17,11 +17,11 @@ import (
 	peer "github.com/libp2p/go-libp2p/core/peer"
 	"go.uber.org/zap"
 
-	"berty.tech/berty/v2/go/internal/handshake"
-	"berty.tech/berty/v2/go/internal/ipfsutil"
-	"berty.tech/berty/v2/go/internal/logutil"
-	"berty.tech/berty/v2/go/pkg/errcode"
-	"berty.tech/berty/v2/go/pkg/protocoltypes"
+	"berty.tech/weshnet/internal/handshake"
+	"berty.tech/weshnet/pkg/ipfsutil"
+	"berty.tech/berty/v2/go/pkg/logutil"
+	"berty.tech/weshnet/pkg/errcode"
+	"berty.tech/weshnet/pkg/protocoltypes"
 	"berty.tech/berty/v2/go/pkg/tyber"
 )
 
