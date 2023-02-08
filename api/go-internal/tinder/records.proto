@@ -4,7 +4,7 @@ package tinder;
 
 import "gogoproto/gogo.proto";
 
-option go_package = "berty.tech/berty/go/internal/tinder";
+option go_package = "berty.tech/weshnet/internal/tinder";
 
 option (gogoproto.goproto_enum_prefix_all) = false;
 option (gogoproto.marshaler_all) = true;

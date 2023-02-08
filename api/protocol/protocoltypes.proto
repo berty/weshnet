@@ -1,11 +1,11 @@
 syntax = "proto3";
 
-package berty.protocol.v1;
+package weshnet.protocol.v1;
 
 import "gogoproto/gogo.proto";
-import "pushtypes.proto";
+import "pushtypes/pushtypes.proto";
 
-option go_package = "berty.tech/berty/go/pkg/protocoltypes";
+option go_package = "berty.tech/weshnet/pkg/protocoltypes";
 
 option (gogoproto.goproto_enum_prefix_all) = false;
 option (gogoproto.marshaler_all) = true;

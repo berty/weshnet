@@ -1,10 +1,10 @@
 syntax = "proto3";
 
-package berty.errcode;
+package weshnet.errcode;
 
 import "gogoproto/gogo.proto";
 
-option go_package = "berty.tech/berty/go/pkg/errcode";
+option go_package = "berty.tech/weshnet/pkg/errcode";
 
 option (gogoproto.goproto_enum_prefix_all) = false;
 option (gogoproto.marshaler_all) = true;

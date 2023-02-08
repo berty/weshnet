@@ -183,11 +183,11 @@ $(gen_sum): $(gen_src)
 	  docker run \
 		--user="$$uid" \
 		--volume="`go env GOPATH`/pkg/mod:/go/pkg/mod" \
-		--volume="$(PWD)/..:/go/src/berty.tech/berty" \
-		--workdir="/go/src/berty.tech/berty/go" \
+		--volume="$(PWD):/go/src/berty.tech/weshnet" \
+		--workdir="/go/src/berty.tech/weshnet" \
 		--entrypoint="sh" \
 		--rm \
-		bertytech/protoc:29 \
+		bertytech/protoc:30 \
 		-xec 'make generate_local'; \
 	  $(MAKE) tidy \
 	)
@@ -196,30 +196,9 @@ $(gen_sum): $(gen_src)
 
 generate_local:
 	go version
-	$(call check-program, shasum protoc)
-	$(GO) run github.com/buicongtan1997/protoc-gen-swagger-config -i ../api/accounttypes.proto -o ../api/accounttypes.yaml
-	$(GO) run github.com/buicongtan1997/protoc-gen-swagger-config -i ../api/messengertypes.proto -o ../api/messengertypes.yaml
-	$(GO) run github.com/buicongtan1997/protoc-gen-swagger-config -i ../api/protocoltypes.proto -o ../api/protocoltypes.yaml
-	$(GO) run github.com/buicongtan1997/protoc-gen-swagger-config -i ../api/bertyreplication.proto -o ../api/bertyreplication.yaml
-	$(GO) run github.com/buicongtan1997/protoc-gen-swagger-config -i ../api/bertydirectory.proto -o ../api/bertydirectory.yaml
-	$(GO) run github.com/buicongtan1997/protoc-gen-swagger-config -i ../api/pushtypes.proto -o ../api/pushtypes.yaml
-	protoc $(protoc_opts) --gogo_out=plugins=grpc:$(GOPATH)/src ../api/errcode.proto
-	protoc $(protoc_opts) --gogo_out=plugins=grpc:$(GOPATH)/src ../api/accounttypes.proto
-	protoc $(protoc_opts) --gogo_out=plugins=grpc:$(GOPATH)/src ../api/bertybridge.proto
-	protoc $(protoc_opts) --gogo_out=plugins=grpc:$(GOPATH)/src ../api/pushtypes.proto
-	protoc $(protoc_opts) --gogo_out=plugins=grpc:$(GOPATH)/src ../api/bertyverifiablecreds.proto
-	protoc $(protoc_opts) --gogo_out=plugins=grpc:$(GOPATH)/src ../api/bertydirectory.proto
-	protoc $(protoc_opts) --gogo_out=plugins=grpc:$(GOPATH)/src ../api/go-internal/testutil.proto
-	protoc $(protoc_opts) --gogo_out=plugins=grpc:$(GOPATH)/src ../api/go-internal/records.proto
-	protoc $(protoc_opts) --gogo_out=plugins=grpc:$(GOPATH)/src ../api/go-internal/handshake.proto
-	protoc $(protoc_opts) --gogo_out=plugins=grpc:$(GOPATH)/src --grpc-gateway_out=logtostderr=true,grpc_api_configuration=../api/accounttypes.yaml:$(GOPATH)/src ../api/accounttypes.proto
-	protoc $(protoc_opts) --gogo_out=plugins=grpc:$(GOPATH)/src --grpc-gateway_out=logtostderr=true,grpc_api_configuration=../api/protocoltypes.yaml:$(GOPATH)/src ../api/protocoltypes.proto
-	protoc $(protoc_opts) --gogo_out=plugins=grpc:$(GOPATH)/src --grpc-gateway_out=logtostderr=true,grpc_api_configuration=../api/messengertypes.yaml:$(GOPATH)/src ../api/messengertypes.proto
-	protoc $(protoc_opts) --gogo_out=plugins=grpc:$(GOPATH)/src --grpc-gateway_out=logtostderr=true,grpc_api_configuration=../api/bertyreplication.yaml:$(GOPATH)/src ../api/bertyreplication.proto
-	protoc $(protoc_opts) --gogo_out=plugins=grpc:$(GOPATH)/src --grpc-gateway_out=logtostderr=true,grpc_api_configuration=../api/bertydirectory.yaml:$(GOPATH)/src ../api/bertydirectory.proto
-	protoc $(protoc_opts) --gogo_out=plugins=grpc:$(GOPATH)/src --grpc-gateway_out=logtostderr=true,grpc_api_configuration=../api/pushtypes.yaml:$(GOPATH)/src ../api/pushtypes.proto
-	sed -i s@berty.tech/berty/go@berty.tech/berty/v2/go@ ./pkg/*/*.pb.go
-	sed -i s@berty.tech/berty/go@berty.tech/berty/v2/go@ ./pkg/*/*.pb.gw.go
+	$(call check-program, shasum buf)
+	buf generate api/go-internal;
+	buf generate api/protocol;
 	$(MAKE) go.fmt
 	shasum $(gen_src) | sort -k 2 > $(gen_sum).tmp
 	mv $(gen_sum).tmp $(gen_sum)
@@ -241,6 +220,8 @@ gen.clean:
 	rm -f gen.sum $(wildcard */*/*.pb.go) $(wildcard */*/*pb_test.go) $(wildcard */*/*pb.gw.go)
 .PHONY: gen.clean
 
+pb.push:
+	buf push api/protocol
 
 ##
 ## Doc gen

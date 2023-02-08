@@ -1,10 +1,10 @@
 syntax = "proto3";
 
-package berty.push.v1;
+package weshnet.push.v1;
 
 import "gogoproto/gogo.proto";
 
-option go_package = "berty.tech/berty/go/pkg/pushtypes";
+option go_package = "berty.tech/weshnet/pkg/pushtypes";
 
 option (gogoproto.marshaler_all) = true;
 option (gogoproto.unmarshaler_all) = true;
