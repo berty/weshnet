@@ -57,21 +57,12 @@ regenerate: gen.clean generate
 .PHONY: regenerate
 
 
-install: go.install
-.PHONY: install
-
-
 clean:
 	rm -rf out/
 .PHONY: clean
 
 
-mini.dev: generate
-	go run github.com/githubnemo/CompileDaemon --color=true --build="go install -v" --build-dir="./cmd/berty" --command="berty mini"
-.PHONY: mini.dev
-
-
-re: clean generate install
+re: clean generate
 .PHONY: re
 
 
@@ -110,40 +101,22 @@ go.unittest: pb.generate
 
 
 go.flappy-tests: pb.generate
-	TEST_STABILITY=flappy go run moul.io/testman test -v -test.v -timeout=600s -retry=10 -run ^TestFlappy    ./pkg/bertymessenger
-	TEST_STABILITY=flappy go run moul.io/testman test -v -test.v -timeout=600s -retry=10 -run ^TestFlappy    ./pkg/bertybot
-	TEST_STABILITY=flappy go run moul.io/testman test -v -test.v -timeout=600s -retry=10 -run ^TestFlappy    ./pkg/bertyprotocol
-	TEST_STABILITY=flappy go run moul.io/testman test -v -test.v -timeout=600s -retry=10 -run ^TestScenario_ ./pkg/bertyprotocol
-	TEST_STABILITY=flappy go run moul.io/testman test -v -test.v -timeout=600s -retry=10 -run ^TestFlappy    ./internal/tinder
+	TEST_STABILITY=flappy go run moul.io/testman test -v -test.v -timeout=600s -retry=10 -run ^TestFlappy    ./
+	TEST_STABILITY=flappy go run moul.io/testman test -v -test.v -timeout=600s -retry=10 -run ^TestScenario_ ./
+	TEST_STABILITY=flappy go run moul.io/testman test -v -test.v -timeout=600s -retry=10 -run ^TestFlappy    ./pkg/tinder
 	# FIXME: run on other packages too
 .PHONY: go.flappy-tests
 
 
 go.broken-tests: pb.generate
-	TEST_STABILITY=broken go run moul.io/testman test -continue-on-error -timeout=1200s -test.timeout=60s -retry=5 -run ^TestBroken ./pkg/bertymessenger
-	TEST_STABILITY=broken go run moul.io/testman test -continue-on-error -timeout=1200s -test.timeout=60s -retry=5 -run ^TestScenario_ ./pkg/bertyprotocol
+	TEST_STABILITY=broken go run moul.io/testman test -continue-on-error -timeout=1200s -test.timeout=60s -retry=5 -run ^TestScenario_ ./
 .PHONY: go.broken-tests
-
-
-go.install: pb.generate
-	$(call check-program, $(GO))
-	@echo GO111MODULE=on $(GO) install $(GO_TAGS) $(LDFLAGS) -v ./cmd/...
-	@GO111MODULE=on $(GO) install $(GO_TAGS) $(LDFLAGS) -v ./cmd/...
-.PHONY: go.install
 
 
 docker.build: pb.generate
 	$(call check-program, docker)
 	docker build -t bertytech/berty ..
 .PHONY: docker.build
-
-
-docker.fast: pb.generate
-	$(call check-program, $(GO) docker)
-	@mkdir -p out
-	GOOS=linux GOARCH=amd64 GO111MODULE=on $(GO) build $(GO_TAGS) -v -o ./out/berty-linux-static ./cmd/berty
-	docker run -it --rm -v $(PWD)/out/berty-linux-static:/bin/berty $(RUN_OPTS) ubuntu berty $(ARGS)
-.PHONY: docker.fast
 
 
 print-%:
@@ -183,11 +156,11 @@ $(gen_sum): $(gen_src)
 	  docker run \
 		--user="$$uid" \
 		--volume="`go env GOPATH`/pkg/mod:/go/pkg/mod" \
-		--volume="$(PWD)/..:/go/src/berty.tech/berty" \
-		--workdir="/go/src/berty.tech/berty/go" \
+		--volume="$(PWD):/go/src/berty.tech/weshnet" \
+		--workdir="/go/src/berty.tech/weshnet" \
 		--entrypoint="sh" \
 		--rm \
-		bertytech/protoc:29 \
+		bertytech/protoc:30 \
 		-xec 'make generate_local'; \
 	  $(MAKE) tidy \
 	)
@@ -196,30 +169,9 @@ $(gen_sum): $(gen_src)
 
 generate_local:
 	go version
-	$(call check-program, shasum protoc)
-	$(GO) run github.com/buicongtan1997/protoc-gen-swagger-config -i ../api/accounttypes.proto -o ../api/accounttypes.yaml
-	$(GO) run github.com/buicongtan1997/protoc-gen-swagger-config -i ../api/messengertypes.proto -o ../api/messengertypes.yaml
-	$(GO) run github.com/buicongtan1997/protoc-gen-swagger-config -i ../api/protocoltypes.proto -o ../api/protocoltypes.yaml
-	$(GO) run github.com/buicongtan1997/protoc-gen-swagger-config -i ../api/bertyreplication.proto -o ../api/bertyreplication.yaml
-	$(GO) run github.com/buicongtan1997/protoc-gen-swagger-config -i ../api/bertydirectory.proto -o ../api/bertydirectory.yaml
-	$(GO) run github.com/buicongtan1997/protoc-gen-swagger-config -i ../api/pushtypes.proto -o ../api/pushtypes.yaml
-	protoc $(protoc_opts) --gogo_out=plugins=grpc:$(GOPATH)/src ../api/errcode.proto
-	protoc $(protoc_opts) --gogo_out=plugins=grpc:$(GOPATH)/src ../api/accounttypes.proto
-	protoc $(protoc_opts) --gogo_out=plugins=grpc:$(GOPATH)/src ../api/bertybridge.proto
-	protoc $(protoc_opts) --gogo_out=plugins=grpc:$(GOPATH)/src ../api/pushtypes.proto
-	protoc $(protoc_opts) --gogo_out=plugins=grpc:$(GOPATH)/src ../api/bertyverifiablecreds.proto
-	protoc $(protoc_opts) --gogo_out=plugins=grpc:$(GOPATH)/src ../api/bertydirectory.proto
-	protoc $(protoc_opts) --gogo_out=plugins=grpc:$(GOPATH)/src ../api/go-internal/testutil.proto
-	protoc $(protoc_opts) --gogo_out=plugins=grpc:$(GOPATH)/src ../api/go-internal/records.proto
-	protoc $(protoc_opts) --gogo_out=plugins=grpc:$(GOPATH)/src ../api/go-internal/handshake.proto
-	protoc $(protoc_opts) --gogo_out=plugins=grpc:$(GOPATH)/src --grpc-gateway_out=logtostderr=true,grpc_api_configuration=../api/accounttypes.yaml:$(GOPATH)/src ../api/accounttypes.proto
-	protoc $(protoc_opts) --gogo_out=plugins=grpc:$(GOPATH)/src --grpc-gateway_out=logtostderr=true,grpc_api_configuration=../api/protocoltypes.yaml:$(GOPATH)/src ../api/protocoltypes.proto
-	protoc $(protoc_opts) --gogo_out=plugins=grpc:$(GOPATH)/src --grpc-gateway_out=logtostderr=true,grpc_api_configuration=../api/messengertypes.yaml:$(GOPATH)/src ../api/messengertypes.proto
-	protoc $(protoc_opts) --gogo_out=plugins=grpc:$(GOPATH)/src --grpc-gateway_out=logtostderr=true,grpc_api_configuration=../api/bertyreplication.yaml:$(GOPATH)/src ../api/bertyreplication.proto
-	protoc $(protoc_opts) --gogo_out=plugins=grpc:$(GOPATH)/src --grpc-gateway_out=logtostderr=true,grpc_api_configuration=../api/bertydirectory.yaml:$(GOPATH)/src ../api/bertydirectory.proto
-	protoc $(protoc_opts) --gogo_out=plugins=grpc:$(GOPATH)/src --grpc-gateway_out=logtostderr=true,grpc_api_configuration=../api/pushtypes.yaml:$(GOPATH)/src ../api/pushtypes.proto
-	sed -i s@berty.tech/berty/go@berty.tech/berty/v2/go@ ./pkg/*/*.pb.go
-	sed -i s@berty.tech/berty/go@berty.tech/berty/v2/go@ ./pkg/*/*.pb.gw.go
+	$(call check-program, shasum buf)
+	buf generate api/go-internal;
+	buf generate api/protocol;
 	$(MAKE) go.fmt
 	shasum $(gen_src) | sort -k 2 > $(gen_sum).tmp
 	mv $(gen_sum).tmp $(gen_sum)
@@ -241,16 +193,18 @@ gen.clean:
 	rm -f gen.sum $(wildcard */*/*.pb.go) $(wildcard */*/*pb_test.go) $(wildcard */*/*pb.gw.go)
 .PHONY: gen.clean
 
+pb.push:
+	buf push api/protocol
 
 ##
 ## Doc gen
 ##
 
 
-doc.generate: md.generate depaware.generate
+doc.generate: md.generate
 .PHONY: doc.generate
 
-md.generate: install
+md.generate:
 	mkdir -p .tmp
 
 	# generate embeddable outputs
@@ -288,48 +242,3 @@ md.generate: install
 	go run github.com/campoy/embedmd -w README.md
 	#rm -rf .tmp
 .PHONY: md.generate
-
-
-##
-## depaware
-##
-
-
-depaware.generate: ./cmd/*/depaware.txt
-.PHONY: depaware.generate
-
-depaware_pkgs = ./cmd/berty ./cmd/rdvp ./framework/bertybridge ./cmd/welcomebot  ./cmd/berty-doctor ./cmd/berty-integration
-./cmd/*/depaware.txt: ../go.sum
-	@set -xe; for pkg in $(depaware_pkgs); do $(GO) run github.com/tailscale/depaware --update $$pkg; done
-
-depaware.check:
-	@set -xe; for pkg in $(depaware_pkgs); do $(GO) run github.com/tailscale/depaware --check $$pkg; done
-.PHONY: depaware.check
-
-
-##
-## doctor
-##
-
-
-doctor:
-	go run ./cmd/berty-doctor/
-.PHONY: doctor
-
-
-doctor.verbose:
-	go run ./cmd/berty-doctor/ -v
-.PHONY: doctor.verbose
-
-
-## integration
-
-
-integration.dev:
-	go run ./cmd/berty-integration
-.PHONY: integration.prod
-
-
-integration.prod:
-	go run ./cmd/berty-integration -integration.testbot=`cat ../config/config.gen.json | jq -r '.berty.contacts["testbot"].link'`
-.PHONY: integration.prod
