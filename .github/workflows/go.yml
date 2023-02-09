@@ -6,15 +6,15 @@ on:
     branches:
       - master
     paths:
-      - "go/**"
-      - "!go/**.md"
+      - "**"
+      - "!**.md"
       - "go.*"
       - "**.go"
       - ".github/workflows/go.yml"
   pull_request:
     paths:
-      - "go/**"
-      - "!go/**.md"
+      - "**"
+      - "!**.md"
       - "go.*"
       - "**.go"
       - ".github/workflows/go.yml"
@@ -41,7 +41,6 @@ jobs:
           asdf install golangci-lint
 
       - name: Run golangci-lint
-        working-directory: go
         run: make lint
 
   # this is not very common to have a job that checks the flappy tests.
@@ -82,15 +81,14 @@ jobs:
           restore-keys: ${{ runner.os }}-go-${{ env.go_version }}-${{ env.json_cache-versions_go }}-
 
       - name: Avoid triggering make generate
-        run: touch go/gen.sum
+        run: touch gen.sum
 
       - name: Fetch go modules
         run: go mod download
 
       - name: Compile the testing binaries
         run: |
-          pushd ./go/pkg/bertyprotocol  && go test -c -o ./tests.bin . && popd
-          pushd ./go/pkg/bertymessenger && go test -tags "fts5 sqlite sqlite_unlock_notify" -c -o ./tests.bin . && popd
+          pushd .  && go test -c -o ./tests.bin . && popd
 
       - name: Check go.mod and go.sum
         run: |
@@ -99,7 +97,6 @@ jobs:
           git --no-pager diff --quiet go.mod go.sum
 
       - name: Run fast flappy tests
-        working-directory: go
         env:
           TEST_SPEED: fast
           TEST_STABILITY: flappy
@@ -133,12 +130,6 @@ jobs:
           key:          ${{ runner.os }}-go-${{ env.go_version }}-${{ env.json_cache-versions_go }}-${{ hashFiles('**/go.sum') }}
           restore-keys: ${{ runner.os }}-go-${{ env.go_version }}-${{ env.json_cache-versions_go }}-
 
-      - name: Compile the project on Unix-like operating systems
-        working-directory: go
-        run: |
-          touch gen.sum # avoid triggering make generate
-          make go.install
-
       - name: Check go.mod and go.sum
         run: |
           go mod tidy -v
@@ -146,21 +137,18 @@ jobs:
           git --no-pager diff --quiet go.mod go.sum
 
       - name: Run fast tests multiple times
-        working-directory: go
         env:
           TEST_SPEED: fast
           GO_TEST_OPTS: -test.timeout=600s -count 1 -tags "fts5 sqlite sqlite_unlock_notify"
         run: set -o pipefail; make go.unittest | tee test_log.txt
 
       - name: Run all tests
-        working-directory: go
         env:
           TEST_SPEED: any
           GO_TEST_OPTS: -test.timeout=600s -count 1 -tags "fts5 sqlite sqlite_unlock_notify"
         run: make go.unittest
 
       - name: Run all tests with race flag and generate coverage
-        working-directory: go
         env:
           TEST_SPEED: any
           GO_TEST_OPTS: -test.timeout=1200s -count=1 -race -cover -tags "fts5 sqlite sqlite_unlock_notify" -coverprofile=coverage.txt -covermode=atomic
@@ -206,8 +194,6 @@ jobs:
           key:          ${{ runner.os }}-go-${{ env.go_version }}-${{ env.json_cache-versions_go }}-${{ hashFiles('**/go.sum') }}
           restore-keys: ${{ runner.os }}-go-${{ env.go_version }}-${{ env.json_cache-versions_go }}-
 
-      - name: Compile the project on Windows
-        run: go.exe install -buildmode=exe ./go/cmd/...
       - name: Check go.mod and go.sum
         run: |
           go mod tidy -v
@@ -215,13 +201,11 @@ jobs:
           git --no-pager diff --quiet go.mod go.sum
 
       - name: Run fast tests multiple times
-        working-directory: go
         env:
           TEST_SPEED: fast
         run: go.exe test ./... -tags "fts5 sqlite sqlite_unlock_notify" -buildmode=exe -timeout=600s -count=5
 
       - name: Run all tests
-        working-directory: go
         env:
           TEST_SPEED: any
         run: go.exe test ./... -tags "fts5 sqlite sqlite_unlock_notify" -buildmode=exe -timeout=600s -count=1
@@ -254,12 +238,6 @@ jobs:
           key:          ${{ runner.os }}-go-${{ env.go_version }}-${{ env.json_cache-versions_go }}-${{ hashFiles('**/go.sum') }}
           restore-keys: ${{ runner.os }}-go-${{ env.go_version }}-${{ env.json_cache-versions_go }}-
 
-      - name: Compile the project on Unix-like operating systems
-        working-directory: go
-        run: |
-          touch gen.sum # avoid triggering make generate
-          make go.install
-
       - name: Check go.mod and go.sum
         run: |
           go mod tidy -v
@@ -267,21 +245,18 @@ jobs:
           git --no-pager diff --quiet go.mod go.sum
 
       - name: Run fast tests multiple times
-        working-directory: go
         env:
           TEST_SPEED: fast
           GO_TEST_OPTS: -test.timeout=600s -count 1 -tags "fts5 sqlite sqlite_unlock_notify"
         run: set -o pipefail; make go.unittest | tee test_log.txt
 
       - name: Run all tests
-        working-directory: go
         env:
           TEST_SPEED: any
           GO_TEST_OPTS: -test.timeout=600s -count 1 -tags "fts5 sqlite sqlite_unlock_notify"
         run: make go.unittest
 
       - name: Run all tests with race flag and generate coverage
-        working-directory: go
         env:
           TEST_SPEED: any
           GO_TEST_OPTS: -test.timeout=1200s -count=1 -race -cover -tags "fts5 sqlite sqlite_unlock_notify" -coverprofile=coverage.txt -covermode=atomic

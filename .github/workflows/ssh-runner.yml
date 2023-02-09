@@ -43,19 +43,6 @@ jobs:
           asdf install golang
           echo "go_version=$(asdf current golang | xargs | cut -d ' ' -f 2)" >> $GITHUB_ENV
 
-      - name: Setup node
-        if: runner.os != 'Windows'
-        run: |
-          asdf plugin add nodejs
-          asdf install nodejs
-          echo "node_version=$(asdf current nodejs | xargs | cut -d ' ' -f 2)" >> $GITHUB_ENV
-
-      - name: Setup yarn
-        if: runner.os != 'Windows'
-        run: |
-          asdf plugin add yarn
-          asdf install yarn
-
       - name: Cache go modules
         if: github.event.inputs.mod == 'true' && runner.os != 'Windows'
         uses: actions/cache@v2.1.6
@@ -76,11 +63,6 @@ jobs:
         if: github.event.inputs.mod == 'true' && runner.os != 'Windows'
         working-directory: go
         run: go mod tidy
-
-      - name: Fetch node modules
-        if: github.event.inputs.mod == 'true' && runner.os != 'Windows'
-        working-directory: js
-        run: make node_modules
 
       - name: Install emacs
         shell: bash
