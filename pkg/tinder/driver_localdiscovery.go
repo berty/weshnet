@@ -20,9 +20,9 @@ import (
 	manet "github.com/multiformats/go-multiaddr/net"
 	"go.uber.org/zap"
 
+	"berty.tech/berty/v2/go/pkg/logutil"
 	nearby "berty.tech/weshnet/pkg/androidnearby"
 	ble "berty.tech/weshnet/pkg/ble-driver"
-	"berty.tech/berty/v2/go/pkg/logutil"
 	mc "berty.tech/weshnet/pkg/multipeer-connectivity-driver"
 )
 

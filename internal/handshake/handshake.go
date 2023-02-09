@@ -8,9 +8,9 @@ import (
 	p2pcrypto "github.com/libp2p/go-libp2p/core/crypto"
 	"golang.org/x/crypto/nacl/box"
 
+	"berty.tech/berty/v2/go/pkg/tyber"
 	"berty.tech/weshnet/pkg/cryptoutil"
 	"berty.tech/weshnet/pkg/errcode"
-	"berty.tech/berty/v2/go/pkg/tyber"
 )
 
 // Constant nonces

@@ -16,6 +16,8 @@ import (
 	"golang.org/x/crypto/nacl/secretbox"
 	"golang.org/x/sync/semaphore"
 
+	"berty.tech/berty/v2/go/pkg/logutil"
+	"berty.tech/berty/v2/go/pkg/tyber"
 	ipfslog "berty.tech/go-ipfs-log"
 	"berty.tech/go-ipfs-log/identityprovider"
 	ipliface "berty.tech/go-ipfs-log/iface"
@@ -25,11 +27,9 @@ import (
 	"berty.tech/go-orbit-db/stores/basestore"
 	"berty.tech/go-orbit-db/stores/operation"
 	"berty.tech/weshnet/pkg/cryptoutil"
-	"berty.tech/berty/v2/go/pkg/logutil"
 	"berty.tech/weshnet/pkg/errcode"
 	"berty.tech/weshnet/pkg/protocoltypes"
 	"berty.tech/weshnet/pkg/pushtypes"
-	"berty.tech/berty/v2/go/pkg/tyber"
 )
 
 const groupMessageStoreType = "berty_group_messages"

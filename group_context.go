@@ -11,11 +11,11 @@ import (
 	"github.com/libp2p/go-libp2p/core/crypto"
 	"go.uber.org/zap"
 
+	"berty.tech/berty/v2/go/pkg/logutil"
 	"berty.tech/go-orbit-db/stores"
 	"berty.tech/weshnet/pkg/cryptoutil"
-	"berty.tech/weshnet/pkg/ipfsutil"
-	"berty.tech/berty/v2/go/pkg/logutil"
 	"berty.tech/weshnet/pkg/errcode"
+	"berty.tech/weshnet/pkg/ipfsutil"
 	"berty.tech/weshnet/pkg/protocoltypes"
 )
 

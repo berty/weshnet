@@ -17,6 +17,7 @@ import (
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
 
+	"berty.tech/berty/v2/go/pkg/tyber"
 	ipfslog "berty.tech/go-ipfs-log"
 	"berty.tech/go-ipfs-log/enc"
 	"berty.tech/go-ipfs-log/entry"
@@ -26,13 +27,12 @@ import (
 	"berty.tech/go-orbit-db/baseorbitdb"
 	"berty.tech/go-orbit-db/iface"
 	"berty.tech/go-orbit-db/pubsub/pubsubcoreapi"
-	"berty.tech/weshnet/pkg/cryptoutil"
 	"berty.tech/weshnet/internal/datastoreutil"
-	"berty.tech/weshnet/pkg/ipfsutil"
-	"berty.tech/weshnet/pkg/rendezvous"
+	"berty.tech/weshnet/pkg/cryptoutil"
 	"berty.tech/weshnet/pkg/errcode"
+	"berty.tech/weshnet/pkg/ipfsutil"
 	"berty.tech/weshnet/pkg/protocoltypes"
-	"berty.tech/berty/v2/go/pkg/tyber"
+	"berty.tech/weshnet/pkg/rendezvous"
 )
 
 type GroupOpenMode uint64

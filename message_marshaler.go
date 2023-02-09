@@ -13,8 +13,8 @@ import (
 	"berty.tech/go-ipfs-log/entry"
 	"berty.tech/go-orbit-db/iface"
 	"berty.tech/weshnet/pkg/cryptoutil"
-	"berty.tech/weshnet/pkg/rendezvous"
 	"berty.tech/weshnet/pkg/protocoltypes"
+	"berty.tech/weshnet/pkg/rendezvous"
 )
 
 type PeerDeviceGroup struct {

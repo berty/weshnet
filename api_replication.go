@@ -11,14 +11,14 @@ import (
 	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/credentials/insecure"
 
-	"berty.tech/weshnet/pkg/authtypes"
-	"berty.tech/weshnet/pkg/cryptoutil"
-	"berty.tech/weshnet/internal/grpcutil"
 	"berty.tech/berty/v2/go/pkg/logutil"
-	"berty.tech/weshnet/pkg/errcode"
-	"berty.tech/weshnet/pkg/protocoltypes"
 	"berty.tech/berty/v2/go/pkg/replicationtypes"
 	"berty.tech/berty/v2/go/pkg/tyber"
+	"berty.tech/weshnet/internal/grpcutil"
+	"berty.tech/weshnet/pkg/authtypes"
+	"berty.tech/weshnet/pkg/cryptoutil"
+	"berty.tech/weshnet/pkg/errcode"
+	"berty.tech/weshnet/pkg/protocoltypes"
 )
 
 func FilterGroupForReplication(m *protocoltypes.Group) (*protocoltypes.Group, error) {

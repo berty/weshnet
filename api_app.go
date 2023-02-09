@@ -7,9 +7,9 @@ import (
 
 	"go.uber.org/zap"
 
+	"berty.tech/berty/v2/go/pkg/tyber"
 	"berty.tech/weshnet/pkg/errcode"
 	"berty.tech/weshnet/pkg/protocoltypes"
-	"berty.tech/berty/v2/go/pkg/tyber"
 )
 
 func (s *service) AppMetadataSend(ctx context.Context, req *protocoltypes.AppMetadataSend_Request) (_ *protocoltypes.AppMetadataSend_Reply, err error) {

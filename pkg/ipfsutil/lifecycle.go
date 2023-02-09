@@ -13,8 +13,8 @@ import (
 	"github.com/libp2p/go-libp2p/p2p/protocol/ping"
 	"go.uber.org/zap"
 
-	"berty.tech/weshnet/pkg/lifecycle"
 	"berty.tech/berty/v2/go/pkg/logutil"
+	"berty.tech/weshnet/pkg/lifecycle"
 )
 
 var (

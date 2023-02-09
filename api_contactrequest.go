@@ -5,9 +5,9 @@ import (
 
 	"github.com/libp2p/go-libp2p/core/crypto"
 
+	"berty.tech/berty/v2/go/pkg/tyber"
 	"berty.tech/weshnet/pkg/errcode"
 	"berty.tech/weshnet/pkg/protocoltypes"
-	"berty.tech/berty/v2/go/pkg/tyber"
 )
 
 // ContactRequestReference retrieves the necessary information to create a contact link

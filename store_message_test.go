@@ -11,8 +11,8 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	ipfslog "berty.tech/go-ipfs-log"
 	"berty.tech/berty/v2/go/pkg/testutil"
+	ipfslog "berty.tech/go-ipfs-log"
 	"berty.tech/weshnet/pkg/protocoltypes"
 )
 

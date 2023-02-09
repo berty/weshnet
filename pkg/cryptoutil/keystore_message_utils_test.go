@@ -14,9 +14,9 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	"berty.tech/berty/v2/go/pkg/testutil"
 	"berty.tech/weshnet"
 	"berty.tech/weshnet/pkg/cryptoutil"
-	"berty.tech/berty/v2/go/pkg/testutil"
 	"berty.tech/weshnet/pkg/protocoltypes"
 )
 

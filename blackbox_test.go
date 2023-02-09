@@ -8,9 +8,9 @@ import (
 	keystore "github.com/ipfs/go-ipfs-keystore"
 	"github.com/stretchr/testify/assert"
 
+	"berty.tech/berty/v2/go/pkg/testutil"
 	"berty.tech/weshnet"
 	"berty.tech/weshnet/pkg/cryptoutil"
-	"berty.tech/berty/v2/go/pkg/testutil"
 	"berty.tech/weshnet/pkg/protocoltypes"
 )
 

@@ -23,20 +23,20 @@ import (
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
 
+	"berty.tech/berty/v2/go/pkg/bertypush"
+	"berty.tech/berty/v2/go/pkg/bertyvcissuer"
+	"berty.tech/berty/v2/go/pkg/tyber"
 	"berty.tech/go-orbit-db/baseorbitdb"
 	"berty.tech/go-orbit-db/iface"
 	"berty.tech/go-orbit-db/pubsub/directchannel"
-	"berty.tech/weshnet/pkg/cryptoutil"
+	"berty.tech/weshnet/internal/bertyversion"
 	"berty.tech/weshnet/internal/datastoreutil"
+	"berty.tech/weshnet/pkg/cryptoutil"
+	"berty.tech/weshnet/pkg/errcode"
 	"berty.tech/weshnet/pkg/ipfsutil"
 	ipfs_mobile "berty.tech/weshnet/pkg/ipfsutil/mobile"
-	tinder "berty.tech/weshnet/pkg/tinder"
-	"berty.tech/berty/v2/go/pkg/bertypush"
-	"berty.tech/berty/v2/go/pkg/bertyvcissuer"
-	"berty.tech/weshnet/internal/bertyversion"
-	"berty.tech/weshnet/pkg/errcode"
 	"berty.tech/weshnet/pkg/protocoltypes"
-	"berty.tech/berty/v2/go/pkg/tyber"
+	tinder "berty.tech/weshnet/pkg/tinder"
 )
 
 var _ Service = (*service)(nil)

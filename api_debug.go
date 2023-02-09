@@ -14,8 +14,8 @@ import (
 	"go.uber.org/zap"
 
 	"berty.tech/go-orbit-db/stores/operation"
-	"berty.tech/weshnet/pkg/cryptoutil"
 	"berty.tech/weshnet/internal/sysutil"
+	"berty.tech/weshnet/pkg/cryptoutil"
 	"berty.tech/weshnet/pkg/errcode"
 	"berty.tech/weshnet/pkg/protocoltypes"
 )

@@ -9,9 +9,9 @@ import (
 	"go.uber.org/zap"
 	"golang.org/x/crypto/nacl/box"
 
+	"berty.tech/berty/v2/go/pkg/tyber"
 	"berty.tech/weshnet/pkg/cryptoutil"
 	"berty.tech/weshnet/pkg/errcode"
-	"berty.tech/berty/v2/go/pkg/tyber"
 )
 
 // ResponseUsingReaderWriter handle the handshake inited by the requester, using provided ggio reader and writer
