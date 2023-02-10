@@ -113,12 +113,6 @@ go.broken-tests: pb.generate
 .PHONY: go.broken-tests
 
 
-docker.build: pb.generate
-	$(call check-program, docker)
-	docker build -t bertytech/berty ..
-.PHONY: docker.build
-
-
 print-%:
 	@echo $* = $($*)
 
@@ -160,7 +154,7 @@ $(gen_sum): $(gen_src)
 		--workdir="/go/src/berty.tech/weshnet" \
 		--entrypoint="sh" \
 		--rm \
-		bertytech/protoc:30 \
+		bertytech/buf:1 \
 		-xec 'make generate_local'; \
 	  $(MAKE) tidy \
 	)
