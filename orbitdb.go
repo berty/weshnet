@@ -17,7 +17,6 @@ import (
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
 
-	"berty.tech/berty/v2/go/pkg/tyber"
 	ipfslog "berty.tech/go-ipfs-log"
 	"berty.tech/go-ipfs-log/enc"
 	"berty.tech/go-ipfs-log/entry"
@@ -33,6 +32,7 @@ import (
 	"berty.tech/weshnet/pkg/ipfsutil"
 	"berty.tech/weshnet/pkg/protocoltypes"
 	"berty.tech/weshnet/pkg/rendezvous"
+	"berty.tech/weshnet/pkg/tyber"
 )
 
 type GroupOpenMode uint64

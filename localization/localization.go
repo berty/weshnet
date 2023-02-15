@@ -7,7 +7,7 @@ import (
 
 	"golang.org/x/text/language"
 
-	"berty.tech/berty/v2/go/internal/i18n"
+	"berty.tech/weshnet/internal/i18n"
 )
 
 //go:embed locales

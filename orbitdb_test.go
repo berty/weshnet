@@ -15,10 +15,10 @@ import (
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap"
 
-	"berty.tech/berty/v2/go/pkg/testutil"
 	"berty.tech/weshnet/internal/datastoreutil"
 	"berty.tech/weshnet/pkg/ipfsutil"
 	"berty.tech/weshnet/pkg/protocoltypes"
+	"berty.tech/weshnet/pkg/testutil"
 	"berty.tech/weshnet/pkg/tinder"
 )
 

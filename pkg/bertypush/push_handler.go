@@ -13,13 +13,14 @@ import (
 	"golang.org/x/crypto/nacl/box"
 	"golang.org/x/crypto/nacl/secretbox"
 
-	"berty.tech/berty/v2/go/internal/accountutils"
-	"berty.tech/berty/v2/go/internal/cryptoutil"
-	"berty.tech/berty/v2/go/internal/datastoreutil"
-	"berty.tech/berty/v2/go/pkg/errcode"
-	"berty.tech/berty/v2/go/pkg/protocoltypes"
-	"berty.tech/berty/v2/go/pkg/pushtypes"
+	"berty.tech/weshnet/internal/datastoreutil"
+	"berty.tech/weshnet/pkg/cryptoutil"
+	"berty.tech/weshnet/pkg/errcode"
+	"berty.tech/weshnet/pkg/protocoltypes"
+	"berty.tech/weshnet/pkg/pushtypes"
 )
+
+const InMemoryDir = ":memory:"
 
 type pushHandler struct {
 	logger          *zap.Logger
@@ -77,7 +78,7 @@ func (opts *PushHandlerOpts) applyPushDefaults() error {
 	}
 
 	if opts.RootDatastore == nil {
-		if opts.DatastoreDir == "" || opts.DatastoreDir == accountutils.InMemoryDir {
+		if opts.DatastoreDir == "" || opts.DatastoreDir == InMemoryDir {
 			opts.RootDatastore = ds_sync.MutexWrap(ds.NewMapDatastore())
 		} else {
 			opts.RootDatastore = nil

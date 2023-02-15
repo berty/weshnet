@@ -12,10 +12,10 @@ import (
 	"go.uber.org/zap"
 	"golang.org/x/net/context/ctxhttp"
 
-	"berty.tech/berty/v2/go/pkg/bertyauth"
-	"berty.tech/berty/v2/go/pkg/logutil"
 	"berty.tech/weshnet/pkg/authtypes"
+	"berty.tech/weshnet/pkg/bertyauth"
 	"berty.tech/weshnet/pkg/errcode"
+	"berty.tech/weshnet/pkg/logutil"
 	"berty.tech/weshnet/pkg/protocoltypes"
 	"berty.tech/weshnet/pkg/pushtypes"
 )

@@ -18,11 +18,10 @@ import (
 	"go.uber.org/goleak"
 	"go.uber.org/zap"
 
-	"berty.tech/berty/v2/go/pkg/testutil"
 	weshnet "berty.tech/weshnet"
 	"berty.tech/weshnet/pkg/errcode"
 	"berty.tech/weshnet/pkg/protocoltypes"
-	"berty.tech/weshnet/pkg/tinder"
+	"berty.tech/weshnet/pkg/testutil"
 )
 
 type testCase struct {

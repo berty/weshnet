@@ -8,9 +8,9 @@ import (
 	"go.uber.org/multierr"
 	"moul.io/openfiles"
 
-	"berty.tech/berty/v2/go/pkg/username"
 	"berty.tech/weshnet/internal/bertyversion"
 	"berty.tech/weshnet/pkg/protocoltypes"
+	"berty.tech/weshnet/pkg/username"
 )
 
 func SystemInfoProcess() (*protocoltypes.SystemInfo_Process, error) {

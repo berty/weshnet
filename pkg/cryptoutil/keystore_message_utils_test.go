@@ -14,10 +14,10 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"berty.tech/berty/v2/go/pkg/testutil"
 	"berty.tech/weshnet"
 	"berty.tech/weshnet/pkg/cryptoutil"
 	"berty.tech/weshnet/pkg/protocoltypes"
+	"berty.tech/weshnet/pkg/testutil"
 )
 
 func addDummyMemberInMetadataStore(ctx context.Context, t testing.TB, ms *weshnet.MetadataStore, g *protocoltypes.Group, memberPK crypto.PubKey, join bool) (crypto.PubKey, *protocoltypes.DeviceSecret) {

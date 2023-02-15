@@ -14,7 +14,7 @@ import (
 	"moul.io/u"
 	"moul.io/zapring"
 
-	"berty.tech/berty/v2/go/internal/logutil"
+	"berty.tech/weshnet/pkg/logutil"
 )
 
 func TestTypeStd(t *testing.T) {

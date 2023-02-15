@@ -11,7 +11,7 @@ import (
 
 	libp2p_ci "github.com/libp2p/go-libp2p/core/crypto"
 
-	"berty.tech/berty/v2/go/pkg/bertyvcissuer"
+	"berty.tech/weshnet/pkg/bertyvcissuer"
 	"berty.tech/weshnet/pkg/errcode"
 	"berty.tech/weshnet/pkg/protocoltypes"
 )

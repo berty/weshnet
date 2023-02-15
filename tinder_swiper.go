@@ -14,10 +14,10 @@ import (
 	"go.uber.org/zap"
 	"moul.io/srand"
 
-	"berty.tech/berty/v2/go/pkg/logutil"
-	"berty.tech/berty/v2/go/pkg/tyber"
+	"berty.tech/weshnet/pkg/logutil"
 	"berty.tech/weshnet/pkg/rendezvous"
 	tinder "berty.tech/weshnet/pkg/tinder"
+	"berty.tech/weshnet/pkg/tyber"
 )
 
 type swiperRequest struct {

@@ -13,10 +13,10 @@ import (
 	"golang.org/x/text/language"
 	"golang.org/x/text/message"
 
-	"berty.tech/berty/v2/go/internal/i18n"
-	"berty.tech/berty/v2/go/localization"
-	"berty.tech/berty/v2/go/pkg/authtypes"
-	"berty.tech/berty/v2/go/pkg/errcode"
+	"berty.tech/weshnet/internal/i18n"
+	"berty.tech/weshnet/localization"
+	"berty.tech/weshnet/pkg/authtypes"
+	"berty.tech/weshnet/pkg/errcode"
 )
 
 type AuthTokenServer struct {

@@ -17,10 +17,10 @@ import (
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap"
 
-	"berty.tech/berty/v2/go/pkg/testutil"
 	"berty.tech/weshnet/pkg/cryptoutil"
 	"berty.tech/weshnet/pkg/ipfsutil"
 	"berty.tech/weshnet/pkg/protocoltypes"
+	"berty.tech/weshnet/pkg/testutil"
 )
 
 func TestMetadataStoreSecret_Basic(t *testing.T) {

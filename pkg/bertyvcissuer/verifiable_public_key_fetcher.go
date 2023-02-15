@@ -9,7 +9,7 @@ import (
 	"github.com/hyperledger/aries-framework-go/pkg/kms"
 	"github.com/multiformats/go-multibase"
 
-	"berty.tech/berty/v2/go/pkg/errcode"
+	"berty.tech/weshnet/pkg/errcode"
 )
 
 func embeddedPublicKeyFetcher(issuerID string, allowList []string) (*verifier.PublicKey, error) {

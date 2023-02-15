@@ -15,7 +15,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap"
 
-	"berty.tech/berty/v2/go/pkg/testutil"
+	"berty.tech/weshnet/pkg/testutil"
 )
 
 type testMakeDriver = func(t *testing.T, logger *zap.Logger, p host.Host) IDriver

@@ -6,8 +6,8 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"berty.tech/berty/v2/go/pkg/bertyauth"
 	"berty.tech/weshnet/pkg/authtypes"
+	"berty.tech/weshnet/pkg/bertyauth"
 )
 
 func TestServiceAuthServiceInitFlow(t *testing.T) {

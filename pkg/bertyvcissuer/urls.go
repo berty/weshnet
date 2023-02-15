@@ -21,14 +21,14 @@ const (
 	ParamIdentifier   = "identifier"
 )
 
-func makeAuthenticateURL(serverBaseRoot, flowCtxStr string) string {
+func MakeAuthenticateURL(serverBaseRoot, flowCtxStr string) string {
 	return fmt.Sprintf("%s%s?%s=%s", serverBaseRoot, PathAuthenticate, ParamContext, flowCtxStr)
 }
 
-func makeProofURL(serverBaseRoot, flowCtxStr string) string {
+func MakeProofURL(serverBaseRoot, flowCtxStr string) string {
 	return fmt.Sprintf("%s%s?%s=%s", serverBaseRoot, PathProof, ParamContext, flowCtxStr)
 }
 
-func makeRedirectSuccessURI(redirectURI, state string, credentials []byte) string {
+func MakeRedirectSuccessURI(redirectURI, state string, credentials []byte) string {
 	return fmt.Sprintf("%s%s?%s=%s&%s=%s", redirectURI, PathProof, ParamState, state, ParamCredentials, base64.URLEncoding.EncodeToString(credentials))
 }

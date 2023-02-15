@@ -10,9 +10,9 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"berty.tech/berty/v2/go/pkg/testutil"
 	"berty.tech/weshnet/pkg/ipfsutil"
 	"berty.tech/weshnet/pkg/rendezvous"
+	"berty.tech/weshnet/pkg/testutil"
 	"berty.tech/weshnet/pkg/tinder"
 )
 

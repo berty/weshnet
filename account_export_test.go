@@ -15,13 +15,13 @@ import (
 	mocknet "github.com/libp2p/go-libp2p/p2p/net/mock"
 	"github.com/stretchr/testify/require"
 
-	"berty.tech/berty/v2/go/pkg/testutil"
 	orbitdb "berty.tech/go-orbit-db"
 	"berty.tech/go-orbit-db/pubsub/pubsubraw"
 	"berty.tech/weshnet/internal/datastoreutil"
 	"berty.tech/weshnet/pkg/cryptoutil"
 	"berty.tech/weshnet/pkg/ipfsutil"
 	"berty.tech/weshnet/pkg/protocoltypes"
+	"berty.tech/weshnet/pkg/testutil"
 	"berty.tech/weshnet/pkg/tinder"
 )
 

@@ -21,6 +21,7 @@ on:
 
 jobs:
   benchmark:
+    if: github.event_name == 'DISABLED'
     name: Run benchmarks
     runs-on: ubuntu-latest
     steps:

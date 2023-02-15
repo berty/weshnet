@@ -8,10 +8,10 @@ import (
 	keystore "github.com/ipfs/go-ipfs-keystore"
 	"github.com/stretchr/testify/assert"
 
-	"berty.tech/berty/v2/go/pkg/testutil"
 	"berty.tech/weshnet"
 	"berty.tech/weshnet/pkg/cryptoutil"
 	"berty.tech/weshnet/pkg/protocoltypes"
+	"berty.tech/weshnet/pkg/testutil"
 )
 
 func TestTestingClient_impl(t *testing.T) {

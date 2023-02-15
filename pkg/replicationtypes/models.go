@@ -1,22 +1,23 @@
 package replicationtypes
 
 import (
-	"berty.tech/berty/v2/go/internal/messengerutil"
-	"berty.tech/berty/v2/go/pkg/protocoltypes"
+	"encoding/base64"
+
+	"berty.tech/weshnet/pkg/protocoltypes"
 )
 
 func (m *ReplicatedGroup) ToGroup() (*protocoltypes.Group, error) {
-	pk, err := messengerutil.B64DecodeBytes(m.PublicKey)
+	pk, err := base64.RawURLEncoding.DecodeString(m.PublicKey)
 	if err != nil {
 		return nil, err
 	}
 
-	signPub, err := messengerutil.B64DecodeBytes(m.SignPub)
+	signPub, err := base64.RawURLEncoding.DecodeString(m.SignPub)
 	if err != nil {
 		return nil, err
 	}
 
-	linkKey, err := messengerutil.B64DecodeBytes(m.LinkKey)
+	linkKey, err := base64.RawURLEncoding.DecodeString(m.LinkKey)
 	if err != nil {
 		return nil, err
 	}

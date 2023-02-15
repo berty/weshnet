@@ -27,7 +27,6 @@ import (
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
 
-	"berty.tech/berty/v2/go/pkg/testutil"
 	encrepo "berty.tech/go-ipfs-repo-encrypted"
 	orbitdb "berty.tech/go-orbit-db"
 	"berty.tech/go-orbit-db/pubsub/pubsubraw"
@@ -36,6 +35,7 @@ import (
 	"berty.tech/weshnet/pkg/errcode"
 	"berty.tech/weshnet/pkg/ipfsutil"
 	"berty.tech/weshnet/pkg/protocoltypes"
+	"berty.tech/weshnet/pkg/testutil"
 	"berty.tech/weshnet/pkg/tinder"
 )
 

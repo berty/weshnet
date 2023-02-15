@@ -14,10 +14,10 @@ import (
 	"go.uber.org/zap"
 	"golang.org/x/crypto/nacl/box"
 
-	"berty.tech/berty/v2/go/pkg/testutil"
 	"berty.tech/weshnet/pkg/cryptoutil"
 	"berty.tech/weshnet/pkg/errcode"
 	"berty.tech/weshnet/pkg/ipfsutil"
+	"berty.tech/weshnet/pkg/testutil"
 )
 
 // Request init a handshake with the responder

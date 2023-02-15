@@ -10,7 +10,7 @@ import (
 	"moul.io/u"
 	"moul.io/zapfilter"
 
-	"berty.tech/berty/v2/go/pkg/errcode"
+	"berty.tech/weshnet/pkg/errcode"
 )
 
 const (

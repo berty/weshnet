@@ -5,8 +5,8 @@ import (
 
 	"google.golang.org/grpc"
 
-	"berty.tech/weshnet/internal/grpcutil"
 	"berty.tech/weshnet/pkg/errcode"
+	"berty.tech/weshnet/pkg/grpcutil"
 	"berty.tech/weshnet/pkg/protocoltypes"
 )
 

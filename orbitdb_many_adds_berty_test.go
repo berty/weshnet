@@ -15,10 +15,10 @@ import (
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap"
 
-	"berty.tech/berty/v2/go/pkg/testutil"
 	"berty.tech/go-orbit-db/iface"
 	"berty.tech/weshnet/pkg/ipfsutil"
 	"berty.tech/weshnet/pkg/protocoltypes"
+	"berty.tech/weshnet/pkg/testutil"
 )
 
 func testAddBerty(ctx context.Context, t *testing.T, node ipfsutil.CoreAPIMock, g *protocoltypes.Group, pathBase string, storageKey []byte, storageSalt []byte, amountToAdd, amountCurrentlyPresent int) {

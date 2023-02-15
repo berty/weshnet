@@ -17,12 +17,12 @@ import (
 	peer "github.com/libp2p/go-libp2p/core/peer"
 	"go.uber.org/zap"
 
-	"berty.tech/berty/v2/go/pkg/logutil"
-	"berty.tech/berty/v2/go/pkg/tyber"
 	"berty.tech/weshnet/internal/handshake"
 	"berty.tech/weshnet/pkg/errcode"
 	"berty.tech/weshnet/pkg/ipfsutil"
+	"berty.tech/weshnet/pkg/logutil"
 	"berty.tech/weshnet/pkg/protocoltypes"
+	"berty.tech/weshnet/pkg/tyber"
 )
 
 const contactRequestV1 = "/berty/contact_req/1.0.0"
