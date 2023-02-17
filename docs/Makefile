@@ -35,23 +35,15 @@ $(gen_sum): $(gen_src)
 protoc_opts := -I ../api:`go list -m -mod=mod -f {{.Dir}} github.com/grpc-ecosystem/grpc-gateway`/third_party/googleapis:`go list -m -mod=mod -f {{.Dir}} github.com/gogo/protobuf`:/protobuf
 .PHONY: generate_local
 generate_local:
-	mkdir -p protocol messenger
-	protoc $(protoc_opts) --doc_out=./protocol  --doc_opt=markdown,api.md.tmp ../api/protocoltypes.proto
-	protoc $(protoc_opts) --doc_out=./messenger --doc_opt=markdown,api.md.tmp ../api/messengertypes.proto
+	mkdir -p protocol
+	buf generate --template ./buf-doc.gen.yaml ../api/protocol/protocoltypes.proto -o protocol
 	@# replace multiple empty lines with one
 	cat protocol/api.md.tmp | sed '/^$$/N;/^\n$$/D' > protocol/api.md
-	cat messenger/api.md.tmp | sed '/^$$/N;/^\n$$/D' > messenger/api.md
 	rm -f */*.md.tmp
 	shasum $(gen_src) | sort -k 2 > $(gen_sum).tmp
 	mv $(gen_sum).tmp $(gen_sum)
-	@# FIXME: patch file with version
-	@# FIXME: use allow_merge=true (requires v2)
-	protoc $(protoc_opts) --swagger_out=logtostderr=true,grpc_api_configuration=../api/protocoltypes.yaml:./protocol  ../api/protocoltypes.proto
-	protoc $(protoc_opts) --swagger_out=logtostderr=true,grpc_api_configuration=../api/messengertypes.yaml:./messenger ../api/messengertypes.proto
 	mv protocol/api.md apis/protocoltypes.md
-	mv messenger/api.md apis/messengertypes.md
-	mv messenger/messengertypes.swagger.json apis/
-	mv protocol/protocoltypes.swagger.json apis/
+	mv protocol/api.json apis/protocoltypes.json
 
 .PHONY: openapi.prepare
 openapi.prepare: gen.sum
