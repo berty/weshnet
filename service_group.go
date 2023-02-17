@@ -142,7 +142,7 @@ func (s *service) activateGroup(ctx context.Context, pk crypto.PubKey, localOnly
 	dbOpts := &iface.CreateDBOptions{LocalOnly: &localOnly}
 	gc, err := s.odb.OpenGroup(ctx, g, dbOpts)
 	if err != nil {
-		return errcode.ErrBertyAccountOpenAccount.Wrap(err)
+		return errcode.ErrGroupOpen.Wrap(err)
 	}
 
 	if err := gc.ActivateGroupContext(contactPK); err != nil {
