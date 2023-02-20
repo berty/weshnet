@@ -1,4 +1,4 @@
-module berty.tech/berty/v2/tool/bench-cellular
+module berty.tech/weshnet/tool/bench-cellular
 
 go 1.15
 

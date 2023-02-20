@@ -6,21 +6,22 @@ on:
     branches:
       - master
     paths:
-      - "go/**"
-      - "!go/**.md"
+      - "**"
+      - "!**.md"
       - "go.*"
       - "**.go"
       - ".github/workflows/benchmark.yml"
   pull_request:
     paths:
-      - "go/**"
-      - "!go/**.md"
+      - "**"
+      - "!**.md"
       - "go.*"
       - "**.go"
       - ".github/workflows/benchmark.yml"
 
 jobs:
   benchmark:
+    if: github.event_name == 'DISABLED'
     name: Run benchmarks
     runs-on: ubuntu-latest
     steps:
@@ -47,18 +48,12 @@ jobs:
         uses: actions/cache@v2.1.6
         with:
           path: ~/go/pkg/mod
-          key:          ${{ runner.os }}-go-${{ env.go_version }}-${{ env.json_cache-versions_go }}-${{ hashFiles('**/go.sum') }}
+          key:          ${{ runner.os }}-go-${{ env.go_version }}-${{ env.json_cache-versions_go }}-${{ hashFiles('go.sum') }}
           restore-keys: ${{ runner.os }}-go-${{ env.go_version }}-${{ env.json_cache-versions_go }}-
-
-      - name: Compile the project on Unix-like operating systems
-        working-directory: go
-        run: |
-          touch gen.sum # avoid triggering make generate
-          make go.install
 
       - name: Run benchmark
         run: make go.unittest | tee output_head.txt
-        working-directory: go
+        working-directory: .
         env:
           TEST_SPEED: any
           GO_TEST_PATH: ./internal/benchmark
@@ -73,20 +68,13 @@ jobs:
         if: github.event_name == 'pull_request'
         with:
           path: ~/go/pkg/mod
-          key:          ${{ runner.os }}-go-${{ env.go_version }}-${{ env.json_cache-versions_go }}-${{ hashFiles('**/go.sum') }}
+          key:          ${{ runner.os }}-go-${{ env.go_version }}-${{ env.json_cache-versions_go }}-${{ hashFiles('go.sum') }}
           restore-keys: ${{ runner.os }}-go-${{ env.go_version }}-${{ env.json_cache-versions_go }}-
-
-      - name: Compile the project on Unix-like operating systems (master)
-        working-directory: go
-        if: github.event_name == 'pull_request'
-        run: |
-          touch gen.sum # avoid triggering make generate
-          make go.install
 
       - name: Run benchmark (master)
         run: make go.unittest | tee output_base.txt
         if: github.event_name == 'pull_request'
-        working-directory: go
+        working-directory: .
         env:
           TEST_SPEED: any
           GO_TEST_PATH: ./internal/benchmark
@@ -100,7 +88,7 @@ jobs:
           echo '```' >> $GITHUB_STEP_SUMMARY
           benchstat output_head.txt >> $GITHUB_STEP_SUMMARY
           echo '```' >> $GITHUB_STEP_SUMMARY
-        working-directory: go
+        working-directory: .
 
       - name: Benchstat PR
         id: benchstat-pr
@@ -110,11 +98,11 @@ jobs:
           echo '```' >> $GITHUB_STEP_SUMMARY
           benchstat output_head.txt output_base.txt >> $GITHUB_STEP_SUMMARY
           echo '```' >> $GITHUB_STEP_SUMMARY
-        working-directory: go
+        working-directory: .
 
       - name: Generate pprof html files
         id: pprof-html-files-no-relative
-        working-directory: go
+        working-directory: .
         run: |
           mkdir -p pprof_html/head/{cpu,mem}/{top,flamegraph,peek,source}
 
@@ -168,7 +156,7 @@ jobs:
       - name: Generate pprof html files (PR)
         if: github.event_name == 'pull_request'
         id: pprof-html-files-pr
-        working-directory: go
+        working-directory: .
         run: |
           mkdir -p pprof_html/base_comp/{cpu,mem}
 
@@ -197,7 +185,7 @@ jobs:
 
       - name: Generate pprof html files (footer)
         id: pprof-html-files-footer
-        working-directory: go
+        working-directory: .
         run: |
           cat << EOF >> pprof_html/index.html
           </body>

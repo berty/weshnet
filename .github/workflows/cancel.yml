@@ -2,13 +2,10 @@ name: Cancel
 on:
   workflow_run:
     workflows: [
-      "Android",
       "CodeQL",
       "Dependent Issues",
       "Go",
       "Integration",
-      "iOS",
-      "JS",
       "macOS Release",
       "Protobuf",
     ]
