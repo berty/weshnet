@@ -10,9 +10,11 @@ import (
 	"github.com/ipfs/go-datastore"
 	dssync "github.com/ipfs/go-datastore/sync"
 	"github.com/libp2p/go-libp2p/core/crypto"
+	"go.uber.org/zap"
 	"golang.org/x/crypto/nacl/secretbox"
 
 	"berty.tech/weshnet/pkg/errcode"
+	"berty.tech/weshnet/pkg/logutil"
 	"berty.tech/weshnet/pkg/protocoltypes"
 )
 
@@ -22,6 +24,7 @@ type MessageKeystore struct {
 	lock                 sync.Mutex
 	preComputedKeysCount int
 	store                *dssync.MutexDatastore
+	logger               *zap.Logger
 }
 
 type DecryptInfo struct {
@@ -204,6 +207,10 @@ func (m *MessageKeystore) registerChainKey(ctx context.Context, g *protocoltypes
 
 	if _, err := m.GetDeviceChainKey(ctx, groupPK, devicePK); err == nil {
 		// Device is already registered, ignore it
+		m.logger.Debug("device already registered in group",
+			logutil.PrivateBinary("devicePK", logutil.CryptoKeyToBytes(devicePK)),
+			logutil.PrivateBinary("groupPK", logutil.CryptoKeyToBytes(groupPK)),
+		)
 		return nil
 	}
 
@@ -227,8 +234,7 @@ func (m *MessageKeystore) registerChainKey(ctx context.Context, g *protocoltypes
 	devicePKBytes, err := devicePK.Raw()
 	if err == nil {
 		if err := m.UpdatePushGroupReferences(ctx, devicePKBytes, ds.Counter, g); err != nil {
-			// TODO: log
-			_ = err
+			m.logger.Error("updating push group references failed", zap.Error(err))
 		}
 	}
 
@@ -330,45 +336,47 @@ type computedKey struct {
 }
 
 func (m *MessageKeystore) putPrecomputedKeys(ctx context.Context, groupPK, device crypto.PubKey, preComputedKeys ...computedKey) error {
-	if m == nil || len(preComputedKeys) == 0 {
+	if m == nil {
 		return errcode.ErrInvalidInput
 	}
 
-	deviceRaw, err := device.Raw()
-	if err != nil {
-		return errcode.ErrSerialization.Wrap(err)
-	}
+	if len(preComputedKeys) != 0 {
+		deviceRaw, err := device.Raw()
+		if err != nil {
+			return errcode.ErrSerialization.Wrap(err)
+		}
 
-	groupRaw, err := groupPK.Raw()
-	if err != nil {
-		return errcode.ErrSerialization.Wrap(err)
-	}
+		groupRaw, err := groupPK.Raw()
+		if err != nil {
+			return errcode.ErrSerialization.Wrap(err)
+		}
 
-	batch, err := m.store.Batch(ctx)
-	if err == datastore.ErrBatchUnsupported {
+		batch, err := m.store.Batch(ctx)
+		if err == datastore.ErrBatchUnsupported {
+			for _, preComputedKey := range preComputedKeys {
+				id := idForCachedKey(groupRaw, deviceRaw, preComputedKey.counter)
+
+				if err := m.store.Put(ctx, id, preComputedKey.mk[:]); err != nil {
+					return errcode.ErrMessageKeyPersistencePut.Wrap(err)
+				}
+			}
+
+			return nil
+		} else if err != nil {
+			return errcode.ErrMessageKeyPersistencePut.Wrap(err)
+		}
+
 		for _, preComputedKey := range preComputedKeys {
 			id := idForCachedKey(groupRaw, deviceRaw, preComputedKey.counter)
 
-			if err := m.store.Put(ctx, id, preComputedKey.mk[:]); err != nil {
+			if err := batch.Put(ctx, id, preComputedKey.mk[:]); err != nil {
 				return errcode.ErrMessageKeyPersistencePut.Wrap(err)
 			}
 		}
 
-		return nil
-	} else if err != nil {
-		return errcode.ErrMessageKeyPersistencePut.Wrap(err)
-	}
-
-	for _, preComputedKey := range preComputedKeys {
-		id := idForCachedKey(groupRaw, deviceRaw, preComputedKey.counter)
-
-		if err := batch.Put(ctx, id, preComputedKey.mk[:]); err != nil {
+		if err := batch.Commit(ctx); err != nil {
 			return errcode.ErrMessageKeyPersistencePut.Wrap(err)
 		}
-	}
-
-	if err := batch.Commit(ctx); err != nil {
-		return errcode.ErrMessageKeyPersistencePut.Wrap(err)
 	}
 
 	return nil
@@ -644,18 +652,23 @@ func (m *MessageKeystore) updateCurrentKey(ctx context.Context, groupPK, pk cryp
 }
 
 // NewMessageKeystore instantiate a new MessageKeystore
-func NewMessageKeystore(s datastore.Datastore) *MessageKeystore {
+func NewMessageKeystore(s datastore.Datastore, logger *zap.Logger) *MessageKeystore {
+	if logger == nil {
+		logger = zap.NewNop()
+	}
+
 	return &MessageKeystore{
 		preComputedKeysCount: 100,
 		store:                dssync.MutexWrap(s),
+		logger:               logger.Named("message-ks"),
 	}
 }
 
 // nolint:deadcode,unused // NewInMemMessageKeystore instantiate a new MessageKeystore, useful for testing
-func NewInMemMessageKeystore() (*MessageKeystore, func()) {
+func NewInMemMessageKeystore(logger *zap.Logger) (*MessageKeystore, func()) {
 	ds := dssync.MutexWrap(datastore.NewMapDatastore())
 
-	return NewMessageKeystore(ds), func() { _ = ds.Close() }
+	return NewMessageKeystore(ds, logger), func() { _ = ds.Close() }
 }
 
 func (m *MessageKeystore) OpenOutOfStoreMessage(ctx context.Context, envelope *protocoltypes.OutOfStoreMessage, groupPublicKey []byte) ([]byte, bool, error) {
@@ -777,12 +790,12 @@ func (m *MessageKeystore) UpdatePushGroupReferences(ctx context.Context, deviceP
 	for i := 0; i < len(refsExisting); i++ {
 		ref, err := CreatePushGroupReference(devicePK, refsExisting[i], groupPushSecret)
 		if err != nil {
-			// TODO: log
+			m.logger.Error("creating existing push group reference failed", logutil.PrivateBinary("ref", ref), zap.Error(err))
 			continue
 		}
 
 		if err := m.store.Delete(ctx, m.refKey(ref)); err != nil {
-			// TODO: log
+			m.logger.Error("deleting existing push group reference failed", logutil.PrivateBinary("ref", ref), zap.Error(err))
 			continue
 		}
 	}
@@ -791,12 +804,12 @@ func (m *MessageKeystore) UpdatePushGroupReferences(ctx context.Context, deviceP
 	for i := 0; i < len(refsToCreate); i++ {
 		ref, err := CreatePushGroupReference(devicePK, refsToCreate[i], groupPushSecret)
 		if err != nil {
-			// TODO: log
+			m.logger.Error("creating new push group reference failed", logutil.PrivateBinary("ref", ref), zap.Error(err))
 			continue
 		}
 
 		if err := m.store.Put(ctx, m.refKey(ref), group.GetPublicKey()); err != nil {
-			// TODO: log
+			m.logger.Error("putting new push group reference failed", logutil.PrivateBinary("ref", ref), zap.Error(err))
 			continue
 		}
 	}

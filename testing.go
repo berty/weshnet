@@ -383,7 +383,7 @@ func CreatePeersWithGroupTest(ctx context.Context, t testing.TB, pathBase string
 				require.NoError(t, err, "deviceKeystore from existing keys")
 			}
 
-			mk, cleanupMessageKeystore := cryptoutil.NewInMemMessageKeystore()
+			mk, cleanupMessageKeystore := cryptoutil.NewInMemMessageKeystore(logger)
 
 			db, err := NewBertyOrbitDB(ctx, ca.API(), &NewOrbitDBOptions{
 				NewOrbitDBOptions: orbitdb.NewOrbitDBOptions{

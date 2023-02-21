@@ -71,7 +71,7 @@ func (n *NewOrbitDBOptions) applyDefaults() {
 	}
 
 	if n.MessageKeystore == nil {
-		n.MessageKeystore = cryptoutil.NewMessageKeystore(datastoreutil.NewNamespacedDatastore(n.Datastore, datastore.NewKey(datastoreutil.NamespaceMessageKeystore)))
+		n.MessageKeystore = cryptoutil.NewMessageKeystore(datastoreutil.NewNamespacedDatastore(n.Datastore, datastore.NewKey(datastoreutil.NamespaceMessageKeystore)), n.Logger)
 	}
 
 	if n.DeviceKeystore == nil {
@@ -237,7 +237,7 @@ func (s *BertyOrbitDB) openAccountGroup(ctx context.Context, options *orbitdb.Cr
 
 	gc, err := s.OpenGroup(ctx, g, options)
 	if err != nil {
-		return nil, errcode.TODO.Wrap(err)
+		return nil, errcode.ErrGroupOpen.Wrap(err)
 	}
 
 	l.Debug("Opened account group", tyber.FormatStepLogFields(ctx, []tyber.Detail{})...)

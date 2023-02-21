@@ -98,7 +98,7 @@ func (opts *PushHandlerOpts) applyPushDefaults() error {
 	}
 
 	if opts.MessageKeystore == nil {
-		opts.MessageKeystore = cryptoutil.NewMessageKeystore(datastoreutil.NewNamespacedDatastore(opts.RootDatastore, ds.NewKey(datastoreutil.NamespaceMessageKeystore)))
+		opts.MessageKeystore = cryptoutil.NewMessageKeystore(datastoreutil.NewNamespacedDatastore(opts.RootDatastore, ds.NewKey(datastoreutil.NamespaceMessageKeystore)), opts.Logger)
 	}
 
 	return nil
