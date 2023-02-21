@@ -40,6 +40,7 @@ func testAddBerty(ctx context.Context, t *testing.T, node ipfsutil.CoreAPIMock, 
 	require.NoError(t, err)
 
 	baseDS = sync_ds.MutexWrap(baseDS)
+
 	defer testutil.Close(t, baseDS)
 
 	secretStore, err := secretstore.NewSecretStore(baseDS, nil)
@@ -62,9 +63,6 @@ func testAddBerty(ctx context.Context, t *testing.T, node ipfsutil.CoreAPIMock, 
 	defer gc.Close()
 
 	defer testutil.Close(t, gc)
-
-	err = gc.ActivateGroupContext(nil)
-	require.NoError(t, err)
 
 	wg := sync.WaitGroup{}
 	wg.Add(amountToAdd * 2)
