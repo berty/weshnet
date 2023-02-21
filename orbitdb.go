@@ -240,16 +240,13 @@ func (s *BertyOrbitDB) openAccountGroup(ctx context.Context, options *orbitdb.Cr
 	if err != nil {
 		return nil, errcode.ErrGroupOpen.Wrap(err)
 	}
-
 	l.Debug("Opened account group", tyber.FormatStepLogFields(ctx, []tyber.Detail{})...)
+
+	gc.TagGroupContextPeers(ipfsCoreAPI, 84)
 
 	if err := gc.ActivateGroupContext(nil); err != nil {
 		return nil, errcode.TODO.Wrap(err)
 	}
-
-	l.Debug("Account group context activated", tyber.FormatStepLogFields(ctx, []tyber.Detail{})...)
-
-	gc.TagGroupContextPeers(ipfsCoreAPI, 84)
 
 	l.Debug("TagGroupContextPeers done", tyber.FormatStepLogFields(ctx, []tyber.Detail{})...)
 	return gc, nil

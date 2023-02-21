@@ -102,6 +102,7 @@ func (s *service) activateGroup(ctx context.Context, pk crypto.PubKey, localOnly
 	s.lock.Lock()
 	defer s.lock.Unlock()
 
+	// @WIP(gfanton): do we need to use contactPK
 	var contactPK crypto.PubKey
 	switch g.GroupType {
 	case protocoltypes.GroupTypeMultiMember:
@@ -145,7 +146,7 @@ func (s *service) activateGroup(ctx context.Context, pk crypto.PubKey, localOnly
 		return errcode.ErrGroupOpen.Wrap(err)
 	}
 
-	if err := gc.ActivateGroupContext(contactPK); err != nil {
+	if err = gc.ActivateGroupContext(contactPK); err != nil {
 		gc.Close()
 		return errcode.ErrGroupActivate.Wrap(err)
 	}
