@@ -4,7 +4,7 @@ on:
     tags:
       - v*
     branches:
-      - master
+      - main
     paths:
       - "**"
       - "!**.md"
@@ -63,7 +63,7 @@ jobs:
         run: git checkout ${{ github.event.pull_request.base.sha }}
         if: github.event_name == 'pull_request'
 
-      - name: Cache go modules (master)
+      - name: Cache go modules (main)
         uses: actions/cache@v2.1.6
         if: github.event_name == 'pull_request'
         with:
@@ -71,7 +71,7 @@ jobs:
           key:          ${{ runner.os }}-go-${{ env.go_version }}-${{ env.json_cache-versions_go }}-${{ hashFiles('**/go.sum') }}
           restore-keys: ${{ runner.os }}-go-${{ env.go_version }}-${{ env.json_cache-versions_go }}-
 
-      - name: Run benchmark (master)
+      - name: Run benchmark (main)
         run: make go.unittest | tee output_base.txt
         if: github.event_name == 'pull_request'
         working-directory: .
@@ -81,8 +81,8 @@ jobs:
           GO_TEST_OPTS: -bench=. -test.benchmem -cpuprofile cpu_base.prof -memprofile mem_base.prof -test.timeout=1200s -count=5 -tags "fts5 sqlite sqlite_unlock_notify"
 
       - name: Benchstat
-        id: benchstat-master
-        if: github.ref == 'refs/heads/master' && github.event_name != 'pull_request'
+        id: benchstat-main
+        if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
         run: |
           echo 'Benchmark report' >> $GITHUB_STEP_SUMMARY
           echo '```' >> $GITHUB_STEP_SUMMARY
@@ -194,11 +194,11 @@ jobs:
 
       # upload arifacts
       #
-      - name: upload artifact (master)
+      - name: upload artifact (main)
         uses: actions/upload-artifact@v3
-        if: github.ref == 'refs/heads/master'
+        if: github.ref == 'refs/heads/main'
         with:
-          name: "bench-master"
+          name: "bench-main"
           path: go/pprof_html
 
       - name: upload artifact (PR)
