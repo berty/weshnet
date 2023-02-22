@@ -26,6 +26,7 @@ import (
 	"berty.tech/go-orbit-db/baseorbitdb"
 	"berty.tech/go-orbit-db/iface"
 	"berty.tech/go-orbit-db/pubsub/pubsubcoreapi"
+	"berty.tech/go-orbit-db/stores"
 	"berty.tech/weshnet/internal/datastoreutil"
 	"berty.tech/weshnet/pkg/cryptoutil"
 	"berty.tech/weshnet/pkg/errcode"
@@ -319,7 +320,27 @@ func (s *BertyOrbitDB) setHeadsForGroup(ctx context.Context, g *protocoltypes.Gr
 	for i, h := range metaHeads {
 		metaHeadsEntries[i] = &entry.Entry{Hash: h}
 	}
+
+	if len(metaHeads) == 0 {
+		return nil
+	}
+
+	chSub, err := metaImpl.EventBus().Subscribe(new(stores.EventReplicated))
+	if err != nil {
+		// something is really wrong if this happens, so better return an error
+		return fmt.Errorf("unable to subscribe to EventReplicated")
+	}
+	defer chSub.Close()
+
+	// start to load metadata heads
 	metaImpl.Replicator().Load(ctx, metaHeadsEntries)
+
+	// wait for load to finish
+	select {
+	case <-chSub.Out():
+	case <-s.ctx.Done():
+		return s.ctx.Err()
+	}
 
 	return nil
 }
