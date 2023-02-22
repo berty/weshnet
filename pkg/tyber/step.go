@@ -2,6 +2,7 @@ package tyber
 
 import (
 	"context"
+	"runtime/debug"
 
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
@@ -33,6 +34,12 @@ func FormatStepLogFields(ctx context.Context, details []Detail, mutators ...Step
 	for _, m := range mutators {
 		s = m(s)
 	}
+
+	// Add debug if a there is no parent trace ID
+	if s.ParentTraceID == noTraceID {
+		s.Details = append(s.Details, Detail{Name: "StackTrace", Description: string(debug.Stack())})
+	}
+
 	return []zapcore.Field{
 		zap.String("tyberLogType", string(StepType)),
 		zap.Any("step", s),

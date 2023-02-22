@@ -217,7 +217,7 @@ func (m *MessageStore) processMessageLoop(ctx context.Context) {
 					device.queue.Add(message)
 					_ = m.emitters.groupCacheMessage.Emit(*message)
 				} else {
-					m.logger.Error("unable to prcess message", zap.Error(err))
+					m.logger.Error("unable to process message", zap.Error(err))
 				}
 
 				return

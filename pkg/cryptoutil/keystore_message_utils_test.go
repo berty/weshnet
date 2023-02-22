@@ -13,6 +13,7 @@ import (
 	"github.com/libp2p/go-libp2p/core/crypto"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"go.uber.org/zap"
 
 	"berty.tech/weshnet"
 	"berty.tech/weshnet/pkg/cryptoutil"
@@ -74,6 +75,7 @@ func mustMessageHeaders(t testing.TB, sk crypto.PrivKey, counter uint64, payload
 }
 
 func Test_EncryptMessagePayload(t *testing.T) {
+	logger := zap.NewNop()
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
@@ -100,10 +102,10 @@ func Test_EncryptMessagePayload(t *testing.T) {
 
 	omd2, err := acc2.MemberDeviceForGroup(g)
 
-	mkh1, cleanup := cryptoutil.NewInMemMessageKeystore()
+	mkh1, cleanup := cryptoutil.NewInMemMessageKeystore(logger)
 	defer cleanup()
 
-	mkh2, cleanup := cryptoutil.NewInMemMessageKeystore()
+	mkh2, cleanup := cryptoutil.NewInMemMessageKeystore(logger)
 	defer cleanup()
 
 	gc1 := weshnet.NewContextGroup(g, nil, nil, mkh1, omd1, nil)
@@ -263,6 +265,7 @@ func Test_EncryptMessagePayload(t *testing.T) {
 }
 
 func Test_EncryptMessageEnvelope(t *testing.T) {
+	logger := zap.NewNop()
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
@@ -270,7 +273,7 @@ func Test_EncryptMessageEnvelope(t *testing.T) {
 	assert.NoError(t, err)
 
 	acc1 := cryptoutil.NewDeviceKeystore(keystore.NewMemKeystore(), nil)
-	mkh1, cleanup := cryptoutil.NewInMemMessageKeystore()
+	mkh1, cleanup := cryptoutil.NewInMemMessageKeystore(logger)
 	defer cleanup()
 
 	omd1, err := acc1.MemberDeviceForGroup(g)
@@ -285,7 +288,7 @@ func Test_EncryptMessageEnvelope(t *testing.T) {
 	assert.NoError(t, err)
 
 	acc2 := cryptoutil.NewDeviceKeystore(keystore.NewMemKeystore(), nil)
-	mkh2, cleanup := cryptoutil.NewInMemMessageKeystore()
+	mkh2, cleanup := cryptoutil.NewInMemMessageKeystore(logger)
 	defer cleanup()
 
 	omd2, err := acc2.MemberDeviceForGroup(g)
@@ -318,6 +321,7 @@ func Test_EncryptMessageEnvelope(t *testing.T) {
 }
 
 func Test_EncryptMessageEnvelopeAndDerive(t *testing.T) {
+	logger := zap.NewNop()
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
@@ -336,10 +340,10 @@ func Test_EncryptMessageEnvelopeAndDerive(t *testing.T) {
 	ds1, err := cryptoutil.NewDeviceSecret()
 	assert.NoError(t, err)
 
-	mkh1, cleanup := cryptoutil.NewInMemMessageKeystore()
+	mkh1, cleanup := cryptoutil.NewInMemMessageKeystore(logger)
 	defer cleanup()
 
-	mkh2, cleanup := cryptoutil.NewInMemMessageKeystore()
+	mkh2, cleanup := cryptoutil.NewInMemMessageKeystore(logger)
 	defer cleanup()
 
 	err = mkh1.RegisterChainKey(ctx, g, omd1.PrivateDevice().GetPublic(), ds1, true)
