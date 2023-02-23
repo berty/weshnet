@@ -271,7 +271,6 @@ func (s *BertyOrbitDB) setHeadsForGroup(ctx context.Context, g *protocoltypes.Gr
 		metaImpl = existingGC.metadataStore
 		messagesImpl = existingGC.messageStore
 	}
-
 	if metaImpl == nil || messagesImpl == nil {
 		groupID := g.GroupIDAsString()
 		s.groups.Store(groupID, g)
@@ -335,11 +334,25 @@ func (s *BertyOrbitDB) setHeadsForGroup(ctx context.Context, g *protocoltypes.Gr
 	// start to load metadata heads
 	metaImpl.Replicator().Load(ctx, metaHeadsEntries)
 
-	// wait for load to finish
-	select {
-	case <-chSub.Out():
-	case <-s.ctx.Done():
-		return s.ctx.Err()
+	for found := 0; found < len(metaHeadsEntries); {
+		// wait for load to finish
+		select {
+		case e := <-chSub.Out():
+			evt := e.(stores.EventReplicated)
+
+			// iterate over entries from replicated event to search for our heads
+			for _, headEntry := range metaHeadsEntries {
+				for _, evtEntry := range evt.Entries {
+					if evtEntry.Equals(headEntry) {
+						found++
+						break
+					}
+				}
+			}
+
+		case <-s.ctx.Done():
+			return s.ctx.Err()
+		}
 	}
 
 	return nil
