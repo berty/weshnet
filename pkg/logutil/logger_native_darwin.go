@@ -49,7 +49,7 @@ func NativeLog(logLevel zapcore.Level, namespace string, message string) {
 		level = C.INFO
 	}
 
-	log := C.os_log_create(C.CString(namespace), C.CString(""))
+	log := C.os_log_create(C.CString(namespace), C.CString(namespace))
 
 	C.os_log_wrapper(level, log, C.CString(fmt.Sprintf("[%s] %s", logLevel.CapitalString(), message)))
 }
