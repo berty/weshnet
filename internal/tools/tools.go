@@ -23,6 +23,8 @@ import (
 	_ "github.com/golang/protobuf/proto"
 	// required by protoc
 	_ "github.com/grpc-ecosystem/grpc-gateway/protoc-gen-grpc-gateway"
+	// required by protoc
+	_ "github.com/grpc-ecosystem/grpc-gateway/protoc-gen-swagger"
 	// required by Makefile
 	_ "github.com/mdomke/git-semver/v5"
 	// required by protoc

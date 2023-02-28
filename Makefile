@@ -49,15 +49,15 @@ unittest: go.unittest
 .PHONY: unittest
 
 
-generate: pb.generate
+generate: pb.generate docs.generate
 .PHONY: generate
 
 
-regenerate: gen.clean generate
+regenerate: gen.clean docs.clean generate docs.generate
 .PHONY: regenerate
 
 
-clean:
+clean: gen.clean docs.clean
 	rm -rf out/
 .PHONY: clean
 
@@ -191,48 +191,30 @@ pb.push:
 	buf push api/protocol
 
 ##
-## Doc gen
+## Docs gen
 ##
 
 
-doc.generate: md.generate
-.PHONY: doc.generate
+docs.generate:
+	cd docs; $(MAKE) generate
+.PHONY: docs.generate
 
-md.generate:
-	mkdir -p .tmp
+docs.clean:
+	cd docs; $(MAKE) clean
+.PHONY: docs.generate
 
-	# generate embeddable outputs
-	echo 'foo@bar:~$$ berty -h' > .tmp/berty-usage.txt
-	(berty -h || true) 2>> .tmp/berty-usage.txt
-	for sub in `berty -h 2>&1 | grep "^  [a-z]" | sed 1d | awk '{print $$1}'`; do \
-		echo >> .tmp/berty-usage.txt; \
-		echo 'foo@bar:~$$ berty '$$sub' -h' >> .tmp/berty-usage.txt; \
-		(berty $$sub -h || true) 2>> .tmp/berty-usage.txt; \
+
+asdf.install_plugins:
+	$(call check-program, asdf)
+	@echo "Installing asdf plugins..."
+	@set -e; \
+	for PLUGIN in $$(cut -d' ' -f1 .tool-versions | grep "^[^\#]"); do \
+		asdf plugin add $$PLUGIN || [ $$? == 2 ] || exit 1; \
 	done
+.PHONY: asdf.install_plugins
 
-	echo 'foo@bar:~$$ berty share-invite' > .tmp/berty-share-invite.txt
-	berty --log.filters="" share-invite -store.inmem -node.display-name=demo >> .tmp/berty-share-invite.txt
-
-	echo 'foo@bar:~$$ berty info' > .tmp/berty-info.txt
-	berty --log.filters="" info --info.anonymize -store.inmem >> .tmp/berty-info.txt
-
-	echo 'foo@bar:~$$ berty daemon' > .tmp/berty-daemon.txt
-	expect -c "set timeout 10; spawn -noecho docker run bertytech/berty --log.format=console --log.filters=info+:bty daemon -store.inmem; expect serving" >> .tmp/berty-daemon.txt
-	echo '...' >> .tmp/berty-daemon.txt
-
-	echo 'foo@bar:~$$ rdvp -h' > .tmp/rdvp-usage.txt
-	(rdvp -h || true) 2>> .tmp/rdvp-usage.txt
-	for sub in `rdvp -h 2>&1 | grep "^  [a-z]" | sed 1d | awk '{print $$1}'`; do \
-		echo >> .tmp/rdvp-usage.txt; \
-		echo 'foo@bar:~$$ rdvp '$$sub' -h' >> .tmp/rdvp-usage.txt; \
-		(rdvp $$sub -h || true) 2>> .tmp/rdvp-usage.txt; \
-	done
-
-	echo 'foo@bar:~$$ welcomebot -h' > .tmp/welcomebot-usage.txt
-	(welcomebot -h || true) 2>> .tmp/welcomebot-usage.txt
-
-	# FIXME: generate output for berty mini
-
-	go run github.com/campoy/embedmd -w README.md
-	#rm -rf .tmp
-.PHONY: md.generate
+asdf.install_tools: asdf.install_plugins
+	$(call check-program, asdf)
+	@echo "Installing asdf tools..."
+	@asdf install
+.PHONY: asdf.install_tools
