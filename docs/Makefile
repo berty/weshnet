@@ -6,16 +6,9 @@ VERSION ?= `go run github.com/mdomke/git-semver/v5`
 
 all: generate
 
-.PHONY: gen.clean
-gen.clean:
-	rm -f gen.sum $(wildcard */*.md.tmp) $(wildcard */*.swagger.json) $(wildcard */*.swagger.json)
-
-.PHONY: regenerate
-regenerate: gen.clean generate
-
 gen_src := $(wildcard ../api/*.proto) $(wildcard ../api/*.yaml) Makefile
 gen_sum := gen.sum
-.PHONY: generate
+
 generate: gen.sum
 $(gen_sum): $(gen_src)
 	@shasum $(gen_src) | sort -k 2 > $(gen_sum).tmp
@@ -32,8 +25,10 @@ $(gen_sum): $(gen_src)
 	    bertytech/buf:1 \
 	    -xec 'make generate_local' \
 	)
+.PHONY: generate
+
 protoc_opts := -I ../api:`go list -m -mod=mod -f {{.Dir}} github.com/grpc-ecosystem/grpc-gateway`/third_party/googleapis:`go list -m -mod=mod -f {{.Dir}} github.com/gogo/protobuf`:/protobuf
-.PHONY: generate_local
+
 generate_local:
 	mkdir -p protocol
 	buf generate --template ./buf-doc.gen.yaml ../api/protocol/protocoltypes.proto -o protocol
@@ -43,26 +38,39 @@ generate_local:
 	shasum $(gen_src) | sort -k 2 > $(gen_sum).tmp
 	mv $(gen_sum).tmp $(gen_sum)
 	mv protocol/api.md apis/protocoltypes.md
-	mv protocol/api.json apis/protocoltypes.json
+	mv protocol/protocoltypes.swagger.json apis/
+.PHONY: generate_local
 
-.PHONY: openapi.prepare
+regenerate: gen.clean generate
+.PHONY: regenerate
+
+gen.clean:
+	rm -f gen.sum $(wildcard */*.md.tmp) $(wildcard */*.swagger.json)
+.PHONY: gen.clean
+
 openapi.prepare: gen.sum
 	mkdir -p .tmp/openapi
-	cat ./messenger/messengertypes.swagger.json | jq '.info.version="'$(VERSION)'"' > .tmp/openapi/messengertypes.swagger.json
-	cat ./protocol/protocoltypes.swagger.json   | jq '.info.version="'$(VERSION)'"' > .tmp/openapi/protocoltypes.swagger.json
-	cat .tmp/openapi/*.swagger.json | jq .info.version
+	cat ./apis/protocoltypes.swagger.json   | jq '.info.version="'$(VERSION)'"' > .tmp/openapi/protocoltypes.swagger.json
+	cat .tmp/openapi/*.json | jq .info.version
+.PHONY: openapi.prepare
 
 BUMP_TOKEN ?=
-.PHONY: bump.validate
 bump.validate: openapi.prepare
 	@# gem install bump-cli
-	bump validate --token=$(BUMP_TOKEN) --doc=f3c48f1c-2b5b-4d3f-9ddb-40f6cf09b905 .tmp/openapi/messengertypes.swagger.json
 	bump validate --token=$(BUMP_TOKEN) --doc=6eb1bb1e-c65d-4b73-a8c4-0e545742f6db .tmp/openapi/protocoltypes.swagger.json
-.PHONY: bump.deploy
+.PHONY: bump.validate
+
 bump.deploy: bump.validate
 	@# gem install bump-cli
-	bump deploy --token=$(BUMP_TOKEN) --doc=f3c48f1c-2b5b-4d3f-9ddb-40f6cf09b905 .tmp/openapi/messengertypes.swagger.json
 	bump deploy --token=$(BUMP_TOKEN) --doc=6eb1bb1e-c65d-4b73-a8c4-0e545742f6db .tmp/openapi/protocoltypes.swagger.json
+.PHONY: bump.deploy
 
-.PHONY: tidy
+openapi.clean:
+	rm -rf .tmp/openapi
+.PHONY: openapi.clean
+
+clean: gen.clean openapi.clean
+.PHONY: clean
+
 tidy:
+.PHONY: tidy

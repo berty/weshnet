@@ -3,6 +3,7 @@ plugins:
   - plugin: doc
     out: ./
     opt: markdown,api.md.tmp
-  - plugin: doc
+  - plugin: swagger
     out: ./
-    opt: json,api.json
+    opt:
+      - logtostderr=true

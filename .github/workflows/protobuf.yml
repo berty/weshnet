@@ -40,6 +40,7 @@ on:
       - "**/go.sum"
 jobs:
   gen-go-and-docs:
+    if: github.event_name == 'DISABLED' # need to fix it by removing docker for generation
     name: Generate go protobuf and docs
     runs-on: ubuntu-latest
     container: bertytech/buf:1
@@ -51,7 +52,7 @@ jobs:
         run: git fetch --prune --unshallow
 
       - name: Remove lock files
-        run: find . -name gen.sum ! -path './js/*' -delete
+        run: find . -name gen.sum -delete
 
       - name: Load variables from file
         uses: antifree/json-to-variables@v1.0.1
