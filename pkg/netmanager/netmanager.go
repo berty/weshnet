@@ -8,7 +8,7 @@ import (
 )
 
 type NetManager struct {
-	currentState *ConnectivityInfo
+	currentState ConnectivityInfo
 
 	locker *sync.RWMutex
 	notify *notify.Notify
@@ -29,8 +29,11 @@ const (
 		NetManagerConnectivityNetTypeChanged      |
 		NetManagerConnectivityCellularTypeChanged
 )
+func (t NetManagerEventType) has(other NetManagerEventType) bool {
+	return (t & other) == other
+}
 
-func NewNetManager(initialState *ConnectivityInfo) *NetManager {
+func NewNetManager(initialState ConnectivityInfo) *NetManager {
 	var locker sync.RWMutex
 	return &NetManager{
 		currentState: initialState,
@@ -40,7 +43,7 @@ func NewNetManager(initialState *ConnectivityInfo) *NetManager {
 }
 
 // UpdateState update the current state of the Manager
-func (m *NetManager) UpdateState(state *ConnectivityInfo) {
+func (m *NetManager) UpdateState(state ConnectivityInfo) {
 	m.locker.Lock()
 	if m.currentState != state {
 		m.currentState = state
@@ -55,11 +58,11 @@ func (m *NetManager) WaitForStateChange(ctx context.Context, sourceState *Connec
 
 	ok := true
 	for ok {
-		if (eventType & NetManagerConnectivityStateChanged != 0 && sourceState.State != m.currentState.State) ||
-		   (eventType & NetManagerConnectivityMeteringChanged != 0 && sourceState.Metering != m.currentState.Metering) ||
-		   (eventType & NetManagerConnectivityBluetoothChanged != 0 && sourceState.Bluetooth != m.currentState.Bluetooth) ||
-		   (eventType & NetManagerConnectivityNetTypeChanged != 0 && sourceState.NetType != m.currentState.NetType) ||
-		   (eventType & NetManagerConnectivityCellularTypeChanged != 0 && sourceState.CellularType != m.currentState.CellularType) {
+		if (eventType.has(NetManagerConnectivityStateChanged)        && sourceState.State != m.currentState.State) ||
+		   (eventType.has(NetManagerConnectivityMeteringChanged)     && sourceState.Metering != m.currentState.Metering) ||
+		   (eventType.has(NetManagerConnectivityBluetoothChanged)    && sourceState.Bluetooth != m.currentState.Bluetooth) ||
+		   (eventType.has(NetManagerConnectivityNetTypeChanged)      && sourceState.NetType != m.currentState.NetType) ||
+		   (eventType.has(NetManagerConnectivityCellularTypeChanged) && sourceState.CellularType != m.currentState.CellularType) {
 			break
 		}
 		// wait until state has been changed or context has been cancel
@@ -71,7 +74,7 @@ func (m *NetManager) WaitForStateChange(ctx context.Context, sourceState *Connec
 }
 
 // GetCurrentState return the current state of the Manager
-func (m *NetManager) GetCurrentState() (state *ConnectivityInfo) {
+func (m *NetManager) GetCurrentState() (state ConnectivityInfo) {
 	m.locker.RLock()
 	state = m.currentState
 	m.locker.RUnlock()

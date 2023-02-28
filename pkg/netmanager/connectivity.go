@@ -10,7 +10,7 @@ const (
 	ConnectivityStateOff
 	ConnectivityStateOn
 )
-func (cs ConnectivityState) ToString() string {
+func (cs ConnectivityState) String() string {
 	switch cs {
 	case ConnectivityStateUnknown:
 		return "unknown"
@@ -31,7 +31,7 @@ const (
 	ConnectivityNetEthernet
 	ConnectivityNetCellular
 )
-func (cnt ConnectivityNetType) ToString() string {
+func (cnt ConnectivityNetType) String() string {
 	switch cnt {
 	case ConnectivityNetUnknown:
 		return "unknown"
@@ -57,7 +57,7 @@ const (
 	ConnectivityCellular4G
 	ConnectivityCellular5G
 )
-func (cct ConnectivityCellularType) ToString() string {
+func (cct ConnectivityCellularType) String() string {
 	switch cct {
 	case ConnectivityCellularUnknown:
 		return "unknown"
@@ -83,35 +83,12 @@ type ConnectivityInfo struct {
 	NetType      ConnectivityNetType
 	CellularType ConnectivityCellularType
 }
-
-func NewConnectivityInfo() *ConnectivityInfo {
-	return &ConnectivityInfo{
-		State:        ConnectivityState(ConnectivityStateUnknown),
-		Metering:     ConnectivityState(ConnectivityStateUnknown),
-		Bluetooth:    ConnectivityState(ConnectivityStateUnknown),
-		NetType:      ConnectivityNetType(ConnectivityNetUnknown),
-		CellularType: ConnectivityCellularType(ConnectivityCellularUnknown),
-	}
-}
-
-func (ci *ConnectivityInfo) GetState() ConnectivityState                 { return ci.State }
-func (ci *ConnectivityInfo) GetMetering() ConnectivityState              { return ci.Metering }
-func (ci *ConnectivityInfo) GetBluetooth() ConnectivityState             { return ci.Bluetooth }
-func (ci *ConnectivityInfo) GetNetType() ConnectivityNetType             { return ci.NetType }
-func (ci *ConnectivityInfo) GetCellularType() ConnectivityCellularType   { return ci.CellularType }
-
-func (ci *ConnectivityInfo) SetState(state ConnectivityState)                      { ci.State = state }
-func (ci *ConnectivityInfo) SetMetering(metering ConnectivityState)                { ci.Metering = metering }
-func (ci *ConnectivityInfo) SetBluetooth(bluetooth ConnectivityState)              { ci.Bluetooth = bluetooth }
-func (ci *ConnectivityInfo) SetNetType(netType ConnectivityNetType)                { ci.NetType = netType }
-func (ci *ConnectivityInfo) SetCellularType(cellularType ConnectivityCellularType) { ci.CellularType = cellularType }
-
-func (ci *ConnectivityInfo) ToString() string {
+func (ci ConnectivityInfo) String() string {
 	return fmt.Sprint("ConnectivityInfo{ ",
-		"State: ", ci.State.ToString(), ", ",
-		"Metering: ", ci.Metering.ToString(), ", ",
-		"Bluetooth: ", ci.Bluetooth.ToString(), ", ",
-		"NetType: ", ci.NetType.ToString(), ", ",
-		"CellularType: ", ci.CellularType.ToString(),
+		"State: ", ci.State.String(), ", ",
+		"Metering: ", ci.Metering.String(), ", ",
+		"Bluetooth: ", ci.Bluetooth.String(), ", ",
+		"NetType: ", ci.NetType.String(), ", ",
+		"CellularType: ", ci.CellularType.String(),
 	" }")
 }
