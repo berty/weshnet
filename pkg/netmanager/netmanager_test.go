@@ -9,8 +9,8 @@ import (
 
 func TestNewNetManager(t *testing.T) {
 	initial := ConnectivityInfo{
-		State: ConnectivityStateOn,
-		NetType:  ConnectivityNetWifi,
+		State:     ConnectivityStateOn,
+		NetType:   ConnectivityNetWifi,
 		Bluetooth: ConnectivityStateOn,
 	}
 
@@ -35,7 +35,7 @@ func TestNetManagerSingleUpdate(t *testing.T) {
 	netmanager.UpdateState(a)
 	require.Equal(t, a, netmanager.GetCurrentState())
 
-	netmanager.WaitForStateChange(ctx, &state, NetManagerConnectivityChanged)
+	netmanager.WaitForStateChange(ctx, &state, ConnectivityChanged)
 
 	require.Equal(t, a, netmanager.GetCurrentState())
 }
@@ -59,7 +59,7 @@ func TestNetManagerDoubleUpdate(t *testing.T) {
 	netmanager.UpdateState(b)
 	require.Equal(t, b, netmanager.GetCurrentState())
 
-	netmanager.WaitForStateChange(ctx, &state, NetManagerConnectivityChanged)
+	netmanager.WaitForStateChange(ctx, &state, ConnectivityChanged)
 	require.Equal(t, b, netmanager.GetCurrentState())
 }
 
@@ -71,8 +71,8 @@ func TestNetManagerFilterUpdate(t *testing.T) {
 		State: ConnectivityStateOff,
 	}
 	b := ConnectivityInfo{
-		State: ConnectivityStateOn,
-		NetType: ConnectivityNetCellular,
+		State:        ConnectivityStateOn,
+		NetType:      ConnectivityNetCellular,
 		CellularType: ConnectivityCellular3G,
 	}
 	state := ConnectivityInfo{}
@@ -84,6 +84,6 @@ func TestNetManagerFilterUpdate(t *testing.T) {
 	netmanager.UpdateState(b)
 	require.Equal(t, b, netmanager.GetCurrentState())
 
-	netmanager.WaitForStateChange(ctx, &state, NetManagerConnectivityCellularTypeChanged)
+	netmanager.WaitForStateChange(ctx, &state, ConnectivityCellularTypeChanged)
 	require.Equal(t, b, netmanager.GetCurrentState())
 }

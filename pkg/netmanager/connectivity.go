@@ -5,11 +5,13 @@ import (
 )
 
 type ConnectivityState int
+
 const (
 	ConnectivityStateUnknown ConnectivityState = iota
 	ConnectivityStateOff
 	ConnectivityStateOn
 )
+
 func (cs ConnectivityState) String() string {
 	switch cs {
 	case ConnectivityStateUnknown:
@@ -24,6 +26,7 @@ func (cs ConnectivityState) String() string {
 }
 
 type ConnectivityNetType int
+
 const (
 	ConnectivityNetUnknown ConnectivityNetType = iota
 	ConnectivityNetNone
@@ -31,6 +34,7 @@ const (
 	ConnectivityNetEthernet
 	ConnectivityNetCellular
 )
+
 func (cnt ConnectivityNetType) String() string {
 	switch cnt {
 	case ConnectivityNetUnknown:
@@ -49,6 +53,7 @@ func (cnt ConnectivityNetType) String() string {
 }
 
 type ConnectivityCellularType int
+
 const (
 	ConnectivityCellularUnknown ConnectivityCellularType = iota
 	ConnectivityCellularNone
@@ -57,6 +62,7 @@ const (
 	ConnectivityCellular4G
 	ConnectivityCellular5G
 )
+
 func (cct ConnectivityCellularType) String() string {
 	switch cct {
 	case ConnectivityCellularUnknown:
@@ -83,6 +89,7 @@ type ConnectivityInfo struct {
 	NetType      ConnectivityNetType
 	CellularType ConnectivityCellularType
 }
+
 func (ci ConnectivityInfo) String() string {
 	return fmt.Sprint("ConnectivityInfo{ ",
 		"State: ", ci.State.String(), ", ",
@@ -90,5 +97,5 @@ func (ci ConnectivityInfo) String() string {
 		"Bluetooth: ", ci.Bluetooth.String(), ", ",
 		"NetType: ", ci.NetType.String(), ", ",
 		"CellularType: ", ci.CellularType.String(),
-	" }")
+		" }")
 }

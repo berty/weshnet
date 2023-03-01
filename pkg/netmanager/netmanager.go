@@ -14,22 +14,24 @@ type NetManager struct {
 	notify *notify.Notify
 }
 
-type NetManagerEventType uint
-const (
-	NetManagerConnectivityStateChanged NetManagerEventType = 1 << iota
-	NetManagerConnectivityMeteringChanged
-	NetManagerConnectivityBluetoothChanged
-	NetManagerConnectivityNetTypeChanged
-	NetManagerConnectivityCellularTypeChanged
+type EventType uint
 
-	NetManagerConnectivityChanged = 0             |
-		NetManagerConnectivityStateChanged        |
-		NetManagerConnectivityMeteringChanged     |
-		NetManagerConnectivityBluetoothChanged    |
-		NetManagerConnectivityNetTypeChanged      |
-		NetManagerConnectivityCellularTypeChanged
+const (
+	ConnectivityStateChanged EventType = 1 << iota
+	ConnectivityMeteringChanged
+	ConnectivityBluetoothChanged
+	ConnectivityNetTypeChanged
+	ConnectivityCellularTypeChanged
+
+	ConnectivityChanged = 0 |
+		ConnectivityStateChanged |
+		ConnectivityMeteringChanged |
+		ConnectivityBluetoothChanged |
+		ConnectivityNetTypeChanged |
+		ConnectivityCellularTypeChanged
 )
-func (t NetManagerEventType) has(other NetManagerEventType) bool {
+
+func (t EventType) has(other EventType) bool {
 	return (t & other) == other
 }
 
@@ -53,16 +55,16 @@ func (m *NetManager) UpdateState(state ConnectivityInfo) {
 }
 
 // WaitForStateChange waits until the currentState changes from sourceState or ctx expires. A true value is returned in former case and false in latter.
-func (m *NetManager) WaitForStateChange(ctx context.Context, sourceState *ConnectivityInfo, eventType NetManagerEventType) bool {
+func (m *NetManager) WaitForStateChange(ctx context.Context, sourceState *ConnectivityInfo, eventType EventType) bool {
 	m.locker.Lock()
 
 	ok := true
 	for ok {
-		if (eventType.has(NetManagerConnectivityStateChanged)        && sourceState.State != m.currentState.State) ||
-		   (eventType.has(NetManagerConnectivityMeteringChanged)     && sourceState.Metering != m.currentState.Metering) ||
-		   (eventType.has(NetManagerConnectivityBluetoothChanged)    && sourceState.Bluetooth != m.currentState.Bluetooth) ||
-		   (eventType.has(NetManagerConnectivityNetTypeChanged)      && sourceState.NetType != m.currentState.NetType) ||
-		   (eventType.has(NetManagerConnectivityCellularTypeChanged) && sourceState.CellularType != m.currentState.CellularType) {
+		if (eventType.has(ConnectivityStateChanged) && sourceState.State != m.currentState.State) ||
+			(eventType.has(ConnectivityMeteringChanged) && sourceState.Metering != m.currentState.Metering) ||
+			(eventType.has(ConnectivityBluetoothChanged) && sourceState.Bluetooth != m.currentState.Bluetooth) ||
+			(eventType.has(ConnectivityNetTypeChanged) && sourceState.NetType != m.currentState.NetType) ||
+			(eventType.has(ConnectivityCellularTypeChanged) && sourceState.CellularType != m.currentState.CellularType) {
 			break
 		}
 		// wait until state has been changed or context has been cancel
