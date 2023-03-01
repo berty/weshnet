@@ -209,7 +209,7 @@ asdf.install_plugins:
 	@echo "Installing asdf plugins..."
 	@set -e; \
 	for PLUGIN in $$(cut -d' ' -f1 .tool-versions | grep "^[^\#]"); do \
-		asdf plugin add $$PLUGIN || [ $$? == 2 ] || exit 1; \
+		asdf plugin add $$PLUGIN || [ $$?==2 ] || exit 1; \
 	done
 .PHONY: asdf.install_plugins
 
