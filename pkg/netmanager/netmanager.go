@@ -67,23 +67,23 @@ func (m *NetManager) WaitForStateChange(ctx context.Context, sourceState *Connec
 	for ok {
 		currentEventType = 0
 
-		if (sourceState.State != m.currentState.State) {
+		if sourceState.State != m.currentState.State {
 			currentEventType |= ConnectivityStateChanged
 		}
-		if (sourceState.Metering != m.currentState.Metering) {
+		if sourceState.Metering != m.currentState.Metering {
 			currentEventType |= ConnectivityMeteringChanged
 		}
-		if (sourceState.Bluetooth != m.currentState.Bluetooth) {
+		if sourceState.Bluetooth != m.currentState.Bluetooth {
 			currentEventType |= ConnectivityBluetoothChanged
 		}
-		if (sourceState.NetType != m.currentState.NetType) {
+		if sourceState.NetType != m.currentState.NetType {
 			currentEventType |= ConnectivityNetTypeChanged
 		}
-		if (sourceState.CellularType != m.currentState.CellularType) {
+		if sourceState.CellularType != m.currentState.CellularType {
 			currentEventType |= ConnectivityCellularTypeChanged
 		}
 
-		if ((eventType & currentEventType) != 0) {
+		if (eventType & currentEventType) != 0 {
 			break
 		}
 		// wait until state has been changed or context has been cancel
