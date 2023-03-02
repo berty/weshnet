@@ -35,9 +35,11 @@ func TestNetManagerSingleUpdate(t *testing.T) {
 	netmanager.UpdateState(a)
 	require.Equal(t, a, netmanager.GetCurrentState())
 
-	netmanager.WaitForStateChange(ctx, &state, ConnectivityChanged)
+	ok, eventType := netmanager.WaitForStateChange(ctx, &state, ConnectivityChanged)
 
 	require.Equal(t, a, netmanager.GetCurrentState())
+	require.True(t, ok)
+	require.Equal(t, ConnectivityStateChanged, eventType)
 }
 
 func TestNetManagerDoubleUpdate(t *testing.T) {
@@ -59,8 +61,11 @@ func TestNetManagerDoubleUpdate(t *testing.T) {
 	netmanager.UpdateState(b)
 	require.Equal(t, b, netmanager.GetCurrentState())
 
-	netmanager.WaitForStateChange(ctx, &state, ConnectivityChanged)
+	ok, eventType := netmanager.WaitForStateChange(ctx, &state, ConnectivityChanged)
+
 	require.Equal(t, b, netmanager.GetCurrentState())
+	require.True(t, ok)
+	require.Equal(t, ConnectivityStateChanged, eventType)
 }
 
 func TestNetManagerFilterUpdate(t *testing.T) {
@@ -84,6 +89,9 @@ func TestNetManagerFilterUpdate(t *testing.T) {
 	netmanager.UpdateState(b)
 	require.Equal(t, b, netmanager.GetCurrentState())
 
-	netmanager.WaitForStateChange(ctx, &state, ConnectivityCellularTypeChanged)
+	ok, eventType := netmanager.WaitForStateChange(ctx, &state, ConnectivityCellularTypeChanged)
+
 	require.Equal(t, b, netmanager.GetCurrentState())
+	require.True(t, ok)
+	require.Equal(t, ConnectivityStateChanged | ConnectivityNetTypeChanged | ConnectivityCellularTypeChanged, eventType)
 }
