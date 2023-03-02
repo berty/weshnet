@@ -271,7 +271,6 @@ func (s *BertyOrbitDB) setHeadsForGroup(ctx context.Context, g *protocoltypes.Gr
 		metaImpl = existingGC.metadataStore
 		messagesImpl = existingGC.messageStore
 	}
-
 	if metaImpl == nil || messagesImpl == nil {
 		groupID := g.GroupIDAsString()
 		s.groups.Store(groupID, g)
@@ -309,37 +308,74 @@ func (s *BertyOrbitDB) setHeadsForGroup(ctx context.Context, g *protocoltypes.Gr
 		return errcode.ErrInternal.Wrap(fmt.Errorf("metadata store is nil"))
 	}
 
-	messageHeadsEntries := make([]ipfslog.Entry, len(messageHeads))
-	for i, h := range messageHeads {
-		messageHeadsEntries[i] = &entry.Entry{Hash: h}
+	var wg sync.WaitGroup
+
+	// load and wait heads for metadata and message stores
+	wg.Add(2)
+
+	go func() {
+		// load meta heads
+		if err := s.loadHeads(ctx, metaImpl, metaHeads); err != nil {
+			s.Logger().Error("unable to load metadata heads", zap.Error(err))
+		}
+
+		wg.Done()
+	}()
+
+	go func() {
+		// load message heads
+		if err := s.loadHeads(ctx, messagesImpl, messageHeads); err != nil {
+			s.Logger().Error("unable to load message heads", zap.Error(err))
+		}
+
+		wg.Done()
+	}()
+
+	wg.Wait()
+
+	return nil
+}
+
+func (s *BertyOrbitDB) loadHeads(ctx context.Context, store iface.Store, heads []cid.Cid) (err error) {
+	sub, err := store.EventBus().Subscribe(new(stores.EventReplicated))
+	if err != nil {
+		return fmt.Errorf("unable to subscribe to EventReplicated")
+	}
+	defer sub.Close()
+
+	// check and generate missing entries if needed
+	headsEntries := make([]ipfslog.Entry, len(heads))
+	for i, h := range heads {
+		if _, ok := store.OpLog().Get(h); !ok {
+			headsEntries[i] = &entry.Entry{Hash: h}
+		}
 	}
 
-	messagesImpl.Replicator().Load(ctx, messageHeadsEntries)
-
-	metaHeadsEntries := make([]ipfslog.Entry, len(metaHeads))
-	for i, h := range metaHeads {
-		metaHeadsEntries[i] = &entry.Entry{Hash: h}
-	}
-
-	if len(metaHeads) == 0 {
+	if len(headsEntries) == 0 {
 		return nil
 	}
 
-	chSub, err := metaImpl.EventBus().Subscribe(new(stores.EventReplicated))
-	if err != nil {
-		// something is really wrong if this happens, so better return an error
-		return fmt.Errorf("unable to subscribe to EventReplicated")
-	}
-	defer chSub.Close()
+	store.Replicator().Load(ctx, headsEntries)
 
-	// start to load metadata heads
-	metaImpl.Replicator().Load(ctx, metaHeadsEntries)
+	for found := 0; found < len(heads); {
+		// wait for load to finish
+		select {
+		case e := <-sub.Out():
+			evt := e.(stores.EventReplicated)
 
-	// wait for load to finish
-	select {
-	case <-chSub.Out():
-	case <-s.ctx.Done():
-		return s.ctx.Err()
+			// iterate over entries from replicated event to search for our heads
+			for _, headEntry := range headsEntries {
+				for _, evtEntry := range evt.Entries {
+					if evtEntry.Equals(headEntry) {
+						found++
+						break
+					}
+				}
+			}
+
+		case <-s.ctx.Done():
+			return s.ctx.Err()
+		}
 	}
 
 	return nil
