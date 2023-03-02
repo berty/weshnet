@@ -1,38 +1,25 @@
+# yamllint disable-line rule:document-start
 name: "Bug report"
-description: Report a bug found while using the Berty apps or packages.
+description: Report a bug found while using weshnet.
 labels: ["bug", "🔍 Ready for Review"]
 assignees:
-- peletron
+  - jefft0
 body:
   - type: checkboxes
     attributes:
       label: Is there an existing issue for this?
-      description: Please search to see if an issue already exists for the bug you encountered.
+      description: >-
+        Please search to see if an issue already exists for the bug you
+        encountered.
       options:
-      - label: I have searched the existing issues
-        required: true
-  - type: dropdown
-    id: product
-    attributes:
-      label: Berty product
-      description: What Berty product are you seeing the problem on?
-      options:
-        - Mobile app
-        - Desktop app
-        - CLI tools (berty mini, daemon, etc.)
-        - Code package
-    validations:
-      required: true
+        - label: I have searched the existing issues
+          required: true
   - type: input
-    id: product-version
+    id: package-version
     attributes:
-      label:  Berty product version
-      description: |+
-                  What is the version of this Berty product?
-
-                  Tip: You can find the version of the mobile and desktop apps in the settings.
-                  To display the CLI tool version, run `berty version`.
-      placeholder: e.g. 2.396.1
+      label: Package version
+      description: What version of weshnet are you using?
+      placeholder: v1.0.3
     validations:
       required: true
   - type: dropdown
@@ -47,39 +34,32 @@ body:
         - macOS
         - Windows
         - Other
+  - type: input
+    id: language-version
+    attributes:
+      label: Language version and compiler version
+      description: What programming language version and compiler are you using?
+      placeholder: >-
+        go1.18.4, javac 11.0.12
     validations:
       required: true
-  - type: input
-    id: version
-    attributes:
-      label: OS version
-      description: What is the version of the OS you are using?
-      placeholder: e.g. iOS 15.4 or Android 11.0 or Ubuntu 20.04.4
-    validations:
-      required: true
-  - type: input
-    id: device
-    attributes:
-      label: Device
-      description: What device are you using?
-      placeholder: e.g. iPhone 12 Pro Max or a Synology NAS
   - type: textarea
-    id: reproduction
+    id: bug-description
     attributes:
-      label: Steps to reproduce
-      description: Steps to reproduce the behavior.
+      label: Bug description
+      description: Provide a bug description and a code snippet if applicable.
       placeholder: |
-       1. Navigate to the ...
-       2. Click on the user ...
-       3. Change name of ...
-       4. Click Save button ...
+        1. Set up this environment ...
+        2. Add this code ...
+        3. Call this function ...
     validations:
       required: true
   - type: textarea
     id: current-behavior
     attributes:
       label: Current behavior
-      description: A description including screenshots, stack traces, debug logs, etc.
+      description: >-
+        Output after code execution including stack traces, debug logs, etc.
       placeholder: Currently ...
     validations:
       required: true
@@ -88,7 +68,17 @@ body:
     attributes:
       label: Expected behavior
       description: Please provide what would be your expectation to happen.
-      placeholder: In this situation, Berty should ...
+      placeholder: In this situation, weshnet should ...
+    validations:
+      required: true
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment
+      description: What is your development environment?
+      placeholder: macOS 13.1
+    validations:
+      required: true
   - type: textarea
     id: other
     attributes:
