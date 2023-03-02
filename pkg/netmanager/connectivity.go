@@ -83,10 +83,20 @@ func (cct ConnectivityCellularType) String() string {
 }
 
 type ConnectivityInfo struct {
+	// False when the device is not connected to a network.
 	State        ConnectivityState
+
+	// True when the device is connected to a metered network.
 	Metering     ConnectivityState
+
+	// True when the device is connected to a bluetooth network.
 	Bluetooth    ConnectivityState
+
+	// The type of the network the device is connected to: wifi/ethernet/cellular.
 	NetType      ConnectivityNetType
+
+	// If the device is connected to a cellular network:
+	// The type of the cellular network the device is connected to: 2G/3G/4G/5G.
 	CellularType ConnectivityCellularType
 }
 

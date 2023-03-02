@@ -31,7 +31,7 @@ const (
 		ConnectivityCellularTypeChanged
 )
 
-func (t EventType) has(other EventType) bool {
+func (t EventType) Has(other EventType) bool {
 	return (t & other) == other
 }
 
@@ -54,17 +54,36 @@ func (m *NetManager) UpdateState(state ConnectivityInfo) {
 	m.locker.Unlock()
 }
 
-// WaitForStateChange waits until the currentState changes from sourceState or ctx expires. A true value is returned in former case and false in latter.
-func (m *NetManager) WaitForStateChange(ctx context.Context, sourceState *ConnectivityInfo, eventType EventType) bool {
+// WaitForStateChange waits until the currentState changes from sourceState or ctx expires.
+// The eventType argument allow you to filter out the event you want to wait for.
+// A true value is returned in former case and false in latter.
+// The EventType is also returned to know which events has been triggered.
+func (m *NetManager) WaitForStateChange(ctx context.Context, sourceState *ConnectivityInfo, eventType EventType) (bool, EventType) {
 	m.locker.Lock()
 
+	var currentEventType EventType
 	ok := true
+
 	for ok {
-		if (eventType.has(ConnectivityStateChanged) && sourceState.State != m.currentState.State) ||
-			(eventType.has(ConnectivityMeteringChanged) && sourceState.Metering != m.currentState.Metering) ||
-			(eventType.has(ConnectivityBluetoothChanged) && sourceState.Bluetooth != m.currentState.Bluetooth) ||
-			(eventType.has(ConnectivityNetTypeChanged) && sourceState.NetType != m.currentState.NetType) ||
-			(eventType.has(ConnectivityCellularTypeChanged) && sourceState.CellularType != m.currentState.CellularType) {
+		currentEventType = 0
+
+		if (sourceState.State != m.currentState.State) {
+			currentEventType |= ConnectivityStateChanged
+		}
+		if (sourceState.Metering != m.currentState.Metering) {
+			currentEventType |= ConnectivityMeteringChanged
+		}
+		if (sourceState.Bluetooth != m.currentState.Bluetooth) {
+			currentEventType |= ConnectivityBluetoothChanged
+		}
+		if (sourceState.NetType != m.currentState.NetType) {
+			currentEventType |= ConnectivityNetTypeChanged
+		}
+		if (sourceState.CellularType != m.currentState.CellularType) {
+			currentEventType |= ConnectivityCellularTypeChanged
+		}
+
+		if ((eventType & currentEventType) != 0) {
 			break
 		}
 		// wait until state has been changed or context has been cancel
@@ -72,7 +91,7 @@ func (m *NetManager) WaitForStateChange(ctx context.Context, sourceState *Connec
 	}
 
 	m.locker.Unlock()
-	return ok
+	return ok, currentEventType
 }
 
 // GetCurrentState return the current state of the Manager
