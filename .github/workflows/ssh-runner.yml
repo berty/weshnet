@@ -51,17 +51,9 @@ jobs:
           key:          ${{ runner.os }}-go-${{ env.go_version }}-${{ env.json_cache-versions_go }}-${{ hashFiles('**/go.sum') }}
           restore-keys: ${{ runner.os }}-go-${{ env.go_version }}-${{ env.json_cache-versions_go }}-
 
-      - name: Cache node modules
-        if: github.event.inputs.mod == 'true' && runner.os != 'Windows'
-        uses: actions/cache@v2.1.6
-        with:
-          path: js/node_modules
-          key:          ${{ runner.OS }}-node-${{ env.node_version }}-${{ env.json_cache-versions_node }}-${{ hashFiles('js/yarn.lock') }}
-          restore-keys: ${{ runner.OS }}-node-${{ env.node_version }}-${{ env.json_cache-versions_node }}-
-
       - name: Fetch go modules
         if: github.event.inputs.mod == 'true' && runner.os != 'Windows'
-        working-directory: go
+        working-directory: .
         run: go mod tidy
 
       - name: Install emacs
