@@ -148,10 +148,9 @@ func testGroupDeviceStatus(ctx context.Context, t *testing.T, groupID []byte, tp
 					statusReceivedLock.Unlock()
 
 					if done {
-						atomic.AddInt64(&nSuccess, 1)
-						nSuccess := atomic.LoadInt64(&nSuccess)
+						n := atomic.AddInt64(&nSuccess, 1)
 
-						got := fmt.Sprintf("%d/%d", nSuccess, ntps)
+						got := fmt.Sprintf("%d/%d", n, ntps)
 						tps[i].Opts.Logger.Debug("received all group device status", zap.String("ok", got))
 						return
 					}
