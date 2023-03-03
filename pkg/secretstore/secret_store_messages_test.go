@@ -6,10 +6,12 @@ import (
 	"os"
 	"path"
 	"testing"
+	"time"
 
 	cid "github.com/ipfs/go-cid"
 	"github.com/libp2p/go-libp2p/core/crypto"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
 	"berty.tech/weshnet"
 	"berty.tech/weshnet/pkg/protocoltypes"
@@ -122,6 +124,7 @@ func testMessageKeyHolderCatchUp(t *testing.T, expectedNewDevices int, isSlow bo
 	defer cleanup()
 
 	peer := peers[0]
+	peer.GC.ActivateGroupContext(nil)
 
 	secretStore1 := peer.SecretStore
 	ms1 := peer.GC.MetadataStore()
@@ -135,10 +138,13 @@ func testMessageKeyHolderCatchUp(t *testing.T, expectedNewDevices int, isSlow bo
 		devicesPK[i] = addDummyMemberInMetadataStore(ctx, t, ms1, peer.GC.Group(), peer.GC.MemberPubKey(), true)
 	}
 
-	for range peer.GC.FillMessageKeysHolderUsingPreviousData() {
-	}
-
 	for i, devicePublicKey := range devicesPK {
+		select {
+		case <-time.After(time.Second):
+			require.FailNow(t, "timeout while waiting for device secret")
+		case <-peer.GC.WaitForDeviceAdded(ctx, devicePublicKey):
+		}
+
 		if !assert.True(t, secretStore1.IsChainKeyKnownForDevice(ctx, groupPublicKey, devicePublicKey)) {
 			t.Fatalf("failed at iteration %d", i)
 		}
@@ -178,27 +184,24 @@ func testMessageKeyHolderSubscription(t *testing.T, expectedNewDevices int, isSl
 	defer cleanup()
 
 	peer := peers[0]
+	peer.GC.ActivateGroupContext(nil)
 
 	secretStore1 := peer.SecretStore
 	ms1 := peer.GC.MetadataStore()
 
 	devicesPK := make([]crypto.PubKey, expectedNewDevices)
 
-	ch := peer.GC.FillMessageKeysHolderUsingNewData()
-
 	for i := 0; i < expectedNewDevices; i++ {
 		devicesPK[i] = addDummyMemberInMetadataStore(ctx, t, ms1, peer.GC.Group(), peer.GC.MemberPubKey(), true)
 	}
 
-	i := 0
-	for range ch {
-		i++
-		if i == expectedNewDevices {
-			break
-		}
-	}
-
 	for i, devicePublicKey := range devicesPK {
+		select {
+		case <-time.After(time.Second):
+			require.FailNow(t, "timeout while waiting for device secret")
+		case <-peer.GC.WaitForDeviceAdded(ctx, devicePublicKey):
+		}
+
 		if !assert.True(t, secretStore1.IsChainKeyKnownForDevice(ctx, groupPrivateKey.GetPublic(), devicePublicKey)) {
 			t.Fatalf("failed at iteration %d", i)
 		}

@@ -28,12 +28,13 @@ type GroupContext struct {
 	secretStore     secretstore.SecretStore
 	ownMemberDevice secretstore.OwnMemberDevice
 
-	logger *zap.Logger
-	closed uint32
-	tasks  sync.WaitGroup
-
-	devicesAdded   map[string]chan struct{}
-	muDevicesAdded sync.RWMutex
+	logger            *zap.Logger
+	closed            uint32
+	tasks             sync.WaitGroup
+	devicesAdded      map[string]chan struct{}
+	muDevicesAdded    sync.RWMutex
+	selfAnnounced     chan struct{}
+	selfAnnouncedOnce sync.Once
 }
 
 func (gc *GroupContext) SecretStore() secretstore.SecretStore {
@@ -100,6 +101,7 @@ func NewContextGroup(group *protocoltypes.Group, metadataStore *MetadataStore, m
 		logger:          logger.With(logutil.PrivateString("group-id", fmt.Sprintf("%.6s", base64.StdEncoding.EncodeToString(group.PublicKey)))),
 		closed:          0,
 		devicesAdded:    make(map[string]chan struct{}),
+		selfAnnounced:   make(chan struct{}),
 	}
 }
 
@@ -108,8 +110,6 @@ func (gc *GroupContext) ActivateGroupContext(contactPK crypto.PubKey) (err error
 
 	// start watching for GroupMetadataEvent to send secret and register
 	// chainkey of new members.
-	// notify `wgSelfAnnouncement` when we found ourself
-	var wgSelfAnnouncement sync.WaitGroup
 	{
 		m := gc.MetadataStore()
 		sub, err := m.EventBus().Subscribe(new(protocoltypes.GroupMetadataEvent))
@@ -118,12 +118,8 @@ func (gc *GroupContext) ActivateGroupContext(contactPK crypto.PubKey) (err error
 		}
 
 		gc.tasks.Add(1)
-		wgSelfAnnouncement.Add(1)
 		go func() {
-			var once sync.Once
-
-			defer gc.tasks.Done()                  // ultimately, mark bg task has done
-			defer once.Do(wgSelfAnnouncement.Done) // avoid deadlock
+			defer gc.tasks.Done() // ultimately, mark bg task has done
 			defer sub.Close()
 
 			for {
@@ -136,14 +132,14 @@ func (gc *GroupContext) ActivateGroupContext(contactPK crypto.PubKey) (err error
 
 				// @TODO(gfanton): should we handle this in a sub gorouting ?
 				e := evt.(protocoltypes.GroupMetadataEvent)
-				self, err := gc.handleGroupMetadataEvent(&e)
-				if err != nil {
+				// start := time.Now()
+				if err := gc.handleGroupMetadataEvent(&e); err != nil {
 					gc.logger.Error("unable to handle EventTypeGroupDeviceSecretAdded", zap.Error(err))
 				}
 
-				if self {
-					once.Do(wgSelfAnnouncement.Done)
-				}
+				// if t := time.Since(start).Milliseconds(); t > 0 {
+				// 	fmt.Printf("elapsed: %dms\n", t)
+				// }
 			}
 		}()
 	}
@@ -179,13 +175,17 @@ func (gc *GroupContext) ActivateGroupContext(contactPK crypto.PubKey) (err error
 	gc.logger.Info(fmt.Sprintf("AddDeviceToGroup took %s", time.Since(start)))
 	if op != nil {
 		// Waiting for async events to be handled
-		wgSelfAnnouncement.Wait()
+		select {
+		case <-ctx.Done():
+			return ctx.Err()
+		case <-gc.selfAnnounced: // device has been selfAnnounced
+		}
 	}
 
 	return nil
 }
 
-func (gc *GroupContext) handleGroupMetadataEvent(e *protocoltypes.GroupMetadataEvent) (isSelf bool, err error) {
+func (gc *GroupContext) handleGroupMetadataEvent(e *protocoltypes.GroupMetadataEvent) (err error) {
 	switch e.Metadata.EventType {
 	case protocoltypes.EventTypeGroupMemberDeviceAdded:
 		event := &protocoltypes.GroupAddMemberDevice{}
@@ -195,16 +195,16 @@ func (gc *GroupContext) handleGroupMetadataEvent(e *protocoltypes.GroupMetadataE
 
 		memberPK, err := crypto.UnmarshalEd25519PublicKey(event.MemberPK)
 		if err != nil {
-			return isSelf, fmt.Errorf("unable to unmarshal sender member pk: %w", err)
+			return fmt.Errorf("unable to unmarshal sender member pk: %w", err)
 		}
 
 		if memberPK.Equals(gc.ownMemberDevice.Member()) {
-			isSelf = true
+			gc.selfAnnouncedOnce.Do(func() { close(gc.selfAnnounced) }) // mark has self announced
 		}
 
 		if _, err := gc.MetadataStore().SendSecret(gc.ctx, memberPK); err != nil {
 			if !errcode.Is(err, errcode.ErrGroupSecretAlreadySentToMember) {
-				return isSelf, fmt.Errorf("unable to send secret to member: %w", err)
+				return fmt.Errorf("unable to send secret to member: %w", err)
 			}
 		}
 
@@ -217,13 +217,13 @@ func (gc *GroupContext) handleGroupMetadataEvent(e *protocoltypes.GroupMetadataE
 		case nil: // ok
 		case errcode.ErrInvalidInput, errcode.ErrGroupSecretOtherDestMember:
 			// @FIXME(gfanton): should we log this ?
-			return isSelf, nil
+			return nil
 		default:
-			return isSelf, fmt.Errorf("an error occurred while opening device secrets: %w", err)
+			return fmt.Errorf("an error occurred while opening device secrets: %w", err)
 		}
 
 		if err = gc.SecretStore().RegisterChainKey(gc.ctx, gc.Group(), senderPublicKey, encryptedDeviceChainKey); err != nil {
-			return isSelf, fmt.Errorf("unable to register chain key: %w", err)
+			return fmt.Errorf("unable to register chain key: %w", err)
 		}
 
 		if rawPK, err := senderPublicKey.Raw(); err == nil {
@@ -235,7 +235,7 @@ func (gc *GroupContext) handleGroupMetadataEvent(e *protocoltypes.GroupMetadataE
 		}
 	}
 
-	return isSelf, nil
+	return nil
 }
 
 func (gc *GroupContext) fillMessageKeysHolderUsingPreviousData() {
