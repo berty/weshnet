@@ -814,6 +814,11 @@ func (m *MessageKeystore) UpdatePushGroupReferences(ctx context.Context, deviceP
 		}
 	}
 
+	// Update first/last
+	if err := m.putFirstLastCachedGroupRefsForMember(ctx, first, last, devicePK, group); err != nil {
+		m.logger.Error("putting first/last push group reference failed", zap.Error(err))
+	}
+
 	return nil
 }
 
@@ -830,4 +835,19 @@ func (m *MessageKeystore) firstLastCachedGroupRefsForMember(ctx context.Context,
 	}
 
 	return ret.First, ret.Last, nil
+}
+
+func (m *MessageKeystore) putFirstLastCachedGroupRefsForMember(ctx context.Context, first uint64, last uint64, devicePK []byte, group GroupWithSecret) error {
+	key := m.refFirstLastKey(group.GetPublicKey(), devicePK)
+
+	fistLast := protocoltypes.FirstLastCounters{
+		First: first,
+		Last:  last,
+	}
+	bytes, err := fistLast.Marshal()
+	if err != nil {
+		return err
+	}
+
+	return m.store.Put(ctx, key, bytes)
 }
