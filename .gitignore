@@ -19,19 +19,7 @@ out/
 profile.out
 vendor/
 debug.log
-/js/*.db.d
-tool/deployments/*/data
-node_modules
 
-# Go CMD's build output
-go/cmd/berty/berty
-go/cmd/berty-doctor/berty-doctor
-go/cmd/berty-integration/berty-integration
-go/cmd/welcomebot/welcomebot
-go/cmd/rdvp/rdvp
-
-# Various berty outputs
-welcomebot.store
 benchmark_result.json
 
 # Delve's binaries
