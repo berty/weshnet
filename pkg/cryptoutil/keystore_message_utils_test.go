@@ -21,6 +21,8 @@ import (
 	"berty.tech/weshnet/pkg/testutil"
 )
 
+const precomputePushRefsCount = uint64(100)
+
 func addDummyMemberInMetadataStore(ctx context.Context, t testing.TB, ms *weshnet.MetadataStore, g *protocoltypes.Group, memberPK crypto.PubKey, join bool) (crypto.PubKey, *protocoltypes.DeviceSecret) {
 	t.Helper()
 
@@ -518,5 +520,80 @@ func TestMessageKeyHolderSubscription(t *testing.T) {
 		},
 	} {
 		testMessageKeyHolderSubscription(t, testCase.expectedNewDevices, testCase.slow)
+	}
+}
+
+func Test_PushGroupReferences(t *testing.T) {
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	logger := zap.NewNop()
+
+	g, _, err := weshnet.NewGroupMultiMember()
+	assert.NoError(t, err)
+
+	acc := cryptoutil.NewDeviceKeystore(keystore.NewMemKeystore(), nil)
+
+	omd, err := acc.MemberDeviceForGroup(g)
+	assert.NoError(t, err)
+
+	devicePK, err := omd.Public().Device.Raw()
+	assert.NoError(t, err)
+
+	ds, err := cryptoutil.NewDeviceSecret()
+	assert.NoError(t, err)
+
+	mkh, cleanup := cryptoutil.NewInMemMessageKeystore(logger)
+	defer cleanup()
+
+	// test with the ds counter
+	updateAndTestPushGroupReferences(ctx, mkh, devicePK, ds.Counter, g, t)
+
+	// do the same test with a new device secret counter
+	// so we can test if old references are deleted
+	updateAndTestPushGroupReferences(ctx, mkh, devicePK, ds.Counter+10, g, t)
+}
+
+func updateAndTestPushGroupReferences(ctx context.Context, mkh *cryptoutil.MessageKeystore, devicePK []byte, counter uint64, g *protocoltypes.Group, t *testing.T) {
+	// get the group push secret, used to create the push group references
+	groupPushSecret, err := cryptoutil.GetGroupPushSecret(g)
+	assert.NoError(t, err)
+
+	// update the push group references
+	err = mkh.UpdatePushGroupReferences(ctx, devicePK, counter, g)
+	assert.NoError(t, err)
+
+	// test that the push group references are updated
+	// refs start counter - 100 to counter + 100
+	start := counter - precomputePushRefsCount
+	end := counter + precomputePushRefsCount
+
+	for i := start; i < end; i++ {
+		// compute the push group reference
+		pushGroupRef, err := cryptoutil.CreatePushGroupReference(devicePK, i, groupPushSecret)
+		assert.NoError(t, err)
+
+		_, err = mkh.GetByPushGroupReference(ctx, pushGroupRef)
+		assert.NoError(t, err)
+	}
+
+	// test boundary conditions
+
+	// before the start counter
+	{
+		before := counter - precomputePushRefsCount - 1
+		pushGroupRef, err := cryptoutil.CreatePushGroupReference(devicePK, before, groupPushSecret)
+		assert.NoError(t, err)
+		_, err = mkh.GetByPushGroupReference(ctx, pushGroupRef)
+		assert.Error(t, err)
+	}
+
+	// after the end counter
+	{
+		end := counter + precomputePushRefsCount + 1
+		pushGroupRef, err := cryptoutil.CreatePushGroupReference(devicePK, end, groupPushSecret)
+		assert.NoError(t, err)
+		_, err = mkh.GetByPushGroupReference(ctx, pushGroupRef)
+		assert.Error(t, err)
 	}
 }
