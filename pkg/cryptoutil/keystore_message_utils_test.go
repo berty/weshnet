@@ -135,7 +135,7 @@ func Test_EncryptMessagePayload(t *testing.T) {
 	assert.NoError(t, err)
 
 	// secret is derived by SealEnvelope
-	err = mkh1.DeriveDeviceSecret(ctx, g, omd1.PrivateDevice())
+	err = mkh1.DeriveDeviceSecret(ctx, g, omd1.PrivateDevice().GetPublic())
 	assert.NoError(t, err)
 
 	assert.NotEqual(t, hex.EncodeToString(payloadRef1), hex.EncodeToString(payloadEnc1))
@@ -166,7 +166,7 @@ func Test_EncryptMessagePayload(t *testing.T) {
 	payloadEnc2, _, err := cryptoutil.SealPayload(payloadRef1, ds, omd1.PrivateDevice(), g)
 	assert.NoError(t, err)
 
-	err = mkh1.DeriveDeviceSecret(ctx, g, omd1.PrivateDevice())
+	err = mkh1.DeriveDeviceSecret(ctx, g, omd1.PrivateDevice().GetPublic())
 	assert.NoError(t, err)
 
 	// Ensure that encrypted message is not the same as the first message
@@ -193,7 +193,7 @@ func Test_EncryptMessagePayload(t *testing.T) {
 	payloadEnc3, _, err := cryptoutil.SealPayload(payloadRef2, ds, omd1.PrivateDevice(), g)
 	assert.NoError(t, err)
 
-	err = mkh1.DeriveDeviceSecret(ctx, g, omd1.PrivateDevice())
+	err = mkh1.DeriveDeviceSecret(ctx, g, omd1.PrivateDevice().GetPublic())
 	assert.NoError(t, err)
 
 	dummyCID1, err := cid.Parse("QmbdQXQh9B2bWZgZJqfbjNPV5jGN2owbQ3vjeYsaDaCDqU")
@@ -241,7 +241,7 @@ func Test_EncryptMessagePayload(t *testing.T) {
 		payloadEnc, _, err := cryptoutil.SealPayload(payloadRef3, ds, omd1.PrivateDevice(), g)
 		assert.NoError(t, err)
 
-		err = mkh1.DeriveDeviceSecret(ctx, g, omd1.PrivateDevice())
+		err = mkh1.DeriveDeviceSecret(ctx, g, omd1.PrivateDevice().GetPublic())
 		assert.NoError(t, err)
 
 		ds, err = mkh1.GetDeviceChainKey(ctx, gPK, omd1.PrivateDevice().GetPublic())
