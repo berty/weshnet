@@ -95,7 +95,7 @@ type (
 	GroupsSigPubKeyMap = sync.Map
 )
 
-type BertyOrbitDB struct {
+type WeshOrbitDB struct {
 	baseorbitdb.BaseOrbitDB
 	keyStore         *BertySignedKeyStore
 	messageKeystore  *cryptoutil.MessageKeystore
@@ -111,7 +111,7 @@ type BertyOrbitDB struct {
 	groupsSigPubKey *GroupsSigPubKeyMap // map[string]crypto.PubKey
 }
 
-func (s *BertyOrbitDB) registerGroupPrivateKey(g *protocoltypes.Group) error {
+func (s *WeshOrbitDB) registerGroupPrivateKey(g *protocoltypes.Group) error {
 	groupID := g.GroupIDAsString()
 
 	gSigSK, err := g.GetSigningPrivKey()
@@ -130,7 +130,7 @@ func (s *BertyOrbitDB) registerGroupPrivateKey(g *protocoltypes.Group) error {
 	return nil
 }
 
-func (s *BertyOrbitDB) registerGroupSigningPubKey(g *protocoltypes.Group) error {
+func (s *WeshOrbitDB) registerGroupSigningPubKey(g *protocoltypes.Group) error {
 	groupID := g.GroupIDAsString()
 
 	var gSigPK crypto.PubKey
@@ -152,7 +152,7 @@ func (s *BertyOrbitDB) registerGroupSigningPubKey(g *protocoltypes.Group) error 
 	return nil
 }
 
-func NewBertyOrbitDB(ctx context.Context, ipfs coreapi.CoreAPI, options *NewOrbitDBOptions) (*BertyOrbitDB, error) {
+func NewWeshOrbitDB(ctx context.Context, ipfs coreapi.CoreAPI, options *NewOrbitDBOptions) (*WeshOrbitDB, error) {
 	var err error
 
 	if options == nil {
@@ -182,7 +182,7 @@ func NewBertyOrbitDB(ctx context.Context, ipfs coreapi.CoreAPI, options *NewOrbi
 		return nil, errcode.TODO.Wrap(err)
 	}
 
-	bertyDB := &BertyOrbitDB{
+	bertyDB := &WeshOrbitDB{
 		ctx:              ctx,
 		messageMarshaler: mm,
 		BaseOrbitDB:      orbitDB,
@@ -205,7 +205,7 @@ func NewBertyOrbitDB(ctx context.Context, ipfs coreapi.CoreAPI, options *NewOrbi
 	return bertyDB, nil
 }
 
-func (s *BertyOrbitDB) openAccountGroup(ctx context.Context, options *orbitdb.CreateDBOptions, ipfsCoreAPI ipfsutil.ExtendedCoreAPI) (*GroupContext, error) {
+func (s *WeshOrbitDB) openAccountGroup(ctx context.Context, options *orbitdb.CreateDBOptions, ipfsCoreAPI ipfsutil.ExtendedCoreAPI) (*GroupContext, error) {
 	l := s.Logger()
 
 	if options == nil {
@@ -255,7 +255,7 @@ func (s *BertyOrbitDB) openAccountGroup(ctx context.Context, options *orbitdb.Cr
 	return gc, nil
 }
 
-func (s *BertyOrbitDB) setHeadsForGroup(ctx context.Context, g *protocoltypes.Group, metaHeads, messageHeads []cid.Cid) error {
+func (s *WeshOrbitDB) setHeadsForGroup(ctx context.Context, g *protocoltypes.Group, metaHeads, messageHeads []cid.Cid) error {
 	id := g.GroupIDAsString()
 
 	var (
@@ -336,7 +336,7 @@ func (s *BertyOrbitDB) setHeadsForGroup(ctx context.Context, g *protocoltypes.Gr
 	return nil
 }
 
-func (s *BertyOrbitDB) loadHeads(ctx context.Context, store iface.Store, heads []cid.Cid) (err error) {
+func (s *WeshOrbitDB) loadHeads(ctx context.Context, store iface.Store, heads []cid.Cid) (err error) {
 	sub, err := store.EventBus().Subscribe(new(stores.EventReplicated))
 	if err != nil {
 		return fmt.Errorf("unable to subscribe to EventReplicated")
@@ -381,7 +381,7 @@ func (s *BertyOrbitDB) loadHeads(ctx context.Context, store iface.Store, heads [
 	return nil
 }
 
-func (s *BertyOrbitDB) OpenGroup(ctx context.Context, g *protocoltypes.Group, options *orbitdb.CreateDBOptions) (*GroupContext, error) {
+func (s *WeshOrbitDB) OpenGroup(ctx context.Context, g *protocoltypes.Group, options *orbitdb.CreateDBOptions) (*GroupContext, error) {
 	if s.deviceKeystore == nil || s.messageKeystore == nil {
 		return nil, errcode.ErrInvalidInput.Wrap(fmt.Errorf("db open in naive mode"))
 	}
@@ -457,7 +457,7 @@ func (s *BertyOrbitDB) OpenGroup(ctx context.Context, g *protocoltypes.Group, op
 	return gc, nil
 }
 
-func (s *BertyOrbitDB) OpenGroupReplication(ctx context.Context, g *protocoltypes.Group, options *orbitdb.CreateDBOptions) (iface.Store, iface.Store, error) {
+func (s *WeshOrbitDB) OpenGroupReplication(ctx context.Context, g *protocoltypes.Group, options *orbitdb.CreateDBOptions) (iface.Store, iface.Store, error) {
 	if g == nil || len(g.PublicKey) == 0 {
 		return nil, nil, errcode.ErrInvalidInput.Wrap(fmt.Errorf("missing group or group pubkey"))
 	}
@@ -492,7 +492,7 @@ func (s *BertyOrbitDB) OpenGroupReplication(ctx context.Context, g *protocoltype
 	return metadataStore, messageStore, nil
 }
 
-func (s *BertyOrbitDB) getGroupContext(id string) (*GroupContext, error) {
+func (s *WeshOrbitDB) getGroupContext(id string) (*GroupContext, error) {
 	g, ok := s.groupContexts.Load(id)
 	if !ok {
 		return nil, errcode.ErrMissingMapKey
@@ -514,7 +514,7 @@ func (s *BertyOrbitDB) getGroupContext(id string) (*GroupContext, error) {
 
 // SetGroupSigPubKey registers a new group signature pubkey, mainly used to
 // replicate a store data without needing to access to its content
-func (s *BertyOrbitDB) SetGroupSigPubKey(groupID string, pubKey crypto.PubKey) error {
+func (s *WeshOrbitDB) SetGroupSigPubKey(groupID string, pubKey crypto.PubKey) error {
 	if pubKey == nil {
 		return errcode.ErrInvalidInput
 	}
@@ -524,7 +524,7 @@ func (s *BertyOrbitDB) SetGroupSigPubKey(groupID string, pubKey crypto.PubKey) e
 	return nil
 }
 
-func (s *BertyOrbitDB) storeForGroup(ctx context.Context, o iface.BaseOrbitDB, g *protocoltypes.Group, options *orbitdb.CreateDBOptions, storeType string, groupOpenMode GroupOpenMode) (iface.Store, error) {
+func (s *WeshOrbitDB) storeForGroup(ctx context.Context, o iface.BaseOrbitDB, g *protocoltypes.Group, options *orbitdb.CreateDBOptions, storeType string, groupOpenMode GroupOpenMode) (iface.Store, error) {
 	l := s.Logger()
 
 	options, err := DefaultOrbitDBOptions(g, options, s.keyStore, storeType, groupOpenMode)
@@ -579,7 +579,7 @@ func (s *BertyOrbitDB) storeForGroup(ctx context.Context, o iface.BaseOrbitDB, g
 	return store, nil
 }
 
-func (s *BertyOrbitDB) groupMetadataStore(ctx context.Context, g *protocoltypes.Group, options *orbitdb.CreateDBOptions) (*MetadataStore, error) {
+func (s *WeshOrbitDB) groupMetadataStore(ctx context.Context, g *protocoltypes.Group, options *orbitdb.CreateDBOptions) (*MetadataStore, error) {
 	if options == nil {
 		options = &orbitdb.CreateDBOptions{}
 	}
@@ -606,7 +606,7 @@ func (s *BertyOrbitDB) groupMetadataStore(ctx context.Context, g *protocoltypes.
 	return sStore, nil
 }
 
-func (s *BertyOrbitDB) groupMessageStore(ctx context.Context, g *protocoltypes.Group, options *orbitdb.CreateDBOptions) (*MessageStore, error) {
+func (s *WeshOrbitDB) groupMessageStore(ctx context.Context, g *protocoltypes.Group, options *orbitdb.CreateDBOptions) (*MessageStore, error) {
 	if options == nil {
 		options = &orbitdb.CreateDBOptions{}
 	}
@@ -629,7 +629,7 @@ func (s *BertyOrbitDB) groupMessageStore(ctx context.Context, g *protocoltypes.G
 	return mStore, nil
 }
 
-func (s *BertyOrbitDB) getGroupFromOptions(options *iface.NewStoreOptions) (*protocoltypes.Group, error) {
+func (s *WeshOrbitDB) getGroupFromOptions(options *iface.NewStoreOptions) (*protocoltypes.Group, error) {
 	groupIDs, err := options.AccessController.GetAuthorizedByRole(identityGroupIDKey)
 	if err != nil {
 		return nil, errcode.TODO.Wrap(err)
@@ -652,12 +652,12 @@ func (s *BertyOrbitDB) getGroupFromOptions(options *iface.NewStoreOptions) (*pro
 	return typed, nil
 }
 
-func (s *BertyOrbitDB) IsGroupLoaded(groupID string) bool {
+func (s *WeshOrbitDB) IsGroupLoaded(groupID string) bool {
 	gc, ok := s.groups.Load(groupID)
 
 	return ok && gc != nil
 }
 
-func (s *BertyOrbitDB) GetDevicePKForPeerID(id peer.ID) (pdg *PeerDeviceGroup, ok bool) {
+func (s *WeshOrbitDB) GetDevicePKForPeerID(id peer.ID) (pdg *PeerDeviceGroup, ok bool) {
 	return s.messageMarshaler.GetDevicePKForPeerID(id)
 }

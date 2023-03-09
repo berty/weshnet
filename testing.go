@@ -41,7 +41,7 @@ import (
 
 const InMemoryDir = ":memory:"
 
-func NewTestOrbitDB(ctx context.Context, t *testing.T, logger *zap.Logger, node ipfsutil.CoreAPIMock, baseDS datastore.Batching) *BertyOrbitDB {
+func NewTestOrbitDB(ctx context.Context, t *testing.T, logger *zap.Logger, node ipfsutil.CoreAPIMock, baseDS datastore.Batching) *WeshOrbitDB {
 	t.Helper()
 
 	api := node.API()
@@ -54,7 +54,7 @@ func NewTestOrbitDB(ctx context.Context, t *testing.T, logger *zap.Logger, node 
 
 	pubSub := pubsubraw.NewPubSub(node.PubSub(), selfKey.ID(), logger, nil)
 
-	odb, err := NewBertyOrbitDB(ctx, api, &NewOrbitDBOptions{
+	odb, err := NewWeshOrbitDB(ctx, api, &NewOrbitDBOptions{
 		Datastore: baseDS,
 		NewOrbitDBOptions: orbitdb.NewOrbitDBOptions{
 			Logger: logger,
@@ -68,7 +68,7 @@ func NewTestOrbitDB(ctx context.Context, t *testing.T, logger *zap.Logger, node 
 
 type mockedPeer struct {
 	CoreAPI ipfsutil.CoreAPIMock
-	DB      *BertyOrbitDB
+	DB      *WeshOrbitDB
 	GC      *GroupContext
 	MKS     *cryptoutil.MessageKeystore
 	DevKS   cryptoutil.DeviceKeystore
@@ -87,7 +87,7 @@ type TestingProtocol struct {
 	RootDatastore  datastore.Batching
 	DeviceKeystore cryptoutil.DeviceKeystore
 	IpfsCoreAPI    ipfsutil.ExtendedCoreAPI
-	OrbitDB        *BertyOrbitDB
+	OrbitDB        *WeshOrbitDB
 	GroupDatastore *cryptoutil.GroupDatastore
 }
 
@@ -97,7 +97,7 @@ type TestingOpts struct {
 	DiscoveryServer *tinder.MockDriverServer
 	DeviceKeystore  cryptoutil.DeviceKeystore
 	CoreAPIMock     ipfsutil.CoreAPIMock
-	OrbitDB         *BertyOrbitDB
+	OrbitDB         *WeshOrbitDB
 	ConnectFunc     ConnectTestingProtocolFunc
 	PushSK          *[32]byte
 }
@@ -137,7 +137,7 @@ func NewTestingProtocol(ctx context.Context, t testing.TB, opts *TestingOpts, ds
 
 		pubSub := pubsubraw.NewPubSub(node.PubSub(), node.MockNode().PeerHost.ID(), opts.Logger, nil)
 
-		odb, err = NewBertyOrbitDB(ctx, node.API(), &NewOrbitDBOptions{
+		odb, err = NewWeshOrbitDB(ctx, node.API(), &NewOrbitDBOptions{
 			NewOrbitDBOptions: orbitdb.NewOrbitDBOptions{
 				PubSub: pubSub,
 				Logger: opts.Logger,
@@ -385,7 +385,7 @@ func CreatePeersWithGroupTest(ctx context.Context, t testing.TB, pathBase string
 
 			mk, cleanupMessageKeystore := cryptoutil.NewInMemMessageKeystore(logger)
 
-			db, err := NewBertyOrbitDB(ctx, ca.API(), &NewOrbitDBOptions{
+			db, err := NewWeshOrbitDB(ctx, ca.API(), &NewOrbitDBOptions{
 				NewOrbitDBOptions: orbitdb.NewOrbitDBOptions{
 					Logger: logger,
 				},

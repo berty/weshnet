@@ -380,7 +380,7 @@ func (state *restoreAccountState) readKey(keyName string) RestoreAccountHandler 
 	}
 }
 
-func (state *restoreAccountState) restoreKeys(odb *BertyOrbitDB) RestoreAccountHandler {
+func (state *restoreAccountState) restoreKeys(odb *WeshOrbitDB) RestoreAccountHandler {
 	return RestoreAccountHandler{
 		PostProcess: func() error {
 			if err := odb.deviceKeystore.RestoreAccountKeys(state.keys[exportAccountKeyFilename], state.keys[exportAccountProofKeyFilename]); err != nil {
@@ -415,7 +415,7 @@ func restoreOrbitDBEntry(ctx context.Context, coreAPI ipfs_interface.CoreAPI) Re
 	}
 }
 
-func restoreOrbitDBHeads(ctx context.Context, odb *BertyOrbitDB) RestoreAccountHandler {
+func restoreOrbitDBHeads(ctx context.Context, odb *WeshOrbitDB) RestoreAccountHandler {
 	return RestoreAccountHandler{
 		Handler: func(header *tar.Header, reader *tar.Reader) (bool, error) {
 			if !strings.HasPrefix(header.Name, exportOrbitDBHeadsPrefix) {
@@ -440,7 +440,7 @@ func restoreOrbitDBHeads(ctx context.Context, odb *BertyOrbitDB) RestoreAccountH
 	}
 }
 
-func RestoreAccountExport(ctx context.Context, reader io.Reader, coreAPI ipfs_interface.CoreAPI, odb *BertyOrbitDB, logger *zap.Logger, handlers ...RestoreAccountHandler) error {
+func RestoreAccountExport(ctx context.Context, reader io.Reader, coreAPI ipfs_interface.CoreAPI, odb *WeshOrbitDB, logger *zap.Logger, handlers ...RestoreAccountHandler) error {
 	tr := tar.NewReader(reader)
 	state := restoreAccountState{
 		keys: map[string]crypto.PrivKey{},
