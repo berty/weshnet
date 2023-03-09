@@ -160,7 +160,11 @@ func (opts *Opts) applyDefaults(ctx context.Context) error {
 	}
 
 	if opts.IpfsCoreAPI == nil {
-		dsync := ds_sync.MutexWrap(ds.NewMapDatastore())
+		dsync := opts.RootDatastore
+		if dsync == nil {
+			dsync = ds_sync.MutexWrap(ds.NewMapDatastore())
+		}
+
 		repo, err := ipfsutil.CreateMockedRepo(dsync)
 		if err != nil {
 			return err
