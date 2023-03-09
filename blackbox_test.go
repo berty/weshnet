@@ -34,11 +34,36 @@ func TestTestingClient_impl(t *testing.T) {
 	assert.Equal(t, expected, status)
 }
 
-func ExampleNew_basic() {
+func ExampleNewClientService_basic(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	client, err := weshnet.New(weshnet.Opts{})
+	client, err := weshnet.NewService(weshnet.Opts{})
+	if err != nil {
+		panic(err)
+	}
+	defer client.Close()
+
+	ret, err := client.InstanceGetConfiguration(ctx, &protocoltypes.InstanceGetConfiguration_Request{})
+	if err != nil {
+		panic(err)
+	}
+
+	for _, listener := range ret.Listeners {
+		if listener == "/p2p-circuit" {
+			fmt.Println(listener)
+		}
+	}
+
+	// Output:
+	// /p2p-circuit
+}
+
+func ExampleNewService_service_only() {
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	client, err := weshnet.NewService(weshnet.Opts{})
 	if err != nil {
 		panic(err)
 	}

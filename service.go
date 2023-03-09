@@ -234,8 +234,8 @@ func (opts *Opts) applyDefaults(ctx context.Context) error {
 	return nil
 }
 
-// New initializes a new Service
-func New(opts Opts) (_ Service, err error) {
+// NewService initializes a new Service
+func NewService(opts Opts) (_ Service, err error) {
 	ctx, cancel := context.WithCancel(context.Background())
 
 	if err := opts.applyDefaults(ctx); err != nil {
