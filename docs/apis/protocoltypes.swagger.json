@@ -746,13 +746,15 @@
           "title": "account_group_pk is the public key of the account group"
         },
         "peer_id": {
-          "type": "string"
+          "type": "string",
+          "title": "peer_id is the peer ID of the current IPFS node"
         },
         "listeners": {
           "type": "array",
           "items": {
             "type": "string"
-          }
+          },
+          "title": "listeners is the list of swarm listening addresses of the current IPFS node"
         },
         "ble_enabled": {
           "$ref": "#/definitions/InstanceGetConfigurationSettingState"

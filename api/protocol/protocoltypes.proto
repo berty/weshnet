@@ -12,13 +12,13 @@ option (gogoproto.marshaler_all) = true;
 option (gogoproto.unmarshaler_all) = true;
 option (gogoproto.sizer_all) = true;
 
-// ProtocolService is the top-level API to manage an instance of the Berty Protocol.
-// Each Berty Protocol Instance is considered as a Berty device and is associated with a Berty user.
+// ProtocolService is the top-level API to manage a Wesh protocol instance.
+// Each Wesh protocol instance is considered as a Wesh device and is associated with a Wesh user.
 service ProtocolService {
   // InstanceExportData exports instance data
   rpc InstanceExportData (InstanceExportData.Request) returns (stream InstanceExportData.Reply);
 
-  // InstanceGetConfiguration gets current configuration of this protocol instance
+  // InstanceGetConfiguration gets the current configuration of this protocol instance
   rpc InstanceGetConfiguration (InstanceGetConfiguration.Request) returns (InstanceGetConfiguration.Reply);
 
   // ContactRequestReference retrieves the information required to create a reference (ie. included in a shareable link) to the current account
@@ -683,7 +683,10 @@ message InstanceGetConfiguration {
     // account_group_pk is the public key of the account group
     bytes account_group_pk = 3 [(gogoproto.customname) = "AccountGroupPK"];
 
+    // peer_id is the peer ID of the current IPFS node
     string peer_id = 4 [(gogoproto.customname) = "PeerID"];
+
+    // listeners is the list of swarm listening addresses of the current IPFS node
     repeated string listeners = 5;
     SettingState ble_enabled = 6;
     SettingState wifi_p2p_enabled = 7; // MultiPeerConnectivity for Darwin and Nearby for Android

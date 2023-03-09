@@ -20,7 +20,7 @@ const _ = grpc.SupportPackageIsVersion7
 type ProtocolServiceClient interface {
 	// InstanceExportData exports instance data
 	InstanceExportData(ctx context.Context, in *InstanceExportData_Request, opts ...grpc.CallOption) (ProtocolService_InstanceExportDataClient, error)
-	// InstanceGetConfiguration gets current configuration of this protocol instance
+	// InstanceGetConfiguration gets the current configuration of this protocol instance
 	InstanceGetConfiguration(ctx context.Context, in *InstanceGetConfiguration_Request, opts ...grpc.CallOption) (*InstanceGetConfiguration_Reply, error)
 	// ContactRequestReference retrieves the information required to create a reference (ie. included in a shareable link) to the current account
 	ContactRequestReference(ctx context.Context, in *ContactRequestReference_Request, opts ...grpc.CallOption) (*ContactRequestReference_Reply, error)
@@ -708,7 +708,7 @@ func (c *protocolServiceClient) RefreshContactRequest(ctx context.Context, in *R
 type ProtocolServiceServer interface {
 	// InstanceExportData exports instance data
 	InstanceExportData(*InstanceExportData_Request, ProtocolService_InstanceExportDataServer) error
-	// InstanceGetConfiguration gets current configuration of this protocol instance
+	// InstanceGetConfiguration gets the current configuration of this protocol instance
 	InstanceGetConfiguration(context.Context, *InstanceGetConfiguration_Request) (*InstanceGetConfiguration_Reply, error)
 	// ContactRequestReference retrieves the information required to create a reference (ie. included in a shareable link) to the current account
 	ContactRequestReference(context.Context, *ContactRequestReference_Request) (*ContactRequestReference_Reply, error)
