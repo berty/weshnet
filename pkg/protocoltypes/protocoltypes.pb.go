@@ -2840,8 +2840,10 @@ type InstanceGetConfiguration_Reply struct {
 	// device_pk is the public key of the current device
 	DevicePK []byte `protobuf:"bytes,2,opt,name=device_pk,json=devicePk,proto3" json:"device_pk,omitempty"`
 	// account_group_pk is the public key of the account group
-	AccountGroupPK       []byte                                `protobuf:"bytes,3,opt,name=account_group_pk,json=accountGroupPk,proto3" json:"account_group_pk,omitempty"`
-	PeerID               string                                `protobuf:"bytes,4,opt,name=peer_id,json=peerId,proto3" json:"peer_id,omitempty"`
+	AccountGroupPK []byte `protobuf:"bytes,3,opt,name=account_group_pk,json=accountGroupPk,proto3" json:"account_group_pk,omitempty"`
+	// peer_id is the peer ID of the current IPFS node
+	PeerID string `protobuf:"bytes,4,opt,name=peer_id,json=peerId,proto3" json:"peer_id,omitempty"`
+	// listeners is the list of swarm listening addresses of the current IPFS node
 	Listeners            []string                              `protobuf:"bytes,5,rep,name=listeners,proto3" json:"listeners,omitempty"`
 	BleEnabled           InstanceGetConfiguration_SettingState `protobuf:"varint,6,opt,name=ble_enabled,json=bleEnabled,proto3,enum=weshnet.protocol.v1.InstanceGetConfiguration_SettingState" json:"ble_enabled,omitempty"`
 	WifiP2PEnabled       InstanceGetConfiguration_SettingState `protobuf:"varint,7,opt,name=wifi_p2p_enabled,json=wifiP2pEnabled,proto3,enum=weshnet.protocol.v1.InstanceGetConfiguration_SettingState" json:"wifi_p2p_enabled,omitempty"`

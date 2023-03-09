@@ -1138,8 +1138,8 @@ GroupRemoveAdditionalRendezvousSeed indicates that a previously added rendezvous
 | account_pk | [bytes](#bytes) |  | account_pk is the public key of the current account |
 | device_pk | [bytes](#bytes) |  | device_pk is the public key of the current device |
 | account_group_pk | [bytes](#bytes) |  | account_group_pk is the public key of the account group |
-| peer_id | [string](#string) |  |  |
-| listeners | [string](#string) | repeated |  |
+| peer_id | [string](#string) |  | peer_id is the peer ID of the current IPFS node |
+| listeners | [string](#string) | repeated | listeners is the list of swarm listening addresses of the current IPFS node |
 | ble_enabled | [InstanceGetConfiguration.SettingState](#weshnet-protocol-v1-InstanceGetConfiguration-SettingState) |  |  |
 | wifi_p2p_enabled | [InstanceGetConfiguration.SettingState](#weshnet-protocol-v1-InstanceGetConfiguration-SettingState) |  | MultiPeerConnectivity for Darwin and Nearby for Android |
 | mdns_enabled | [InstanceGetConfiguration.SettingState](#weshnet-protocol-v1-InstanceGetConfiguration-SettingState) |  |  |
@@ -1925,13 +1925,13 @@ Progress define a generic object that can be used to display a progress bar for 
 <a name="weshnet-protocol-v1-ProtocolService"></a>
 
 ### ProtocolService
-ProtocolService is the top-level API to manage an instance of the Berty Protocol.
-Each Berty Protocol Instance is considered as a Berty device and is associated with a Berty user.
+ProtocolService is the top-level API to manage a Wesh protocol instance.
+Each Wesh protocol instance is considered as a Wesh device and is associated with a Wesh user.
 
 | Method Name | Request Type | Response Type | Description |
 | ----------- | ------------ | ------------- | ------------|
 | InstanceExportData | [InstanceExportData.Request](#weshnet-protocol-v1-InstanceExportData-Request) | [InstanceExportData.Reply](#weshnet-protocol-v1-InstanceExportData-Reply) stream | InstanceExportData exports instance data |
-| InstanceGetConfiguration | [InstanceGetConfiguration.Request](#weshnet-protocol-v1-InstanceGetConfiguration-Request) | [InstanceGetConfiguration.Reply](#weshnet-protocol-v1-InstanceGetConfiguration-Reply) | InstanceGetConfiguration gets current configuration of this protocol instance |
+| InstanceGetConfiguration | [InstanceGetConfiguration.Request](#weshnet-protocol-v1-InstanceGetConfiguration-Request) | [InstanceGetConfiguration.Reply](#weshnet-protocol-v1-InstanceGetConfiguration-Reply) | InstanceGetConfiguration gets the current configuration of this protocol instance |
 | ContactRequestReference | [ContactRequestReference.Request](#weshnet-protocol-v1-ContactRequestReference-Request) | [ContactRequestReference.Reply](#weshnet-protocol-v1-ContactRequestReference-Reply) | ContactRequestReference retrieves the information required to create a reference (ie. included in a shareable link) to the current account |
 | ContactRequestDisable | [ContactRequestDisable.Request](#weshnet-protocol-v1-ContactRequestDisable-Request) | [ContactRequestDisable.Reply](#weshnet-protocol-v1-ContactRequestDisable-Reply) | ContactRequestDisable disables incoming contact requests |
 | ContactRequestEnable | [ContactRequestEnable.Request](#weshnet-protocol-v1-ContactRequestEnable-Request) | [ContactRequestEnable.Reply](#weshnet-protocol-v1-ContactRequestEnable-Reply) | ContactRequestEnable enables incoming contact requests |
