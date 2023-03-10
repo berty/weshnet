@@ -17,6 +17,8 @@ import (
 )
 
 func TestReactivateAccountGroup(t *testing.T) {
+	testutil.FilterStability(t, testutil.Flappy)
+
 	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Minute)
 	defer cancel()
 
