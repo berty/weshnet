@@ -47,7 +47,7 @@
       "type": "string",
       "enum": [
         "UnknownFeature",
-        "BertyFeature",
+        "WeshFeature",
         "BLEFeature",
         "LocalFeature",
         "TorFeature",

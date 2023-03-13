@@ -30,7 +30,7 @@ const (
 	// LocalDiscoveryName is the name of the localdiscovery driver
 	LocalDiscoveryName = "localdisc"
 
-	recProtocolID = protocol.ID("berty/p2p/localrecord")
+	recProtocolID = protocol.ID("wesh/p2p/localrecord")
 
 	minTTL   = 7200 * time.Second
 	maxLimit = 1000

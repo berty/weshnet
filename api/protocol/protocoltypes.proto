@@ -1336,7 +1336,7 @@ message PeerList {
 
   enum Feature {
     UnknownFeature = 0;
-    BertyFeature = 1;
+    WeshFeature = 1;
     BLEFeature = 2;
     LocalFeature = 3;
     TorFeature = 4;

@@ -346,17 +346,17 @@ func (s *service) PeerList(ctx context.Context, request *protocoltypes.PeerList_
 			}
 			if strings.Contains(route.Address, "/mc/") {
 				features[protocoltypes.BLEFeature] = true
-				features[protocoltypes.BertyFeature] = true
+				features[protocoltypes.WeshFeature] = true
 			}
 			if strings.Contains(route.Address, "/tor/") {
 				features[protocoltypes.TorFeature] = true
 			}
 			for _, stream := range route.Streams {
-				if stream.ID == "/berty/contact_req/1.0.0" {
-					features[protocoltypes.BertyFeature] = true
+				if stream.ID == "/wesh/contact_req/1.0.0" {
+					features[protocoltypes.WeshFeature] = true
 				}
 				if stream.ID == "/rendezvous/1.0.0" {
-					features[protocoltypes.BertyFeature] = true
+					features[protocoltypes.WeshFeature] = true
 				}
 			}
 		}
