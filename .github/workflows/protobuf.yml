@@ -8,7 +8,6 @@ on:
     paths:
       - "api/**"
       - "Makefile"
-      - "config/**"
       - "docs/Makefile"
       - ".github/workflows/protobuf.yml"
       - "**/gen.sum"
@@ -25,7 +24,6 @@ on:
     paths:
       - "api/**"
       - "Makefile"
-      - "config/**"
       - "docs/Makefile"
       - ".github/workflows/protobuf.yml"
       - "**/gen.sum"

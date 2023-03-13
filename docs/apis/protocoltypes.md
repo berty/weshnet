@@ -1912,7 +1912,7 @@ Progress define a generic object that can be used to display a progress bar for 
 | Name | Number | Description |
 | ---- | ------ | ----------- |
 | UnknownFeature | 0 |  |
-| BertyFeature | 1 |  |
+| WeshFeature | 1 |  |
 | BLEFeature | 2 |  |
 | LocalFeature | 3 |  |
 | TorFeature | 4 |  |

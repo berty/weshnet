@@ -16,7 +16,7 @@ import (
 	mc "berty.tech/weshnet/pkg/multipeer-connectivity-driver"
 )
 
-const recProtocolID = protocol.ID("berty/p2p/localrecord")
+const recProtocolID = protocol.ID("wesh/p2p/localrecord")
 
 type LocalRecord struct {
 	host host.Host

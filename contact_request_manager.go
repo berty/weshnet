@@ -25,7 +25,7 @@ import (
 	"berty.tech/weshnet/pkg/tyber"
 )
 
-const contactRequestV1 = "/berty/contact_req/1.0.0"
+const contactRequestV1 = "/wesh/contact_req/1.0.0"
 
 type contactRequestsManager struct {
 	muManager sync.Mutex

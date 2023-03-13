@@ -101,6 +101,10 @@ type Opts struct {
 	LocalOnly        bool
 	close            func() error
 	PushKey          *[cryptoutil.KeySize]byte
+
+	// These are used if OrbitDB is nil.
+	GroupMetadataStoreType string
+	GroupMessageStoreType  string
 }
 
 func (opts *Opts) applyPushDefaults() error {
@@ -201,6 +205,9 @@ func (opts *Opts) applyDefaults(ctx context.Context) error {
 			},
 			Datastore:      datastoreutil.NewNamespacedDatastore(opts.RootDatastore, ds.NewKey(NamespaceOrbitDBDatastore)),
 			DeviceKeystore: opts.DeviceKeystore,
+
+			GroupMetadataStoreType: opts.GroupMetadataStoreType,
+			GroupMessageStoreType:  opts.GroupMessageStoreType,
 		}
 
 		if opts.Host != nil {

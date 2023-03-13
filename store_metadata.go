@@ -32,8 +32,6 @@ import (
 	"berty.tech/weshnet/pkg/tyber"
 )
 
-const groupMetadataStoreType = "berty_group_metadata"
-
 type MetadataStore struct {
 	basestore.BaseStore
 	eventBus event.Bus
