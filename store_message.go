@@ -32,8 +32,6 @@ import (
 	"berty.tech/weshnet/pkg/tyber"
 )
 
-const groupMessageStoreType = "berty_group_messages"
-
 // FIXME: replace cache by a circular buffer to avoid an attack by RAM saturation
 type MessageStore struct {
 	basestore.BaseStore
