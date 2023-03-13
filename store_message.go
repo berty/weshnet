@@ -376,7 +376,7 @@ func messageStoreAddMessage(ctx context.Context, g *protocoltypes.Group, md *cry
 	return op, nil
 }
 
-func constructorFactoryGroupMessage(s *BertyOrbitDB, logger *zap.Logger) iface.StoreConstructor {
+func constructorFactoryGroupMessage(s *WeshOrbitDB, logger *zap.Logger) iface.StoreConstructor {
 	return func(ipfs coreapi.CoreAPI, identity *identityprovider.Identity, addr address.Address, options *iface.NewStoreOptions) (iface.Store, error) {
 		g, err := s.getGroupFromOptions(options)
 		if err != nil {

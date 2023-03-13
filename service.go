@@ -56,7 +56,7 @@ type service struct {
 	ctxCancel              context.CancelFunc
 	logger                 *zap.Logger
 	ipfsCoreAPI            ipfsutil.ExtendedCoreAPI
-	odb                    *BertyOrbitDB
+	odb                    *WeshOrbitDB
 	accountGroup           *GroupContext
 	deviceKeystore         cryptoutil.DeviceKeystore
 	openedGroups           map[string]*GroupContext
@@ -93,7 +93,7 @@ type Opts struct {
 	GroupDatastore   *cryptoutil.GroupDatastore
 	AccountCache     ds.Batching
 	MessageKeystore  *cryptoutil.MessageKeystore
-	OrbitDB          *BertyOrbitDB
+	OrbitDB          *WeshOrbitDB
 	TinderService    *tinder.Service
 	Host             host.Host
 	PubSub           *pubsub.PubSub
@@ -207,7 +207,7 @@ func (opts *Opts) applyDefaults(ctx context.Context) error {
 			odbOpts.DirectChannelFactory = directchannel.InitDirectChannelFactory(opts.Logger, opts.Host)
 		}
 
-		odb, err := NewBertyOrbitDB(ctx, opts.IpfsCoreAPI, odbOpts)
+		odb, err := NewWeshOrbitDB(ctx, opts.IpfsCoreAPI, odbOpts)
 		if err != nil {
 			return err
 		}

@@ -42,7 +42,7 @@ func testAddBerty(ctx context.Context, t *testing.T, node ipfsutil.CoreAPIMock, 
 	baseDS = sync_ds.MutexWrap(baseDS)
 	defer testutil.Close(t, baseDS)
 
-	odb, err := NewBertyOrbitDB(ctx, api, &NewOrbitDBOptions{
+	odb, err := NewWeshOrbitDB(ctx, api, &NewOrbitDBOptions{
 		Datastore: baseDS,
 	})
 	require.NoError(t, err)

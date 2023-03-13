@@ -224,7 +224,7 @@ func TestFlappyRestoreAccount(t *testing.T) {
 
 		dksB := cryptoutil.NewDeviceKeystore(ipfsutil.NewDatastoreKeystore(datastoreutil.NewNamespacedDatastore(dsB, ds.NewKey(NamespaceDeviceKeystore))), nil)
 
-		odb, err := NewBertyOrbitDB(ctx, ipfsNodeB.API(), &NewOrbitDBOptions{
+		odb, err := NewWeshOrbitDB(ctx, ipfsNodeB.API(), &NewOrbitDBOptions{
 			NewOrbitDBOptions: orbitdb.NewOrbitDBOptions{
 				PubSub: pubsubraw.NewPubSub(ipfsNodeB.PubSub(), ipfsNodeB.MockNode().PeerHost.ID(), logger, nil),
 				Logger: logger,
