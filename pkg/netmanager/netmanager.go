@@ -59,7 +59,12 @@ func (m *NetManager) UpdateState(state ConnectivityInfo) {
 // A true value is returned in former case and false in latter.
 // The EventType is also returned to know which events has been triggered.
 func (m *NetManager) WaitForStateChange(ctx context.Context, sourceState *ConnectivityInfo, eventType EventType) (bool, EventType) {
+	if ctx.Err() != nil {
+		return false, 0
+	}
+
 	m.locker.Lock()
+	defer m.locker.Unlock()
 
 	var currentEventType EventType
 	ok := true
@@ -90,7 +95,6 @@ func (m *NetManager) WaitForStateChange(ctx context.Context, sourceState *Connec
 		ok = m.notify.Wait(ctx)
 	}
 
-	m.locker.Unlock()
 	return ok, currentEventType
 }
 
