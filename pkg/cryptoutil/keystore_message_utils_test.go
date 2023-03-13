@@ -7,6 +7,7 @@ import (
 	"os"
 	"path"
 	"testing"
+	"time"
 
 	cid "github.com/ipfs/go-cid"
 	keystore "github.com/ipfs/go-ipfs-keystore"
@@ -79,10 +80,8 @@ func Test_EncryptMessagePayload(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	g, gSK, err := weshnet.NewGroupMultiMember()
+	g, _, err := weshnet.NewGroupMultiMember()
 	assert.NoError(t, err)
-
-	_ = gSK
 
 	acc1 := cryptoutil.NewDeviceKeystore(keystore.NewMemKeystore(), nil)
 
@@ -101,6 +100,7 @@ func Test_EncryptMessagePayload(t *testing.T) {
 	acc2 := cryptoutil.NewDeviceKeystore(keystore.NewMemKeystore(), nil)
 
 	omd2, err := acc2.MemberDeviceForGroup(g)
+	require.NoError(t, err)
 
 	mkh1, cleanup := cryptoutil.NewInMemMessageKeystore(logger)
 	defer cleanup()
@@ -109,7 +109,10 @@ func Test_EncryptMessagePayload(t *testing.T) {
 	defer cleanup()
 
 	gc1 := weshnet.NewContextGroup(g, nil, nil, mkh1, omd1, nil)
+	require.NoError(t, err)
+
 	gc2 := weshnet.NewContextGroup(g, nil, nil, mkh2, omd2, nil)
+	require.NoError(t, err)
 
 	err = mkh1.RegisterChainKey(ctx, g, gc1.DevicePubKey(), ds1, true)
 	assert.NoError(t, err)
@@ -167,7 +170,7 @@ func Test_EncryptMessagePayload(t *testing.T) {
 	err = mkh1.DeriveDeviceSecret(ctx, g, omd1.PrivateDevice())
 	assert.NoError(t, err)
 
-	// Ensure that encrypted message is not the same as the first message
+	// Ensure that encryptd message is not the same as the first message
 	assert.NotEqual(t, hex.EncodeToString(payloadRef1), hex.EncodeToString(payloadEnc2))
 	assert.NotEqual(t, hex.EncodeToString(payloadEnc1), hex.EncodeToString(payloadEnc2))
 
@@ -280,6 +283,7 @@ func Test_EncryptMessageEnvelope(t *testing.T) {
 	assert.NoError(t, err)
 
 	gc1 := weshnet.NewContextGroup(g, nil, nil, mkh1, omd1, nil)
+	require.NoError(t, err)
 
 	ds1, err := weshnet.NewDeviceSecret()
 	assert.NoError(t, err)
@@ -353,6 +357,7 @@ func Test_EncryptMessageEnvelopeAndDerive(t *testing.T) {
 	assert.NoError(t, err)
 
 	gc1 := weshnet.NewContextGroup(g, nil, nil, mkh1, omd1, nil)
+	require.NoError(t, err)
 
 	ds2, err := cryptoutil.NewDeviceSecret()
 	assert.NoError(t, err)
@@ -412,6 +417,7 @@ func testMessageKeyHolderCatchUp(t *testing.T, expectedNewDevices int, isSlow bo
 	defer cleanup()
 
 	peer := peers[0]
+	peer.GC.ActivateGroupContext(nil)
 
 	mkh1 := peer.MKS
 	ms1 := peer.GC.MetadataStore()
@@ -423,19 +429,24 @@ func testMessageKeyHolderCatchUp(t *testing.T, expectedNewDevices int, isSlow bo
 		devicesPK[i], deviceSecrets[i] = addDummyMemberInMetadataStore(ctx, t, ms1, peer.GC.Group(), peer.GC.MemberPubKey(), true)
 	}
 
-	for range peer.GC.FillMessageKeysHolderUsingPreviousData() {
-	}
-
 	gPK, err := peer.GC.Group().GetPubKey()
 	require.NoError(t, err)
 
 	for i, dPK := range devicesPK {
+		raw, err := dPK.Raw()
+		require.NoError(t, err)
+		select {
+		case <-time.After(time.Second * 5):
+			require.FailNow(t, "timeout while waiting for device secret")
+		case <-peer.GC.WaitForDeviceAdded(raw):
+		}
+
 		ds, err := mkh1.GetDeviceChainKey(ctx, gPK, dPK)
 		if assert.NoError(t, err) {
 			assert.Equal(t, deviceSecrets[i].Counter+uint64(mkh1.GetPrecomputedKeyExpectedCount()), ds.Counter)
 			// Not testing chain key value as we need to derive it from the generated value
 		} else {
-			t.Fatalf("failed at iteration %d", i)
+			require.FailNowf(t, "unable to get device chain key", "failed at iteration %d", i)
 		}
 	}
 }
@@ -454,7 +465,9 @@ func TestMessageKeyHolderCatchUp(t *testing.T) {
 			slow:               true,
 		},
 	} {
-		testMessageKeyHolderCatchUp(t, testCase.expectedNewDevices, testCase.slow)
+		t.Run(fmt.Sprintf("expected_devices_%d", testCase.expectedNewDevices), func(t *testing.T) {
+			testMessageKeyHolderCatchUp(t, testCase.expectedNewDevices, testCase.slow)
+		})
 	}
 }
 
@@ -469,10 +482,11 @@ func testMessageKeyHolderSubscription(t *testing.T, expectedNewDevices int, isSl
 	dir := path.Join(os.TempDir(), fmt.Sprintf("%d", os.Getpid()), "MessageKeyHolderSubscription")
 	defer os.RemoveAll(dir)
 
-	peers, gSK, cleanup := weshnet.CreatePeersWithGroupTest(ctx, t, dir, 1, 1)
+	peers, _, cleanup := weshnet.CreatePeersWithGroupTest(ctx, t, dir, 1, 1)
 	defer cleanup()
 
 	peer := peers[0]
+	peer.GC.ActivateGroupContext(nil)
 
 	mkh1 := peer.MKS
 	ms1 := peer.GC.MetadataStore()
@@ -480,25 +494,28 @@ func testMessageKeyHolderSubscription(t *testing.T, expectedNewDevices int, isSl
 	devicesPK := make([]crypto.PubKey, expectedNewDevices)
 	deviceSecrets := make([]*protocoltypes.DeviceSecret, expectedNewDevices)
 
-	ch := peer.GC.FillMessageKeysHolderUsingNewData()
-
 	for i := 0; i < expectedNewDevices; i++ {
 		devicesPK[i], deviceSecrets[i] = addDummyMemberInMetadataStore(ctx, t, ms1, peer.GC.Group(), peer.GC.MemberPubKey(), true)
 	}
 
-	i := 0
-	for range ch {
-		i++
-		if i == expectedNewDevices {
-			break
-		}
-	}
+	gPK, err := peer.GC.Group().GetPubKey()
+	require.NoError(t, err)
 
 	for i, dPK := range devicesPK {
-		ds, err := mkh1.GetDeviceChainKey(ctx, gSK.GetPublic(), dPK)
+		raw, err := dPK.Raw()
+		require.NoError(t, err)
+		select {
+		case <-time.After(time.Second):
+			require.FailNow(t, "timeout while waiting for device secret")
+		case <-peer.GC.WaitForDeviceAdded(raw):
+		}
+
+		ds, err := mkh1.GetDeviceChainKey(ctx, gPK, dPK)
 		if assert.NoError(t, err) {
 			assert.Equal(t, deviceSecrets[i].Counter+uint64(mkh1.GetPrecomputedKeyExpectedCount()), ds.Counter)
 			// Not testing chain key value as we need to derive it from the generated value
+		} else {
+			require.FailNowf(t, "unable to get device chain key", "failed at iteration %d", i)
 		}
 	}
 }
@@ -517,6 +534,8 @@ func TestMessageKeyHolderSubscription(t *testing.T) {
 			slow:               true,
 		},
 	} {
-		testMessageKeyHolderSubscription(t, testCase.expectedNewDevices, testCase.slow)
+		t.Run(fmt.Sprintf("expected_devices_%d", testCase.expectedNewDevices), func(t *testing.T) {
+			testMessageKeyHolderSubscription(t, testCase.expectedNewDevices, testCase.slow)
+		})
 	}
 }
