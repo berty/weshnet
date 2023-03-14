@@ -134,9 +134,7 @@ func Test_service_exportAccountProofKey(t *testing.T) {
 	require.True(t, accountProofSK.Equals(sk))
 }
 
-func TestFlappyRestoreAccount(t *testing.T) {
-	testutil.FilterStability(t, testutil.Flappy)
-
+func TestRestoreAccount(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 

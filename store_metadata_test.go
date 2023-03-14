@@ -176,8 +176,8 @@ func ipfsAPIUsingMockNet(ctx context.Context, t *testing.T) ipfsutil.ExtendedCor
 	return node.API()
 }
 
-func TestFlappyMetadataRendezvousPointLifecycle(t *testing.T) {
-	testutil.FilterStabilityAndSpeed(t, testutil.Flappy, testutil.Fast)
+func TestMetadataRendezvousPointLifecycle(t *testing.T) {
+	testutil.FilterSpeed(t, testutil.Fast)
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
