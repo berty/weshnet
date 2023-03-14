@@ -46,7 +46,7 @@ func ExampleNewInMemoryServiceClient_basic() {
 	}
 	defer client.Close()
 
-	ret, err := client.InstanceGetConfiguration(ctx, &protocoltypes.InstanceGetConfiguration_Request{})
+	ret, err := client.ServiceGetConfiguration(ctx, &protocoltypes.ServiceGetConfiguration_Request{})
 	if err != nil {
 		panic(err)
 	}
@@ -61,7 +61,7 @@ func ExampleNewInMemoryServiceClient_basic() {
 	// /p2p-circuit
 }
 
-func ExampleNewPersistantServiceClient_basic() {
+func ExampleNewPersistentServiceClient_basic() {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
@@ -75,12 +75,12 @@ func ExampleNewPersistantServiceClient_basic() {
 	var peerid string
 	// open once
 	{
-		client, err := weshnet.NewPersistantServiceClient(path)
+		client, err := weshnet.NewPersistentServiceClient(path)
 		if err != nil {
 			panic(err)
 		}
 
-		ret, err := client.InstanceGetConfiguration(ctx, &protocoltypes.InstanceGetConfiguration_Request{})
+		ret, err := client.ServiceGetConfiguration(ctx, &protocoltypes.ServiceGetConfiguration_Request{})
 		if err != nil {
 			panic(err)
 		}
@@ -94,13 +94,13 @@ func ExampleNewPersistantServiceClient_basic() {
 
 	// open twice
 	{
-		client, err := weshnet.NewPersistantServiceClient(path)
+		client, err := weshnet.NewPersistentServiceClient(path)
 		if err != nil {
 			panic(err)
 		}
 		defer client.Close()
 
-		ret, err := client.InstanceGetConfiguration(ctx, &protocoltypes.InstanceGetConfiguration_Request{})
+		ret, err := client.ServiceGetConfiguration(ctx, &protocoltypes.ServiceGetConfiguration_Request{})
 		if err != nil {
 			panic(err)
 		}
@@ -123,7 +123,7 @@ func ExampleNewServiceClient_basic() {
 	}
 	defer client.Close()
 
-	ret, err := client.InstanceGetConfiguration(ctx, &protocoltypes.InstanceGetConfiguration_Request{})
+	ret, err := client.ServiceGetConfiguration(ctx, &protocoltypes.ServiceGetConfiguration_Request{})
 	if err != nil {
 		panic(err)
 	}

@@ -52,7 +52,7 @@ func NewInMemoryServiceClient() (ServiceClient, error) {
 	return NewServiceClient(opts)
 }
 
-func NewPersistantServiceClient(path string) (ServiceClient, error) {
+func NewPersistentServiceClient(path string) (ServiceClient, error) {
 	var opts Opts
 
 	bopts := badger.DefaultOptions
