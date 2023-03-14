@@ -20,6 +20,11 @@ import (
 
 const precomputePushRefsCount = 100
 
+// MessageKeystore is a key value datastore for message keys, split into 4 namespaces.
+// `cachedCKs` namespace: used to store precomputed keys for the given group and device. These keys are stored in the "cache" waiting for the corresponding message to be opened.
+// `currentCKs` namespace: used to store the current device secret for the given group and device. This contains the chain key and a counter to derive the next keys put in `cachedCKs`.
+// `cid` namespace: used to store the message key for a given message CID once the corresponding message is opened.
+// `push-refs` namespace: used to store the groupPK related to a computed push group reference. This is used to retrieve the groupPK when receiving a push notification.
 type MessageKeystore struct {
 	lock                 sync.Mutex
 	preComputedKeysCount int
@@ -33,7 +38,7 @@ type DecryptInfo struct {
 	Cid            cid.Cid
 }
 
-// GetOrCreateMessageKeystore returns the device secret for the given group and device.
+// GetDeviceChainKey returns the device secret for the given group and device.
 func (m *MessageKeystore) GetDeviceChainKey(ctx context.Context, groupPK, pk crypto.PubKey) (*protocoltypes.DeviceSecret, error) {
 	if m == nil {
 		return nil, errcode.ErrInvalidInput
@@ -66,7 +71,7 @@ func (m *MessageKeystore) GetDeviceChainKey(ctx context.Context, groupPK, pk cry
 	return ds, nil
 }
 
-// HasSecretForRawDevicePK returns true if the device secret for the given group and device exists.
+// HasSecretForRawDevicePK returns true if the device secret is known for the given group and device.
 func (m *MessageKeystore) HasSecretForRawDevicePK(ctx context.Context, groupPK, devicePK []byte) (has bool) {
 	if m == nil {
 		return false
@@ -77,7 +82,7 @@ func (m *MessageKeystore) HasSecretForRawDevicePK(ctx context.Context, groupPK, 
 	return
 }
 
-// deleteSecretForRawDevicePK deletes the message key in the cache namespace for the given group, device and counter.
+// delPrecomputedKey deletes the message key in the cache namespace for the given group, device and counter.
 func (m *MessageKeystore) delPrecomputedKey(ctx context.Context, groupPK, device crypto.PubKey, counter uint64) error {
 	if m == nil {
 		return errcode.ErrInvalidInput
@@ -102,8 +107,8 @@ func (m *MessageKeystore) delPrecomputedKey(ctx context.Context, groupPK, device
 }
 
 // PostDecryptActions is called after a message has been decrypted.
-// It will save and move the message key from the cache namespace to find it quickly the next time.
-// I will derive the future key in the cache namespace.
+// It saves the message key from the cache namespace to find it quickly on subsequent read operations.
+// It derives the chain key in the cache namespace.
 func (m *MessageKeystore) PostDecryptActions(ctx context.Context, di *DecryptInfo, g *protocoltypes.Group, ownPK crypto.PubKey, headers *protocoltypes.MessageHeaders) error {
 	if m == nil {
 		return errcode.ErrInvalidInput
@@ -153,8 +158,8 @@ func (m *MessageKeystore) PostDecryptActions(ctx context.Context, di *DecryptInf
 	return nil
 }
 
-// GetDeviceSecret returns the device secret for the given group and device.
-// If the secret does not exist, it will be created and registered.
+// GetDeviceSecret returns the device secret for the current device on a given group.
+// If the chain key has not been created yet, it will be generated and registered.
 func (m *MessageKeystore) GetDeviceSecret(ctx context.Context, g *protocoltypes.Group, acc DeviceKeystore) (*protocoltypes.DeviceSecret, error) {
 	if m == nil {
 		return nil, errcode.ErrInvalidInput
@@ -191,8 +196,9 @@ func (m *MessageKeystore) GetDeviceSecret(ctx context.Context, g *protocoltypes.
 	return ds, nil
 }
 
-// RegisterChainKey registers the given device secret for the given group and device.
-// If the device secret is not the one of the current device, it will precompute next message keys for the cache namespace.
+// RegisterChainKey registers a device secret for the given group and device.
+// If the device secret is not from the current device, the function will
+// precompute and store in the cache namespace the next message keys.
 // It is the exported version of registerChainKey.
 func (m *MessageKeystore) RegisterChainKey(ctx context.Context, g *protocoltypes.Group, devicePK crypto.PubKey, ds *protocoltypes.DeviceSecret, isOwnPK bool) error {
 	if m == nil {
@@ -202,8 +208,9 @@ func (m *MessageKeystore) RegisterChainKey(ctx context.Context, g *protocoltypes
 	return m.registerChainKey(ctx, g, devicePK, ds, isOwnPK)
 }
 
-// registerChainKey registers the given device secret for the given group and device.
-// If the device secret is not the one of the current device, it will precompute next message keys for the cache namespace.
+// registerChainKey registers a device secret for the given group and device.
+// If the device secret is not from the current device, the function will
+// precompute and store in the cache namespace the next message keys.
 func (m *MessageKeystore) registerChainKey(ctx context.Context, g *protocoltypes.Group, devicePK crypto.PubKey, ds *protocoltypes.DeviceSecret, isOwnPK bool) error {
 	if m == nil {
 		return errcode.ErrInvalidInput
@@ -438,7 +445,7 @@ func (m *MessageKeystore) putPrecomputedKeys(ctx context.Context, groupPK, devic
 	return nil
 }
 
-// putKeyForCID puts the given message key in the datastore for the given message CID.
+// putKeyForCID puts the given message key in the datastore for the a specified CID.
 func (m *MessageKeystore) putKeyForCID(ctx context.Context, id cid.Cid, key *[32]byte) error {
 	if m == nil {
 		return errcode.ErrInvalidInput
@@ -487,26 +494,6 @@ func (m *MessageKeystore) OpenEnvelopePayload(
 	}
 
 	return &msg, nil
-}
-
-// OpenEnvelope opens a MessageEnvelope and returns the decrypted message.
-// It performs all the necessary steps to decrypt the message.
-func (m *MessageKeystore) OpenEnvelope(ctx context.Context, g *protocoltypes.Group, ownPK crypto.PubKey, data []byte, id cid.Cid) (*protocoltypes.MessageHeaders, *protocoltypes.EncryptedMessage, error) {
-	if m == nil || g == nil {
-		return nil, nil, errcode.ErrInvalidInput
-	}
-
-	env, headers, err := OpenEnvelopeHeaders(data, g)
-	if err != nil {
-		return nil, nil, errcode.ErrCryptoDecrypt.Wrap(err)
-	}
-
-	msg, err := m.OpenEnvelopePayload(ctx, env, headers, g, ownPK, id)
-	if err != nil {
-		return nil, nil, errcode.TODO.Wrap(err)
-	}
-
-	return headers, msg, nil
 }
 
 // OpenPayload opens the payload of a message envelope and returns the decrypted message.
@@ -625,8 +612,9 @@ func (m *MessageKeystore) putDeviceChainKey(ctx context.Context, groupPK, device
 	return nil
 }
 
-// SealEnvelope seals the given payload and returns the sealed envelope.
-// It retrieves the device chain key from the keystore to seal the envelope.
+// SealEnvelope encrypts the given payload and returns it as an envelope to be published on the group's store.
+// It retrieves the device's chain key from the keystore to encrypt the payload using symmetric encryption.
+// The payload is signed using the device's long term private key for the target group.
 // It also updates the device secret and stores the next message key in the cache.
 func (m *MessageKeystore) SealEnvelope(ctx context.Context, g *protocoltypes.Group, deviceSK crypto.PrivKey, payload []byte) ([]byte, error) {
 	if m == nil {
@@ -663,7 +651,7 @@ func (m *MessageKeystore) SealEnvelope(ctx context.Context, g *protocoltypes.Gro
 }
 
 // DeriveDeviceSecret derives the next device secret from the current device secret and stores it in the cache.
-// It also update the device secret in the keystore.
+// It also updates the device secret in the keystore.
 func (m *MessageKeystore) DeriveDeviceSecret(ctx context.Context, g *protocoltypes.Group, devicePK crypto.PubKey) error {
 	if m == nil || devicePK == nil {
 		return errcode.ErrInvalidInput
@@ -730,7 +718,7 @@ func NewInMemMessageKeystore(logger *zap.Logger) (*MessageKeystore, func()) {
 
 // OpenOutOfStoreMessage opens the given OutOfStoreMessage and returns the decrypted payload.
 // The signature is verified against the given devicePK.
-// It derive the next message key and stores it in the cache, but it doesn't update the device secret.
+// It derives the next message key and stores it in the cache, but it doesn't update the device secret.
 func (m *MessageKeystore) OpenOutOfStoreMessage(ctx context.Context, envelope *protocoltypes.OutOfStoreMessage, groupPublicKey []byte) ([]byte, bool, error) {
 	if m == nil || envelope == nil || len(groupPublicKey) == 0 {
 		return nil, false, errcode.ErrInvalidInput

@@ -311,7 +311,7 @@ func Test_EncryptMessageEnvelope(t *testing.T) {
 	env1, err := cryptoutil.SealEnvelope(payloadRef1, ds1, omd1.PrivateDevice(), g)
 	assert.NoError(t, err)
 
-	headers, payloadClr1, err := mkh2.OpenEnvelope(ctx, g, omd2.PrivateDevice().GetPublic(), env1, cid.Undef)
+	headers, payloadClr1, err := openEnvelope(ctx, t, mkh2, g, omd2.PrivateDevice().GetPublic(), env1, cid.Undef)
 	assert.NoError(t, err)
 
 	devRaw, err := omd1.PrivateDevice().GetPublic().Raw()
@@ -379,7 +379,7 @@ func Test_EncryptMessageEnvelopeAndDerive(t *testing.T) {
 		}
 		assert.Equal(t, ds.Counter, initialCounter+uint64(i+1))
 
-		headers, payloadClr, err := mkh2.OpenEnvelope(ctx, g, omd2.PrivateDevice().GetPublic(), envEncrypted, cid.Undef)
+		headers, payloadClr, err := openEnvelope(ctx, t, mkh2, g, omd2.PrivateDevice().GetPublic(), envEncrypted, cid.Undef)
 		if !assert.NoError(t, err) {
 			t.Fatalf("failed at i = %d", i)
 		}
@@ -596,4 +596,21 @@ func updateAndTestPushGroupReferences(ctx context.Context, mkh *cryptoutil.Messa
 		_, err = mkh.GetByPushGroupReference(ctx, pushGroupRef)
 		assert.Error(t, err)
 	}
+}
+
+// openEnvelope opens a MessageEnvelope and returns the decrypted message.
+// It performs all the necessary steps to decrypt the message.
+func openEnvelope(ctx context.Context, t testing.TB, mk *cryptoutil.MessageKeystore, g *protocoltypes.Group, ownPK crypto.PubKey, data []byte, id cid.Cid) (*protocoltypes.MessageHeaders, *protocoltypes.EncryptedMessage, error) {
+	t.Helper()
+
+	assert.NotNil(t, mk)
+	assert.NotNil(t, g)
+
+	env, headers, err := cryptoutil.OpenEnvelopeHeaders(data, g)
+	assert.NoError(t, err)
+
+	msg, err := mk.OpenEnvelopePayload(ctx, env, headers, g, ownPK, id)
+	assert.NoError(t, err)
+
+	return headers, msg, nil
 }
