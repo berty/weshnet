@@ -20,11 +20,26 @@ import (
 
 const precomputePushRefsCount = 100
 
-// MessageKeystore is a key value datastore for message keys, split into 4 namespaces.
-// `cachedCKs` namespace: used to store precomputed keys for the given group and device. These keys are stored in the "cache" waiting for the corresponding message to be opened.
-// `currentCKs` namespace: used to store the current device secret for the given group and device. This contains the chain key and a counter to derive the next keys put in `cachedCKs`.
-// `cid` namespace: used to store the message key for a given message CID once the corresponding message is opened.
-// `push-refs` namespace: used to store the groupPK related to a computed push group reference. This is used to retrieve the groupPK when receiving a push notification.
+// MessageKeystore is a key-value store for storing values related to message
+// opening. It has the following namespaces:
+//   - `chainKeyForDeviceOnGroup`:
+//     Storing the current state of a device chain key for a given group.
+//     It contains the secret used to derive the next value of the chain key
+//     and used to generate a message key for the message at `counter` value,
+//     then put in the `precomputedMessageKeys` namespace.
+//   - `precomputedMessageKeys`:
+//     Storing precomputed message keys for a given group, device and message
+//     counter. As the chain key stored has already been derived, these
+//     message keys need to be computed beforehand. The corresponding message
+//     can then be decrypted via a quick lookup.
+//   - `messageKeyForCIDs`:
+//     Containing the message key for a given message CID once the
+//     corresponding message has been decrypted.
+//   - `outOfStoreGroupHint`:
+//     Keys are a HMAC value associated to a group public key. It is used when
+//     receiving an out-of-store message (e.g. a push notification) to
+//     identify the group on which the message belongs, which can then
+//     be decrypted.
 type MessageKeystore struct {
 	lock                 sync.Mutex
 	preComputedKeysCount int
@@ -98,7 +113,7 @@ func (m *MessageKeystore) delPrecomputedKey(ctx context.Context, groupPK, device
 		return errcode.ErrSerialization.Wrap(err)
 	}
 
-	id := idForCachedKey(groupRaw, deviceRaw, counter)
+	id := idForPrecomputeMK(groupRaw, deviceRaw, counter)
 	if err := m.store.Delete(ctx, id); err != nil {
 		return errcode.ErrMessageKeyPersistencePut.Wrap(err)
 	}
@@ -369,7 +384,7 @@ func (m *MessageKeystore) getPrecomputedKey(ctx context.Context, groupPK, device
 		return nil, errcode.ErrSerialization.Wrap(err)
 	}
 
-	id := idForCachedKey(groupRaw, deviceRaw, counter)
+	id := idForPrecomputeMK(groupRaw, deviceRaw, counter)
 
 	key, err := m.store.Get(ctx, id)
 
@@ -417,7 +432,7 @@ func (m *MessageKeystore) putPrecomputedKeys(ctx context.Context, groupPK, devic
 		batch, err := m.store.Batch(ctx)
 		if err == datastore.ErrBatchUnsupported {
 			for _, preComputedKey := range preComputedKeys {
-				id := idForCachedKey(groupRaw, deviceRaw, preComputedKey.counter)
+				id := idForPrecomputeMK(groupRaw, deviceRaw, preComputedKey.counter)
 
 				if err := m.store.Put(ctx, id, preComputedKey.mk[:]); err != nil {
 					return errcode.ErrMessageKeyPersistencePut.Wrap(err)
@@ -430,7 +445,7 @@ func (m *MessageKeystore) putPrecomputedKeys(ctx context.Context, groupPK, devic
 		}
 
 		for _, preComputedKey := range preComputedKeys {
-			id := idForCachedKey(groupRaw, deviceRaw, preComputedKey.counter)
+			id := idForPrecomputeMK(groupRaw, deviceRaw, preComputedKey.counter)
 
 			if err := batch.Put(ctx, id, preComputedKey.mk[:]); err != nil {
 				return errcode.ErrMessageKeyPersistencePut.Wrap(err)
@@ -455,7 +470,7 @@ func (m *MessageKeystore) putKeyForCID(ctx context.Context, id cid.Cid, key *[32
 		return nil
 	}
 
-	err := m.store.Put(ctx, idForCID(id), key[:])
+	err := m.store.Put(ctx, idForMK(id), key[:])
 	if err != nil {
 		return errcode.ErrMessageKeyPersistencePut.Wrap(err)
 	}
@@ -559,7 +574,7 @@ func (m *MessageKeystore) GetKeyForCID(ctx context.Context, id cid.Cid) (*[32]by
 		return nil, errcode.ErrInvalidInput
 	}
 
-	key, err := m.store.Get(ctx, idForCID(id))
+	key, err := m.store.Get(ctx, idForMK(id))
 	if err == datastore.ErrNotFound {
 		return nil, errcode.ErrInvalidInput
 	}
@@ -777,14 +792,14 @@ func (m *MessageKeystore) OpenOutOfStoreMessage(ctx context.Context, envelope *p
 // refKey returns the datastore key of the groupPK for the given push group reference.
 func (m *MessageKeystore) refKey(ref []byte) datastore.Key {
 	return datastore.KeyWithNamespaces([]string{
-		"push-refs", base64.RawURLEncoding.EncodeToString(ref),
+		"outOfStoreGroupHint", base64.RawURLEncoding.EncodeToString(ref),
 	})
 }
 
 // refFirstLastKey returns the datastore key of the FirstLastCounters struct for the given groupPK and devicePK.
 func (m *MessageKeystore) refFirstLastKey(groupPK, devicePK []byte) datastore.Key {
 	return datastore.KeyWithNamespaces([]string{
-		"push-refs",
+		"outOfStoreGroupHint",
 		base64.RawURLEncoding.EncodeToString(groupPK),
 		base64.RawURLEncoding.EncodeToString(devicePK),
 	})

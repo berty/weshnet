@@ -137,17 +137,17 @@ func deriveNextKeys(ck []byte, salt []byte, groupID []byte) ([]byte, [32]byte, e
 	return nextCK, nextMsg, nil
 }
 
-func idForCachedKey(groupPK, pk []byte, counter uint64) datastore.Key {
-	return datastore.KeyWithNamespaces([]string{"cachedCKs", hex.EncodeToString(groupPK), hex.EncodeToString(pk), fmt.Sprintf("%d", counter)})
+func idForPrecomputeMK(groupPK, pk []byte, counter uint64) datastore.Key {
+	return datastore.KeyWithNamespaces([]string{"precomputedMessageKeys", hex.EncodeToString(groupPK), hex.EncodeToString(pk), fmt.Sprintf("%d", counter)})
 }
 
 func idForCurrentCK(groupPK, pk []byte) datastore.Key {
-	return datastore.KeyWithNamespaces([]string{"currentCKs", hex.EncodeToString(groupPK), hex.EncodeToString(pk)})
+	return datastore.KeyWithNamespaces([]string{"chainKeyForDeviceOnGroup", hex.EncodeToString(groupPK), hex.EncodeToString(pk)})
 }
 
-func idForCID(id cid.Cid) datastore.Key {
+func idForMK(id cid.Cid) datastore.Key {
 	// TODO: specify the id
-	return datastore.KeyWithNamespaces([]string{"cid", id.String()})
+	return datastore.KeyWithNamespaces([]string{"messageKeyForCIDs", id.String()})
 }
 
 func uint64AsNonce(val uint64) *[24]byte {
