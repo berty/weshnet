@@ -18,7 +18,7 @@ func TestClient_impl(t *testing.T) {
 
 func TestEmptyArgs(t *testing.T) {
 	// initialize new client
-	client, err := New(Opts{})
+	client, err := NewService(Opts{})
 	require.NoError(t, err)
 	err = client.Close()
 	require.NoError(t, err)

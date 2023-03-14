@@ -160,7 +160,11 @@ func (opts *Opts) applyDefaults(ctx context.Context) error {
 	}
 
 	if opts.IpfsCoreAPI == nil {
-		dsync := ds_sync.MutexWrap(ds.NewMapDatastore())
+		dsync := opts.RootDatastore
+		if dsync == nil {
+			dsync = ds_sync.MutexWrap(ds.NewMapDatastore())
+		}
+
 		repo, err := ipfsutil.CreateMockedRepo(dsync)
 		if err != nil {
 			return err
@@ -234,8 +238,8 @@ func (opts *Opts) applyDefaults(ctx context.Context) error {
 	return nil
 }
 
-// New initializes a new Service
-func New(opts Opts) (_ Service, err error) {
+// NewService initializes a new Service
+func NewService(opts Opts) (_ Service, err error) {
 	ctx, cancel := context.WithCancel(context.Background())
 
 	if err := opts.applyDefaults(ctx); err != nil {

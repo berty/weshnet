@@ -3,6 +3,7 @@ package ipfsutil
 import (
 	crand "crypto/rand"
 	"encoding/base64"
+	"fmt"
 	"path/filepath"
 	"time"
 
@@ -10,6 +11,7 @@ import (
 	ipfs_cfg "github.com/ipfs/kubo/config"
 	ipfs_loader "github.com/ipfs/kubo/plugin/loader"
 	ipfs_repo "github.com/ipfs/kubo/repo"
+	ipfs_fsrepo "github.com/ipfs/kubo/repo/fsrepo"
 	p2p_ci "github.com/libp2p/go-libp2p/core/crypto"
 	p2p_peer "github.com/libp2p/go-libp2p/core/peer"
 	"github.com/pkg/errors"
@@ -45,7 +47,45 @@ func CreateMockedRepo(dstore ipfs_ds.Batching) (ipfs_repo.Repo, error) {
 	}, nil
 }
 
-func LoadRepoFromPath(path string, key []byte, salt []byte) (ipfs_repo.Repo, error) {
+func CreateOrLoadMockedRepo(dstore ipfs_ds.Batching) (ipfs_repo.Repo, error) {
+	c, err := createBaseConfig()
+	if err != nil {
+		return nil, err
+	}
+
+	return &ipfs_repo.Mock{
+		D: dstore,
+		C: *c,
+	}, nil
+}
+
+func LoadRepoFromPath(path string) (ipfs_repo.Repo, error) {
+	dir, _ := filepath.Split(path)
+	if _, err := loadPlugins(dir); err != nil {
+		return nil, errors.Wrap(err, "failed to load plugins")
+	}
+
+	if !ipfs_fsrepo.IsInitialized(path) {
+		cfg, err := createBaseConfig()
+		if err != nil {
+			return nil, fmt.Errorf("failed to create base config: %w", err)
+		}
+
+		ucfg, err := upgradeToPersistentConfig(cfg)
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to upgrade repo")
+		}
+
+		if err := ipfs_fsrepo.Init(path, ucfg); err != nil {
+			return nil, fmt.Errorf("failed to init ipfs repo: %w", err)
+		}
+	}
+
+	return ipfs_fsrepo.Open(path)
+}
+
+// LoadEncryptedRepoFromPath
+func LoadEncryptedRepoFromPath(path string, key []byte, salt []byte) (ipfs_repo.Repo, error) {
 	dir, _ := filepath.Split(path)
 	if _, err := loadPlugins(dir); err != nil {
 		return nil, errors.Wrap(err, "failed to load plugins")
@@ -230,7 +270,7 @@ func upgradeToPersistentConfig(cfg *ipfs_cfg.Config) (*ipfs_cfg.Config, error) {
 	return cfgCopy, nil
 }
 
-func loadPlugins(repoPath string) (*ipfs_loader.PluginLoader, error) {
+func loadPlugins(repoPath string) (*ipfs_loader.PluginLoader, error) { // nolint:unparam
 	if plugins != nil {
 		return plugins, nil
 	}
