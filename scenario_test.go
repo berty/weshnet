@@ -264,7 +264,7 @@ func TestScenario_MessageAccountGroup(t *testing.T) {
 
 	testingScenario(t, cases, func(ctx context.Context, t *testing.T, tps ...*weshnet.TestingProtocol) {
 		// Get account config
-		config, err := tps[0].Client.InstanceGetConfiguration(ctx, &protocoltypes.InstanceGetConfiguration_Request{})
+		config, err := tps[0].Client.ServiceGetConfiguration(ctx, &protocoltypes.ServiceGetConfiguration_Request{})
 		require.NoError(t, err)
 		require.NotNil(t, config)
 
@@ -281,7 +281,7 @@ func TestScenario_MessageAccountGroup_NonMocked(t *testing.T) {
 
 	testingScenarioNonMocked(t, cases, func(ctx context.Context, t *testing.T, tps ...*weshnet.TestingProtocol) {
 		// Get account config
-		config, err := tps[0].Client.InstanceGetConfiguration(ctx, &protocoltypes.InstanceGetConfiguration_Request{})
+		config, err := tps[0].Client.ServiceGetConfiguration(ctx, &protocoltypes.ServiceGetConfiguration_Request{})
 		require.NoError(t, err)
 		require.NotNil(t, config)
 
@@ -317,7 +317,7 @@ func TestScenario_MessageAccountAndMultiMemberGroups(t *testing.T) {
 		// Send messages on account groups
 		for _, account := range tps {
 			// Get account config
-			config, err := account.Client.InstanceGetConfiguration(ctx, &protocoltypes.InstanceGetConfiguration_Request{})
+			config, err := account.Client.ServiceGetConfiguration(ctx, &protocoltypes.ServiceGetConfiguration_Request{})
 			require.NoError(t, err)
 			require.NotNil(t, config)
 
@@ -354,7 +354,7 @@ func TestScenario_MessageAccountAndContactGroups(t *testing.T) {
 		// Send messages on account groups
 		for _, account := range tps {
 			// Get account config
-			config, err := account.Client.InstanceGetConfiguration(ctx, &protocoltypes.InstanceGetConfiguration_Request{})
+			config, err := account.Client.ServiceGetConfiguration(ctx, &protocoltypes.ServiceGetConfiguration_Request{})
 			require.NoError(t, err)
 			require.NotNil(t, config)
 
@@ -484,10 +484,10 @@ func addAsContact(ctx context.Context, t *testing.T, senders, receivers []*weshn
 			substart := time.Now()
 
 			// Get sender/receiver configs
-			senderCfg, err := sender.Client.InstanceGetConfiguration(ctx, &protocoltypes.InstanceGetConfiguration_Request{})
+			senderCfg, err := sender.Client.ServiceGetConfiguration(ctx, &protocoltypes.ServiceGetConfiguration_Request{})
 			require.NoError(t, err)
 			require.NotNil(t, senderCfg)
-			receiverCfg, err := receiver.Client.InstanceGetConfiguration(ctx, &protocoltypes.InstanceGetConfiguration_Request{})
+			receiverCfg, err := receiver.Client.ServiceGetConfiguration(ctx, &protocoltypes.ServiceGetConfiguration_Request{})
 			require.NoError(t, err)
 			require.NotNil(t, receiverCfg)
 

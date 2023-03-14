@@ -12,14 +12,14 @@ option (gogoproto.marshaler_all) = true;
 option (gogoproto.unmarshaler_all) = true;
 option (gogoproto.sizer_all) = true;
 
-// ProtocolService is the top-level API to manage a Wesh protocol instance.
-// Each Wesh protocol instance is considered as a Wesh device and is associated with a Wesh user.
+// ProtocolService is the top-level API to manage the Wesh protocol service.
+// Each active Wesh protocol service is considered as a Wesh device and is associated with a Wesh user.
 service ProtocolService {
-  // InstanceExportData exports instance data
-  rpc InstanceExportData (InstanceExportData.Request) returns (stream InstanceExportData.Reply);
+  // ServiceExportData exports the current data of the protocol service
+  rpc ServiceExportData (ServiceExportData.Request) returns (stream ServiceExportData.Reply);
 
-  // InstanceGetConfiguration gets the current configuration of this protocol instance
-  rpc InstanceGetConfiguration (InstanceGetConfiguration.Request) returns (InstanceGetConfiguration.Reply);
+  // ServiceGetConfiguration gets the current configuration of the protocol service
+  rpc ServiceGetConfiguration (ServiceGetConfiguration.Request) returns (ServiceGetConfiguration.Reply);
 
   // ContactRequestReference retrieves the information required to create a reference (ie. included in a shareable link) to the current account
   rpc ContactRequestReference (ContactRequestReference.Request) returns (ContactRequestReference.Reply);
@@ -658,14 +658,14 @@ message GroupReplicating {
 //  RPC methods inputs and outputs
 // ***************************************************************************
 
-message InstanceExportData {
+message ServiceExportData {
   message Request {}
   message Reply {
     bytes exported_data = 1;
   }
 }
 
-message InstanceGetConfiguration {
+message ServiceGetConfiguration {
   enum SettingState {
     Unknown = 0;
     Enabled = 1;

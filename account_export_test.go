@@ -152,7 +152,7 @@ func TestFlappyRestoreAccount(t *testing.T) {
 	require.NoError(t, err)
 
 	expectedMessages := map[cid.Cid][]byte{}
-	var nodeAInstanceConfig *protocoltypes.InstanceGetConfiguration_Reply
+	var nodeAInstanceConfig *protocoltypes.ServiceGetConfiguration_Reply
 
 	g, _, err := NewGroupMultiMember()
 	require.NoError(t, err)
@@ -168,7 +168,7 @@ func TestFlappyRestoreAccount(t *testing.T) {
 		serviceA, ok := nodeA.Service.(*service)
 		require.True(t, ok)
 
-		nodeAInstanceConfig, err = nodeA.Client.InstanceGetConfiguration(ctx, &protocoltypes.InstanceGetConfiguration_Request{})
+		nodeAInstanceConfig, err = nodeA.Client.ServiceGetConfiguration(ctx, &protocoltypes.ServiceGetConfiguration_Request{})
 		require.NoError(t, err)
 		require.NotNil(t, nodeAInstanceConfig)
 
@@ -246,7 +246,7 @@ func TestFlappyRestoreAccount(t *testing.T) {
 		}, dsB)
 		defer closeNodeB()
 
-		nodeBInstanceConfig, err := nodeB.Client.InstanceGetConfiguration(ctx, &protocoltypes.InstanceGetConfiguration_Request{})
+		nodeBInstanceConfig, err := nodeB.Client.ServiceGetConfiguration(ctx, &protocoltypes.ServiceGetConfiguration_Request{})
 		require.NoError(t, err)
 
 		require.NotNil(t, nodeBInstanceConfig)

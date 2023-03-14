@@ -33,8 +33,8 @@ var _ = utilities.NewDoubleArray
 var _ = descriptor.ForMessage
 var _ = metadata.Join
 
-func request_ProtocolService_InstanceExportData_0(ctx context.Context, marshaler runtime.Marshaler, client ProtocolServiceClient, req *http.Request, pathParams map[string]string) (ProtocolService_InstanceExportDataClient, runtime.ServerMetadata, error) {
-	var protoReq InstanceExportData_Request
+func request_ProtocolService_ServiceExportData_0(ctx context.Context, marshaler runtime.Marshaler, client ProtocolServiceClient, req *http.Request, pathParams map[string]string) (ProtocolService_ServiceExportDataClient, runtime.ServerMetadata, error) {
+	var protoReq ServiceExportData_Request
 	var metadata runtime.ServerMetadata
 
 	newReader, berr := utilities.IOReaderFactory(req.Body)
@@ -45,7 +45,7 @@ func request_ProtocolService_InstanceExportData_0(ctx context.Context, marshaler
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
 
-	stream, err := client.InstanceExportData(ctx, &protoReq)
+	stream, err := client.ServiceExportData(ctx, &protoReq)
 	if err != nil {
 		return nil, metadata, err
 	}
@@ -58,8 +58,8 @@ func request_ProtocolService_InstanceExportData_0(ctx context.Context, marshaler
 
 }
 
-func request_ProtocolService_InstanceGetConfiguration_0(ctx context.Context, marshaler runtime.Marshaler, client ProtocolServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq InstanceGetConfiguration_Request
+func request_ProtocolService_ServiceGetConfiguration_0(ctx context.Context, marshaler runtime.Marshaler, client ProtocolServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+	var protoReq ServiceGetConfiguration_Request
 	var metadata runtime.ServerMetadata
 
 	newReader, berr := utilities.IOReaderFactory(req.Body)
@@ -70,13 +70,13 @@ func request_ProtocolService_InstanceGetConfiguration_0(ctx context.Context, mar
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
 
-	msg, err := client.InstanceGetConfiguration(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
+	msg, err := client.ServiceGetConfiguration(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
 	return msg, metadata, err
 
 }
 
-func local_request_ProtocolService_InstanceGetConfiguration_0(ctx context.Context, marshaler runtime.Marshaler, server ProtocolServiceServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq InstanceGetConfiguration_Request
+func local_request_ProtocolService_ServiceGetConfiguration_0(ctx context.Context, marshaler runtime.Marshaler, server ProtocolServiceServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+	var protoReq ServiceGetConfiguration_Request
 	var metadata runtime.ServerMetadata
 
 	newReader, berr := utilities.IOReaderFactory(req.Body)
@@ -87,7 +87,7 @@ func local_request_ProtocolService_InstanceGetConfiguration_0(ctx context.Contex
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
 
-	msg, err := server.InstanceGetConfiguration(ctx, &protoReq)
+	msg, err := server.ServiceGetConfiguration(ctx, &protoReq)
 	return msg, metadata, err
 
 }
@@ -1497,14 +1497,14 @@ func local_request_ProtocolService_RefreshContactRequest_0(ctx context.Context, 
 // Note that using this registration option will cause many gRPC library features to stop working. Consider using RegisterProtocolServiceHandlerFromEndpoint instead.
 func RegisterProtocolServiceHandlerServer(ctx context.Context, mux *runtime.ServeMux, server ProtocolServiceServer) error {
 
-	mux.Handle("POST", pattern_ProtocolService_InstanceExportData_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle("POST", pattern_ProtocolService_ServiceExportData_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		err := status.Error(codes.Unimplemented, "streaming calls are not yet supported in the in-process transport")
 		_, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
 		runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 		return
 	})
 
-	mux.Handle("POST", pattern_ProtocolService_InstanceGetConfiguration_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle("POST", pattern_ProtocolService_ServiceGetConfiguration_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		var stream runtime.ServerTransportStream
@@ -1515,7 +1515,7 @@ func RegisterProtocolServiceHandlerServer(ctx context.Context, mux *runtime.Serv
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
-		resp, md, err := local_request_ProtocolService_InstanceGetConfiguration_0(rctx, inboundMarshaler, server, req, pathParams)
+		resp, md, err := local_request_ProtocolService_ServiceGetConfiguration_0(rctx, inboundMarshaler, server, req, pathParams)
 		md.HeaderMD, md.TrailerMD = metadata.Join(md.HeaderMD, stream.Header()), metadata.Join(md.TrailerMD, stream.Trailer())
 		ctx = runtime.NewServerMetadataContext(ctx, md)
 		if err != nil {
@@ -1523,7 +1523,7 @@ func RegisterProtocolServiceHandlerServer(ctx context.Context, mux *runtime.Serv
 			return
 		}
 
-		forward_ProtocolService_InstanceGetConfiguration_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+		forward_ProtocolService_ServiceGetConfiguration_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
 
 	})
 
@@ -2445,7 +2445,7 @@ func RegisterProtocolServiceHandler(ctx context.Context, mux *runtime.ServeMux, 
 // "ProtocolServiceClient" to call the correct interceptors.
 func RegisterProtocolServiceHandlerClient(ctx context.Context, mux *runtime.ServeMux, client ProtocolServiceClient) error {
 
-	mux.Handle("POST", pattern_ProtocolService_InstanceExportData_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle("POST", pattern_ProtocolService_ServiceExportData_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
@@ -2454,18 +2454,18 @@ func RegisterProtocolServiceHandlerClient(ctx context.Context, mux *runtime.Serv
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
-		resp, md, err := request_ProtocolService_InstanceExportData_0(rctx, inboundMarshaler, client, req, pathParams)
+		resp, md, err := request_ProtocolService_ServiceExportData_0(rctx, inboundMarshaler, client, req, pathParams)
 		ctx = runtime.NewServerMetadataContext(ctx, md)
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
 
-		forward_ProtocolService_InstanceExportData_0(ctx, mux, outboundMarshaler, w, req, func() (proto.Message, error) { return resp.Recv() }, mux.GetForwardResponseOptions()...)
+		forward_ProtocolService_ServiceExportData_0(ctx, mux, outboundMarshaler, w, req, func() (proto.Message, error) { return resp.Recv() }, mux.GetForwardResponseOptions()...)
 
 	})
 
-	mux.Handle("POST", pattern_ProtocolService_InstanceGetConfiguration_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle("POST", pattern_ProtocolService_ServiceGetConfiguration_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
@@ -2474,14 +2474,14 @@ func RegisterProtocolServiceHandlerClient(ctx context.Context, mux *runtime.Serv
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
-		resp, md, err := request_ProtocolService_InstanceGetConfiguration_0(rctx, inboundMarshaler, client, req, pathParams)
+		resp, md, err := request_ProtocolService_ServiceGetConfiguration_0(rctx, inboundMarshaler, client, req, pathParams)
 		ctx = runtime.NewServerMetadataContext(ctx, md)
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
 
-		forward_ProtocolService_InstanceGetConfiguration_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+		forward_ProtocolService_ServiceGetConfiguration_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
 
 	})
 
@@ -3349,9 +3349,9 @@ func RegisterProtocolServiceHandlerClient(ctx context.Context, mux *runtime.Serv
 }
 
 var (
-	pattern_ProtocolService_InstanceExportData_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1}, []string{"weshnet.protocol.v1.ProtocolService", "InstanceExportData"}, "", runtime.AssumeColonVerbOpt(true)))
+	pattern_ProtocolService_ServiceExportData_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1}, []string{"weshnet.protocol.v1.ProtocolService", "ServiceExportData"}, "", runtime.AssumeColonVerbOpt(true)))
 
-	pattern_ProtocolService_InstanceGetConfiguration_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1}, []string{"weshnet.protocol.v1.ProtocolService", "InstanceGetConfiguration"}, "", runtime.AssumeColonVerbOpt(true)))
+	pattern_ProtocolService_ServiceGetConfiguration_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1}, []string{"weshnet.protocol.v1.ProtocolService", "ServiceGetConfiguration"}, "", runtime.AssumeColonVerbOpt(true)))
 
 	pattern_ProtocolService_ContactRequestReference_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1}, []string{"weshnet.protocol.v1.ProtocolService", "ContactRequestReference"}, "", runtime.AssumeColonVerbOpt(true)))
 
@@ -3441,9 +3441,9 @@ var (
 )
 
 var (
-	forward_ProtocolService_InstanceExportData_0 = runtime.ForwardResponseStream
+	forward_ProtocolService_ServiceExportData_0 = runtime.ForwardResponseStream
 
-	forward_ProtocolService_InstanceGetConfiguration_0 = runtime.ForwardResponseMessage
+	forward_ProtocolService_ServiceGetConfiguration_0 = runtime.ForwardResponseMessage
 
 	forward_ProtocolService_ContactRequestReference_0 = runtime.ForwardResponseMessage
 
