@@ -66,7 +66,7 @@ func TestReactivateAccountGroup(t *testing.T) {
 	sendMessageToContact(ctx, t, []string{"pre-deactivate nodeA-nodeB"}, nodes)
 
 	// reactivate nodeA account group
-	nodeACfg, err := nodeA.Client.InstanceGetConfiguration(ctx, &protocoltypes.InstanceGetConfiguration_Request{})
+	nodeACfg, err := nodeA.Client.ServiceGetConfiguration(ctx, &protocoltypes.ServiceGetConfiguration_Request{})
 	require.NoError(t, err)
 	require.NotNil(t, nodeACfg)
 
@@ -126,7 +126,7 @@ func TestRaceReactivateAccountGroup(t *testing.T) {
 	require.NoError(t, err)
 
 	// reactivate nodeA account group
-	nodeACfg, err := nodeA.Client.InstanceGetConfiguration(ctx, &protocoltypes.InstanceGetConfiguration_Request{})
+	nodeACfg, err := nodeA.Client.ServiceGetConfiguration(ctx, &protocoltypes.ServiceGetConfiguration_Request{})
 	require.NoError(t, err)
 	require.NotNil(t, nodeACfg)
 

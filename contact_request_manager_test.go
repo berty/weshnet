@@ -38,11 +38,11 @@ func TestContactRequestFlow(t *testing.T) {
 	_, err = pts[1].Client.ContactRequestEnable(ctx, &protocoltypes.ContactRequestEnable_Request{})
 	require.NoError(t, err)
 
-	config0, err := pts[0].Client.InstanceGetConfiguration(ctx, &protocoltypes.InstanceGetConfiguration_Request{})
+	config0, err := pts[0].Client.ServiceGetConfiguration(ctx, &protocoltypes.ServiceGetConfiguration_Request{})
 	require.NoError(t, err)
 	require.NotNil(t, config0)
 
-	config1, err := pts[1].Client.InstanceGetConfiguration(ctx, &protocoltypes.InstanceGetConfiguration_Request{})
+	config1, err := pts[1].Client.ServiceGetConfiguration(ctx, &protocoltypes.ServiceGetConfiguration_Request{})
 	require.NoError(t, err)
 	require.NotNil(t, config1)
 
@@ -165,11 +165,11 @@ func TestContactRequestFlowWithoutIncoming(t *testing.T) {
 	_, err := pts[0].Client.ContactRequestEnable(ctx, &protocoltypes.ContactRequestEnable_Request{})
 	require.NoError(t, err)
 
-	config0, err := pts[0].Client.InstanceGetConfiguration(ctx, &protocoltypes.InstanceGetConfiguration_Request{})
+	config0, err := pts[0].Client.ServiceGetConfiguration(ctx, &protocoltypes.ServiceGetConfiguration_Request{})
 	require.NoError(t, err)
 	require.NotNil(t, config0)
 
-	config1, err := pts[1].Client.InstanceGetConfiguration(ctx, &protocoltypes.InstanceGetConfiguration_Request{})
+	config1, err := pts[1].Client.ServiceGetConfiguration(ctx, &protocoltypes.ServiceGetConfiguration_Request{})
 	require.NoError(t, err)
 	require.NotNil(t, config1)
 

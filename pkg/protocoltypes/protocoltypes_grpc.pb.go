@@ -18,10 +18,10 @@ const _ = grpc.SupportPackageIsVersion7
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type ProtocolServiceClient interface {
-	// InstanceExportData exports instance data
-	InstanceExportData(ctx context.Context, in *InstanceExportData_Request, opts ...grpc.CallOption) (ProtocolService_InstanceExportDataClient, error)
-	// InstanceGetConfiguration gets the current configuration of this protocol instance
-	InstanceGetConfiguration(ctx context.Context, in *InstanceGetConfiguration_Request, opts ...grpc.CallOption) (*InstanceGetConfiguration_Reply, error)
+	// ServiceExportData exports the current data of the protocol service
+	ServiceExportData(ctx context.Context, in *ServiceExportData_Request, opts ...grpc.CallOption) (ProtocolService_ServiceExportDataClient, error)
+	// ServiceGetConfiguration gets the current configuration of the protocol service
+	ServiceGetConfiguration(ctx context.Context, in *ServiceGetConfiguration_Request, opts ...grpc.CallOption) (*ServiceGetConfiguration_Reply, error)
 	// ContactRequestReference retrieves the information required to create a reference (ie. included in a shareable link) to the current account
 	ContactRequestReference(ctx context.Context, in *ContactRequestReference_Request, opts ...grpc.CallOption) (*ContactRequestReference_Reply, error)
 	// ContactRequestDisable disables incoming contact requests
@@ -113,12 +113,12 @@ func NewProtocolServiceClient(cc grpc.ClientConnInterface) ProtocolServiceClient
 	return &protocolServiceClient{cc}
 }
 
-func (c *protocolServiceClient) InstanceExportData(ctx context.Context, in *InstanceExportData_Request, opts ...grpc.CallOption) (ProtocolService_InstanceExportDataClient, error) {
-	stream, err := c.cc.NewStream(ctx, &ProtocolService_ServiceDesc.Streams[0], "/weshnet.protocol.v1.ProtocolService/InstanceExportData", opts...)
+func (c *protocolServiceClient) ServiceExportData(ctx context.Context, in *ServiceExportData_Request, opts ...grpc.CallOption) (ProtocolService_ServiceExportDataClient, error) {
+	stream, err := c.cc.NewStream(ctx, &ProtocolService_ServiceDesc.Streams[0], "/weshnet.protocol.v1.ProtocolService/ServiceExportData", opts...)
 	if err != nil {
 		return nil, err
 	}
-	x := &protocolServiceInstanceExportDataClient{stream}
+	x := &protocolServiceServiceExportDataClient{stream}
 	if err := x.ClientStream.SendMsg(in); err != nil {
 		return nil, err
 	}
@@ -128,26 +128,26 @@ func (c *protocolServiceClient) InstanceExportData(ctx context.Context, in *Inst
 	return x, nil
 }
 
-type ProtocolService_InstanceExportDataClient interface {
-	Recv() (*InstanceExportData_Reply, error)
+type ProtocolService_ServiceExportDataClient interface {
+	Recv() (*ServiceExportData_Reply, error)
 	grpc.ClientStream
 }
 
-type protocolServiceInstanceExportDataClient struct {
+type protocolServiceServiceExportDataClient struct {
 	grpc.ClientStream
 }
 
-func (x *protocolServiceInstanceExportDataClient) Recv() (*InstanceExportData_Reply, error) {
-	m := new(InstanceExportData_Reply)
+func (x *protocolServiceServiceExportDataClient) Recv() (*ServiceExportData_Reply, error) {
+	m := new(ServiceExportData_Reply)
 	if err := x.ClientStream.RecvMsg(m); err != nil {
 		return nil, err
 	}
 	return m, nil
 }
 
-func (c *protocolServiceClient) InstanceGetConfiguration(ctx context.Context, in *InstanceGetConfiguration_Request, opts ...grpc.CallOption) (*InstanceGetConfiguration_Reply, error) {
-	out := new(InstanceGetConfiguration_Reply)
-	err := c.cc.Invoke(ctx, "/weshnet.protocol.v1.ProtocolService/InstanceGetConfiguration", in, out, opts...)
+func (c *protocolServiceClient) ServiceGetConfiguration(ctx context.Context, in *ServiceGetConfiguration_Request, opts ...grpc.CallOption) (*ServiceGetConfiguration_Reply, error) {
+	out := new(ServiceGetConfiguration_Reply)
+	err := c.cc.Invoke(ctx, "/weshnet.protocol.v1.ProtocolService/ServiceGetConfiguration", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -706,10 +706,10 @@ func (c *protocolServiceClient) RefreshContactRequest(ctx context.Context, in *R
 // All implementations must embed UnimplementedProtocolServiceServer
 // for forward compatibility
 type ProtocolServiceServer interface {
-	// InstanceExportData exports instance data
-	InstanceExportData(*InstanceExportData_Request, ProtocolService_InstanceExportDataServer) error
-	// InstanceGetConfiguration gets the current configuration of this protocol instance
-	InstanceGetConfiguration(context.Context, *InstanceGetConfiguration_Request) (*InstanceGetConfiguration_Reply, error)
+	// ServiceExportData exports the current data of the protocol service
+	ServiceExportData(*ServiceExportData_Request, ProtocolService_ServiceExportDataServer) error
+	// ServiceGetConfiguration gets the current configuration of the protocol service
+	ServiceGetConfiguration(context.Context, *ServiceGetConfiguration_Request) (*ServiceGetConfiguration_Reply, error)
 	// ContactRequestReference retrieves the information required to create a reference (ie. included in a shareable link) to the current account
 	ContactRequestReference(context.Context, *ContactRequestReference_Request) (*ContactRequestReference_Reply, error)
 	// ContactRequestDisable disables incoming contact requests
@@ -798,11 +798,11 @@ type ProtocolServiceServer interface {
 type UnimplementedProtocolServiceServer struct {
 }
 
-func (UnimplementedProtocolServiceServer) InstanceExportData(*InstanceExportData_Request, ProtocolService_InstanceExportDataServer) error {
-	return status.Errorf(codes.Unimplemented, "method InstanceExportData not implemented")
+func (UnimplementedProtocolServiceServer) ServiceExportData(*ServiceExportData_Request, ProtocolService_ServiceExportDataServer) error {
+	return status.Errorf(codes.Unimplemented, "method ServiceExportData not implemented")
 }
-func (UnimplementedProtocolServiceServer) InstanceGetConfiguration(context.Context, *InstanceGetConfiguration_Request) (*InstanceGetConfiguration_Reply, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method InstanceGetConfiguration not implemented")
+func (UnimplementedProtocolServiceServer) ServiceGetConfiguration(context.Context, *ServiceGetConfiguration_Request) (*ServiceGetConfiguration_Reply, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ServiceGetConfiguration not implemented")
 }
 func (UnimplementedProtocolServiceServer) ContactRequestReference(context.Context, *ContactRequestReference_Request) (*ContactRequestReference_Reply, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ContactRequestReference not implemented")
@@ -946,41 +946,41 @@ func RegisterProtocolServiceServer(s grpc.ServiceRegistrar, srv ProtocolServiceS
 	s.RegisterService(&ProtocolService_ServiceDesc, srv)
 }
 
-func _ProtocolService_InstanceExportData_Handler(srv interface{}, stream grpc.ServerStream) error {
-	m := new(InstanceExportData_Request)
+func _ProtocolService_ServiceExportData_Handler(srv interface{}, stream grpc.ServerStream) error {
+	m := new(ServiceExportData_Request)
 	if err := stream.RecvMsg(m); err != nil {
 		return err
 	}
-	return srv.(ProtocolServiceServer).InstanceExportData(m, &protocolServiceInstanceExportDataServer{stream})
+	return srv.(ProtocolServiceServer).ServiceExportData(m, &protocolServiceServiceExportDataServer{stream})
 }
 
-type ProtocolService_InstanceExportDataServer interface {
-	Send(*InstanceExportData_Reply) error
+type ProtocolService_ServiceExportDataServer interface {
+	Send(*ServiceExportData_Reply) error
 	grpc.ServerStream
 }
 
-type protocolServiceInstanceExportDataServer struct {
+type protocolServiceServiceExportDataServer struct {
 	grpc.ServerStream
 }
 
-func (x *protocolServiceInstanceExportDataServer) Send(m *InstanceExportData_Reply) error {
+func (x *protocolServiceServiceExportDataServer) Send(m *ServiceExportData_Reply) error {
 	return x.ServerStream.SendMsg(m)
 }
 
-func _ProtocolService_InstanceGetConfiguration_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(InstanceGetConfiguration_Request)
+func _ProtocolService_ServiceGetConfiguration_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ServiceGetConfiguration_Request)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(ProtocolServiceServer).InstanceGetConfiguration(ctx, in)
+		return srv.(ProtocolServiceServer).ServiceGetConfiguration(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/weshnet.protocol.v1.ProtocolService/InstanceGetConfiguration",
+		FullMethod: "/weshnet.protocol.v1.ProtocolService/ServiceGetConfiguration",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ProtocolServiceServer).InstanceGetConfiguration(ctx, req.(*InstanceGetConfiguration_Request))
+		return srv.(ProtocolServiceServer).ServiceGetConfiguration(ctx, req.(*ServiceGetConfiguration_Request))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -1788,8 +1788,8 @@ var ProtocolService_ServiceDesc = grpc.ServiceDesc{
 	HandlerType: (*ProtocolServiceServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
-			MethodName: "InstanceGetConfiguration",
-			Handler:    _ProtocolService_InstanceGetConfiguration_Handler,
+			MethodName: "ServiceGetConfiguration",
+			Handler:    _ProtocolService_ServiceGetConfiguration_Handler,
 		},
 		{
 			MethodName: "ContactRequestReference",
@@ -1938,8 +1938,8 @@ var ProtocolService_ServiceDesc = grpc.ServiceDesc{
 	},
 	Streams: []grpc.StreamDesc{
 		{
-			StreamName:    "InstanceExportData",
-			Handler:       _ProtocolService_InstanceExportData_Handler,
+			StreamName:    "ServiceExportData",
+			Handler:       _ProtocolService_ServiceExportData_Handler,
 			ServerStreams: true,
 		},
 		{

@@ -118,12 +118,6 @@
     - [GroupMetadataList.Request](#weshnet-protocol-v1-GroupMetadataList-Request)
     - [GroupRemoveAdditionalRendezvousSeed](#weshnet-protocol-v1-GroupRemoveAdditionalRendezvousSeed)
     - [GroupReplicating](#weshnet-protocol-v1-GroupReplicating)
-    - [InstanceExportData](#weshnet-protocol-v1-InstanceExportData)
-    - [InstanceExportData.Reply](#weshnet-protocol-v1-InstanceExportData-Reply)
-    - [InstanceExportData.Request](#weshnet-protocol-v1-InstanceExportData-Request)
-    - [InstanceGetConfiguration](#weshnet-protocol-v1-InstanceGetConfiguration)
-    - [InstanceGetConfiguration.Reply](#weshnet-protocol-v1-InstanceGetConfiguration-Reply)
-    - [InstanceGetConfiguration.Request](#weshnet-protocol-v1-InstanceGetConfiguration-Request)
     - [MemberWithDevices](#weshnet-protocol-v1-MemberWithDevices)
     - [MessageEnvelope](#weshnet-protocol-v1-MessageEnvelope)
     - [MessageHeaders](#weshnet-protocol-v1-MessageHeaders)
@@ -190,6 +184,12 @@
     - [ReplicationServiceReplicateGroup](#weshnet-protocol-v1-ReplicationServiceReplicateGroup)
     - [ReplicationServiceReplicateGroup.Reply](#weshnet-protocol-v1-ReplicationServiceReplicateGroup-Reply)
     - [ReplicationServiceReplicateGroup.Request](#weshnet-protocol-v1-ReplicationServiceReplicateGroup-Request)
+    - [ServiceExportData](#weshnet-protocol-v1-ServiceExportData)
+    - [ServiceExportData.Reply](#weshnet-protocol-v1-ServiceExportData-Reply)
+    - [ServiceExportData.Request](#weshnet-protocol-v1-ServiceExportData-Request)
+    - [ServiceGetConfiguration](#weshnet-protocol-v1-ServiceGetConfiguration)
+    - [ServiceGetConfiguration.Reply](#weshnet-protocol-v1-ServiceGetConfiguration-Reply)
+    - [ServiceGetConfiguration.Request](#weshnet-protocol-v1-ServiceGetConfiguration-Request)
     - [ServiceToken](#weshnet-protocol-v1-ServiceToken)
     - [ServiceTokenSupportedService](#weshnet-protocol-v1-ServiceTokenSupportedService)
     - [ServicesTokenCode](#weshnet-protocol-v1-ServicesTokenCode)
@@ -215,8 +215,8 @@
     - [GroupDeviceStatus.Transport](#weshnet-protocol-v1-GroupDeviceStatus-Transport)
     - [GroupDeviceStatus.Type](#weshnet-protocol-v1-GroupDeviceStatus-Type)
     - [GroupType](#weshnet-protocol-v1-GroupType)
-    - [InstanceGetConfiguration.SettingState](#weshnet-protocol-v1-InstanceGetConfiguration-SettingState)
     - [PeerList.Feature](#weshnet-protocol-v1-PeerList-Feature)
+    - [ServiceGetConfiguration.SettingState](#weshnet-protocol-v1-ServiceGetConfiguration-SettingState)
   
     - [ProtocolService](#weshnet-protocol-v1-ProtocolService)
   
@@ -1109,48 +1109,6 @@ GroupRemoveAdditionalRendezvousSeed indicates that a previously added rendezvous
 | authentication_url | [string](#string) |  | authentication_url indicates which server has been used for authentication |
 | replication_server | [string](#string) |  | replication_server indicates which server will be used for replication |
 
-<a name="weshnet-protocol-v1-InstanceExportData"></a>
-
-### InstanceExportData
-
-<a name="weshnet-protocol-v1-InstanceExportData-Reply"></a>
-
-### InstanceExportData.Reply
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| exported_data | [bytes](#bytes) |  |  |
-
-<a name="weshnet-protocol-v1-InstanceExportData-Request"></a>
-
-### InstanceExportData.Request
-
-<a name="weshnet-protocol-v1-InstanceGetConfiguration"></a>
-
-### InstanceGetConfiguration
-
-<a name="weshnet-protocol-v1-InstanceGetConfiguration-Reply"></a>
-
-### InstanceGetConfiguration.Reply
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| account_pk | [bytes](#bytes) |  | account_pk is the public key of the current account |
-| device_pk | [bytes](#bytes) |  | device_pk is the public key of the current device |
-| account_group_pk | [bytes](#bytes) |  | account_group_pk is the public key of the account group |
-| peer_id | [string](#string) |  | peer_id is the peer ID of the current IPFS node |
-| listeners | [string](#string) | repeated | listeners is the list of swarm listening addresses of the current IPFS node |
-| ble_enabled | [InstanceGetConfiguration.SettingState](#weshnet-protocol-v1-InstanceGetConfiguration-SettingState) |  |  |
-| wifi_p2p_enabled | [InstanceGetConfiguration.SettingState](#weshnet-protocol-v1-InstanceGetConfiguration-SettingState) |  | MultiPeerConnectivity for Darwin and Nearby for Android |
-| mdns_enabled | [InstanceGetConfiguration.SettingState](#weshnet-protocol-v1-InstanceGetConfiguration-SettingState) |  |  |
-| relay_enabled | [InstanceGetConfiguration.SettingState](#weshnet-protocol-v1-InstanceGetConfiguration-SettingState) |  |  |
-| device_push_token | [PushServiceReceiver](#weshnet-protocol-v1-PushServiceReceiver) |  |  |
-| device_push_server | [PushServer](#weshnet-protocol-v1-PushServer) |  |  |
-
-<a name="weshnet-protocol-v1-InstanceGetConfiguration-Request"></a>
-
-### InstanceGetConfiguration.Request
-
 <a name="weshnet-protocol-v1-MemberWithDevices"></a>
 
 ### MemberWithDevices
@@ -1636,6 +1594,48 @@ Progress define a generic object that can be used to display a progress bar for 
 | ----- | ---- | ----- | ----------- |
 | group | [Group](#weshnet-protocol-v1-Group) |  |  |
 
+<a name="weshnet-protocol-v1-ServiceExportData"></a>
+
+### ServiceExportData
+
+<a name="weshnet-protocol-v1-ServiceExportData-Reply"></a>
+
+### ServiceExportData.Reply
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| exported_data | [bytes](#bytes) |  |  |
+
+<a name="weshnet-protocol-v1-ServiceExportData-Request"></a>
+
+### ServiceExportData.Request
+
+<a name="weshnet-protocol-v1-ServiceGetConfiguration"></a>
+
+### ServiceGetConfiguration
+
+<a name="weshnet-protocol-v1-ServiceGetConfiguration-Reply"></a>
+
+### ServiceGetConfiguration.Reply
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| account_pk | [bytes](#bytes) |  | account_pk is the public key of the current account |
+| device_pk | [bytes](#bytes) |  | device_pk is the public key of the current device |
+| account_group_pk | [bytes](#bytes) |  | account_group_pk is the public key of the account group |
+| peer_id | [string](#string) |  | peer_id is the peer ID of the current IPFS node |
+| listeners | [string](#string) | repeated | listeners is the list of swarm listening addresses of the current IPFS node |
+| ble_enabled | [ServiceGetConfiguration.SettingState](#weshnet-protocol-v1-ServiceGetConfiguration-SettingState) |  |  |
+| wifi_p2p_enabled | [ServiceGetConfiguration.SettingState](#weshnet-protocol-v1-ServiceGetConfiguration-SettingState) |  | MultiPeerConnectivity for Darwin and Nearby for Android |
+| mdns_enabled | [ServiceGetConfiguration.SettingState](#weshnet-protocol-v1-ServiceGetConfiguration-SettingState) |  |  |
+| relay_enabled | [ServiceGetConfiguration.SettingState](#weshnet-protocol-v1-ServiceGetConfiguration-SettingState) |  |  |
+| device_push_token | [PushServiceReceiver](#weshnet-protocol-v1-PushServiceReceiver) |  |  |
+| device_push_server | [PushServer](#weshnet-protocol-v1-PushServer) |  |  |
+
+<a name="weshnet-protocol-v1-ServiceGetConfiguration-Request"></a>
+
+### ServiceGetConfiguration.Request
+
 <a name="weshnet-protocol-v1-ServiceToken"></a>
 
 ### ServiceToken
@@ -1894,17 +1894,6 @@ Progress define a generic object that can be used to display a progress bar for 
 | GroupTypeContact | 2 | GroupTypeContact is the group created between two accounts, available to all their devices. |
 | GroupTypeMultiMember | 3 | GroupTypeMultiMember is a group containing an undefined number of members. |
 
-<a name="weshnet-protocol-v1-InstanceGetConfiguration-SettingState"></a>
-
-### InstanceGetConfiguration.SettingState
-
-| Name | Number | Description |
-| ---- | ------ | ----------- |
-| Unknown | 0 |  |
-| Enabled | 1 |  |
-| Disabled | 2 |  |
-| Unavailable | 3 |  |
-
 <a name="weshnet-protocol-v1-PeerList-Feature"></a>
 
 ### PeerList.Feature
@@ -1918,6 +1907,17 @@ Progress define a generic object that can be used to display a progress bar for 
 | TorFeature | 4 |  |
 | QuicFeature | 5 |  |
 
+<a name="weshnet-protocol-v1-ServiceGetConfiguration-SettingState"></a>
+
+### ServiceGetConfiguration.SettingState
+
+| Name | Number | Description |
+| ---- | ------ | ----------- |
+| Unknown | 0 |  |
+| Enabled | 1 |  |
+| Disabled | 2 |  |
+| Unavailable | 3 |  |
+
  
 
  
@@ -1925,13 +1925,13 @@ Progress define a generic object that can be used to display a progress bar for 
 <a name="weshnet-protocol-v1-ProtocolService"></a>
 
 ### ProtocolService
-ProtocolService is the top-level API to manage a Wesh protocol instance.
-Each Wesh protocol instance is considered as a Wesh device and is associated with a Wesh user.
+ProtocolService is the top-level API to manage the Wesh protocol service.
+Each active Wesh protocol service is considered as a Wesh device and is associated with a Wesh user.
 
 | Method Name | Request Type | Response Type | Description |
 | ----------- | ------------ | ------------- | ------------|
-| InstanceExportData | [InstanceExportData.Request](#weshnet-protocol-v1-InstanceExportData-Request) | [InstanceExportData.Reply](#weshnet-protocol-v1-InstanceExportData-Reply) stream | InstanceExportData exports instance data |
-| InstanceGetConfiguration | [InstanceGetConfiguration.Request](#weshnet-protocol-v1-InstanceGetConfiguration-Request) | [InstanceGetConfiguration.Reply](#weshnet-protocol-v1-InstanceGetConfiguration-Reply) | InstanceGetConfiguration gets the current configuration of this protocol instance |
+| ServiceExportData | [ServiceExportData.Request](#weshnet-protocol-v1-ServiceExportData-Request) | [ServiceExportData.Reply](#weshnet-protocol-v1-ServiceExportData-Reply) stream | ServiceExportData exports the current data of the protocol service |
+| ServiceGetConfiguration | [ServiceGetConfiguration.Request](#weshnet-protocol-v1-ServiceGetConfiguration-Request) | [ServiceGetConfiguration.Reply](#weshnet-protocol-v1-ServiceGetConfiguration-Reply) | ServiceGetConfiguration gets the current configuration of the protocol service |
 | ContactRequestReference | [ContactRequestReference.Request](#weshnet-protocol-v1-ContactRequestReference-Request) | [ContactRequestReference.Reply](#weshnet-protocol-v1-ContactRequestReference-Reply) | ContactRequestReference retrieves the information required to create a reference (ie. included in a shareable link) to the current account |
 | ContactRequestDisable | [ContactRequestDisable.Request](#weshnet-protocol-v1-ContactRequestDisable-Request) | [ContactRequestDisable.Reply](#weshnet-protocol-v1-ContactRequestDisable-Reply) | ContactRequestDisable disables incoming contact requests |
 | ContactRequestEnable | [ContactRequestEnable.Request](#weshnet-protocol-v1-ContactRequestEnable-Request) | [ContactRequestEnable.Reply](#weshnet-protocol-v1-ContactRequestEnable-Reply) | ContactRequestEnable enables incoming contact requests |

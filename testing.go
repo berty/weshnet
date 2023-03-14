@@ -553,7 +553,7 @@ func CreateMultiMemberGroupInstance(ctx context.Context, t *testing.T, tps ...*T
 
 		// check if everything is ready
 		for _, pt := range tps {
-			_, err := pt.Client.InstanceGetConfiguration(ctx, &protocoltypes.InstanceGetConfiguration_Request{})
+			_, err := pt.Client.ServiceGetConfiguration(ctx, &protocoltypes.ServiceGetConfiguration_Request{})
 			require.NoError(t, err)
 		}
 

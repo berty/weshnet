@@ -10,7 +10,7 @@ import (
 	"berty.tech/weshnet/pkg/tyber"
 )
 
-func (s *service) InstanceExportData(_ *protocoltypes.InstanceExportData_Request, server protocoltypes.ProtocolService_InstanceExportDataServer) (err error) {
+func (s *service) ServiceExportData(_ *protocoltypes.ServiceExportData_Request, server protocoltypes.ProtocolService_ServiceExportDataServer) (err error) {
 	ctx, _, endSection := tyber.Section(server.Context(), s.logger, "Exporting protocol instance data")
 	defer func() { endSection(err, "") }()
 
@@ -35,7 +35,7 @@ func (s *service) InstanceExportData(_ *protocoltypes.InstanceExportData_Request
 				break
 			}
 
-			if err := server.Send(&protocoltypes.InstanceExportData_Reply{ExportedData: contents[:l]}); err != nil {
+			if err := server.Send(&protocoltypes.ServiceExportData_Reply{ExportedData: contents[:l]}); err != nil {
 				exportErr = errcode.ErrStreamWrite.Wrap(err)
 				break
 			}
@@ -56,7 +56,7 @@ func (s *service) InstanceExportData(_ *protocoltypes.InstanceExportData_Request
 	return nil
 }
 
-func (s *service) InstanceGetConfiguration(ctx context.Context, req *protocoltypes.InstanceGetConfiguration_Request) (*protocoltypes.InstanceGetConfiguration_Reply, error) {
+func (s *service) ServiceGetConfiguration(ctx context.Context, req *protocoltypes.ServiceGetConfiguration_Request) (*protocoltypes.ServiceGetConfiguration_Reply, error) {
 	key, err := s.ipfsCoreAPI.Key().Self(ctx)
 	if err != nil {
 		return nil, errcode.TODO.Wrap(err)
@@ -87,7 +87,7 @@ func (s *service) InstanceGetConfiguration(ctx context.Context, req *protocoltyp
 		return nil, errcode.ErrSerialization.Wrap(err)
 	}
 
-	return &protocoltypes.InstanceGetConfiguration_Reply{
+	return &protocoltypes.ServiceGetConfiguration_Reply{
 		AccountPK:        member,
 		DevicePK:         device,
 		AccountGroupPK:   accountGroup.Group().PublicKey,

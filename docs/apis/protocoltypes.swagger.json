@@ -12,16 +12,6 @@
   ],
   "paths": {},
   "definitions": {
-    "InstanceGetConfigurationSettingState": {
-      "type": "string",
-      "enum": [
-        "Unknown",
-        "Enabled",
-        "Disabled",
-        "Unavailable"
-      ],
-      "default": "Unknown"
-    },
     "OrbitDBReplicationStatus": {
       "type": "object",
       "properties": {
@@ -92,6 +82,16 @@
           "description": "id is an identifier used to write protocol headers in streams."
         }
       }
+    },
+    "ServiceGetConfigurationSettingState": {
+      "type": "string",
+      "enum": [
+        "Unknown",
+        "Enabled",
+        "Disabled",
+        "Unavailable"
+      ],
+      "default": "Unknown"
     },
     "SystemInfoOrbitDB": {
       "type": "object",
@@ -718,64 +718,6 @@
       "default": "GroupTypeUndefined",
       "description": " - GroupTypeUndefined: GroupTypeUndefined indicates that the value has not been set. For example, happens if group is replicated.\n - GroupTypeAccount: GroupTypeAccount is the group managing an account, available to all its devices.\n - GroupTypeContact: GroupTypeContact is the group created between two accounts, available to all their devices.\n - GroupTypeMultiMember: GroupTypeMultiMember is a group containing an undefined number of members."
     },
-    "v1InstanceExportDataReply": {
-      "type": "object",
-      "properties": {
-        "exported_data": {
-          "type": "string",
-          "format": "byte"
-        }
-      }
-    },
-    "v1InstanceGetConfigurationReply": {
-      "type": "object",
-      "properties": {
-        "account_pk": {
-          "type": "string",
-          "format": "byte",
-          "title": "account_pk is the public key of the current account"
-        },
-        "device_pk": {
-          "type": "string",
-          "format": "byte",
-          "title": "device_pk is the public key of the current device"
-        },
-        "account_group_pk": {
-          "type": "string",
-          "format": "byte",
-          "title": "account_group_pk is the public key of the account group"
-        },
-        "peer_id": {
-          "type": "string",
-          "title": "peer_id is the peer ID of the current IPFS node"
-        },
-        "listeners": {
-          "type": "array",
-          "items": {
-            "type": "string"
-          },
-          "title": "listeners is the list of swarm listening addresses of the current IPFS node"
-        },
-        "ble_enabled": {
-          "$ref": "#/definitions/InstanceGetConfigurationSettingState"
-        },
-        "wifi_p2p_enabled": {
-          "$ref": "#/definitions/InstanceGetConfigurationSettingState"
-        },
-        "mdns_enabled": {
-          "$ref": "#/definitions/InstanceGetConfigurationSettingState"
-        },
-        "relay_enabled": {
-          "$ref": "#/definitions/InstanceGetConfigurationSettingState"
-        },
-        "device_push_token": {
-          "$ref": "#/definitions/v1PushServiceReceiver"
-        },
-        "device_push_server": {
-          "$ref": "#/definitions/v1PushServer"
-        }
-      }
-    },
     "v1MemberWithDevices": {
       "type": "object",
       "properties": {
@@ -1059,6 +1001,64 @@
     },
     "v1ReplicationServiceRegisterGroupReply": {
       "type": "object"
+    },
+    "v1ServiceExportDataReply": {
+      "type": "object",
+      "properties": {
+        "exported_data": {
+          "type": "string",
+          "format": "byte"
+        }
+      }
+    },
+    "v1ServiceGetConfigurationReply": {
+      "type": "object",
+      "properties": {
+        "account_pk": {
+          "type": "string",
+          "format": "byte",
+          "title": "account_pk is the public key of the current account"
+        },
+        "device_pk": {
+          "type": "string",
+          "format": "byte",
+          "title": "device_pk is the public key of the current device"
+        },
+        "account_group_pk": {
+          "type": "string",
+          "format": "byte",
+          "title": "account_group_pk is the public key of the account group"
+        },
+        "peer_id": {
+          "type": "string",
+          "title": "peer_id is the peer ID of the current IPFS node"
+        },
+        "listeners": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "title": "listeners is the list of swarm listening addresses of the current IPFS node"
+        },
+        "ble_enabled": {
+          "$ref": "#/definitions/ServiceGetConfigurationSettingState"
+        },
+        "wifi_p2p_enabled": {
+          "$ref": "#/definitions/ServiceGetConfigurationSettingState"
+        },
+        "mdns_enabled": {
+          "$ref": "#/definitions/ServiceGetConfigurationSettingState"
+        },
+        "relay_enabled": {
+          "$ref": "#/definitions/ServiceGetConfigurationSettingState"
+        },
+        "device_push_token": {
+          "$ref": "#/definitions/v1PushServiceReceiver"
+        },
+        "device_push_server": {
+          "$ref": "#/definitions/v1PushServer"
+        }
+      }
     },
     "v1ServiceToken": {
       "type": "object",

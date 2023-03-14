@@ -28,7 +28,7 @@ func TestTestingClient_impl(t *testing.T) {
 	defer cleanup()
 
 	// test service
-	_, _ = client.InstanceGetConfiguration(ctx, &protocoltypes.InstanceGetConfiguration_Request{})
+	_, _ = client.ServiceGetConfiguration(ctx, &protocoltypes.ServiceGetConfiguration_Request{})
 	status := client.Status()
 	expected := weshnet.Status{}
 	assert.Equal(t, expected, status)
@@ -44,7 +44,7 @@ func ExampleNew_basic() {
 	}
 	defer client.Close()
 
-	ret, err := client.InstanceGetConfiguration(ctx, &protocoltypes.InstanceGetConfiguration_Request{})
+	ret, err := client.ServiceGetConfiguration(ctx, &protocoltypes.ServiceGetConfiguration_Request{})
 	if err != nil {
 		panic(err)
 	}
