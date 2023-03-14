@@ -46,7 +46,7 @@ func ExampleNewInMemoryServiceClient_basic() {
 	}
 	defer client.Close()
 
-	ret, err := client.InstanceGetConfiguration(ctx, &protocoltypes.InstanceGetConfiguration_Request{})
+	ret, err := client.ServiceGetConfiguration(ctx, &protocoltypes.ServiceGetConfiguration_Request{})
 	if err != nil {
 		panic(err)
 	}
@@ -80,7 +80,7 @@ func ExampleNewPersistantServiceClient_basic() {
 			panic(err)
 		}
 
-		ret, err := client.InstanceGetConfiguration(ctx, &protocoltypes.InstanceGetConfiguration_Request{})
+		ret, err := client.ServiceGetConfiguration(ctx, &protocoltypes.ServiceGetConfiguration_Request{})
 		if err != nil {
 			panic(err)
 		}
@@ -100,7 +100,7 @@ func ExampleNewPersistantServiceClient_basic() {
 		}
 		defer client.Close()
 
-		ret, err := client.InstanceGetConfiguration(ctx, &protocoltypes.InstanceGetConfiguration_Request{})
+		ret, err := client.ServiceGetConfiguration(ctx, &protocoltypes.ServiceGetConfiguration_Request{})
 		if err != nil {
 			panic(err)
 		}
@@ -123,7 +123,7 @@ func ExampleNewServiceClient_basic() {
 	}
 	defer client.Close()
 
-	ret, err := client.InstanceGetConfiguration(ctx, &protocoltypes.InstanceGetConfiguration_Request{})
+	ret, err := client.ServiceGetConfiguration(ctx, &protocoltypes.ServiceGetConfiguration_Request{})
 	if err != nil {
 		panic(err)
 	}
