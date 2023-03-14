@@ -5,15 +5,16 @@
 golang 1.18.4
 
 #-----
-# golangci-lint 1.46.2 is simply the most recent version available to date (07/22).
+# golangci-lint 1.51.2 is simply the most recent version available to date (07/22).
 #
+# @TODO(gfanton): check if we still have this issue
 # The current version of golangci-lint also has a problem displaying logs on
 # Github actions, see: https://github.com/golangci/golangci-lint-action/issues/119
 #
 # It would be good to update it (when possible) to a version that fixes this log
 # issue and to update the golangci-lint Github Actions step accordingly.
 #-----
-golangci-lint 1.50.1
+golangci-lint 1.51.2
 
 #-----
 # jq 1.6 is simply the most recent version available to date (07/22).
