@@ -3,6 +3,8 @@ package weshnet_test
 import (
 	"context"
 	"fmt"
+	"io/ioutil"
+	"os"
 	"testing"
 
 	keystore "github.com/ipfs/go-ipfs-keystore"
@@ -34,11 +36,113 @@ func TestTestingClient_impl(t *testing.T) {
 	assert.Equal(t, expected, status)
 }
 
-func ExampleNew_basic() {
+func ExampleNewInMemoryServiceClient_basic() {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	client, err := weshnet.New(weshnet.Opts{})
+	client, err := weshnet.NewInMemoryServiceClient()
+	if err != nil {
+		panic(err)
+	}
+	defer client.Close()
+
+	ret, err := client.ServiceGetConfiguration(ctx, &protocoltypes.ServiceGetConfiguration_Request{})
+	if err != nil {
+		panic(err)
+	}
+
+	for _, listener := range ret.Listeners {
+		if listener == "/p2p-circuit" {
+			fmt.Println(listener)
+		}
+	}
+
+	// Output:
+	// /p2p-circuit
+}
+
+func ExampleNewPersistentServiceClient_basic() {
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	// create a temporary path to host data of our persistant service
+	path, err := ioutil.TempDir("", "weshnet-test-persistant")
+	if err != nil {
+		panic(err)
+	}
+	defer os.RemoveAll(path)
+
+	var peerid string
+	// open once
+	{
+		client, err := weshnet.NewPersistentServiceClient(path)
+		if err != nil {
+			panic(err)
+		}
+
+		ret, err := client.ServiceGetConfiguration(ctx, &protocoltypes.ServiceGetConfiguration_Request{})
+		if err != nil {
+			panic(err)
+		}
+
+		peerid = ret.PeerID
+
+		if err := client.Close(); err != nil {
+			panic(err)
+		}
+	}
+
+	// open twice
+	{
+		client, err := weshnet.NewPersistentServiceClient(path)
+		if err != nil {
+			panic(err)
+		}
+		defer client.Close()
+
+		ret, err := client.ServiceGetConfiguration(ctx, &protocoltypes.ServiceGetConfiguration_Request{})
+		if err != nil {
+			panic(err)
+		}
+
+		if peerid != ret.PeerID {
+			panic("peerid should be identical")
+		}
+	}
+
+	// Output:
+}
+
+func ExampleNewServiceClient_basic() {
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	client, err := weshnet.NewServiceClient(weshnet.Opts{})
+	if err != nil {
+		panic(err)
+	}
+	defer client.Close()
+
+	ret, err := client.ServiceGetConfiguration(ctx, &protocoltypes.ServiceGetConfiguration_Request{})
+	if err != nil {
+		panic(err)
+	}
+
+	for _, listener := range ret.Listeners {
+		if listener == "/p2p-circuit" {
+			fmt.Println(listener)
+		}
+	}
+
+	// Output:
+	// /p2p-circuit
+}
+
+func ExampleNewService_basic() {
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	client, err := weshnet.NewService(weshnet.Opts{})
 	if err != nil {
 		panic(err)
 	}

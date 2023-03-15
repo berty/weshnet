@@ -82,7 +82,7 @@ type TestingProtocol struct {
 	Opts *Opts
 
 	Service Service
-	Client  Client
+	Client  ServiceClient
 
 	RootDatastore  datastore.Batching
 	DeviceKeystore cryptoutil.DeviceKeystore
@@ -270,7 +270,7 @@ func TestingService(ctx context.Context, t testing.TB, opts Opts) (Service, func
 		opts.IpfsCoreAPI = mn.API()
 	}
 
-	service, err := New(opts)
+	service, err := NewService(opts)
 	if err != nil {
 		t.Fatalf("failed to initialize client: %v", err)
 	}
@@ -282,12 +282,12 @@ func TestingService(ctx context.Context, t testing.TB, opts Opts) (Service, func
 	return service, cleanup
 }
 
-func TestingClientFromServer(ctx context.Context, t testing.TB, s *grpc.Server, svc Service, dialOpts ...grpc.DialOption) (client Client, cleanup func()) {
+func TestingClientFromServer(ctx context.Context, t testing.TB, s *grpc.Server, svc Service, dialOpts ...grpc.DialOption) (client ServiceClient, cleanup func()) {
 	t.Helper()
 
 	var err error
 
-	client, err = NewClientFromServer(ctx, s, svc, dialOpts...)
+	client, err = NewClientFromService(ctx, s, svc, dialOpts...)
 	require.NoError(t, err)
 	cleanup = func() {
 		client.Close()
@@ -296,14 +296,20 @@ func TestingClientFromServer(ctx context.Context, t testing.TB, s *grpc.Server, 
 	return
 }
 
-func TestingClient(ctx context.Context, t testing.TB, svc Service, clientOpts []grpc.DialOption, serverOpts []grpc.ServerOption) (client Client, cleanup func()) {
+func TestingClient(ctx context.Context, t testing.TB, svc Service, clientOpts []grpc.DialOption, serverOpts []grpc.ServerOption) (client ServiceClient, cleanup func()) {
 	t.Helper()
 
 	var err error
 
-	client, err = NewClient(ctx, svc, clientOpts, serverOpts)
+	srv := grpc.NewServer(serverOpts...)
+
+	client, err = NewClientFromService(ctx, srv, svc, clientOpts...)
 	require.NoError(t, err)
-	cleanup = func() { client.Close() }
+
+	cleanup = func() {
+		srv.Stop()
+		client.Close()
+	}
 
 	return
 }

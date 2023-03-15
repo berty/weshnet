@@ -11,28 +11,23 @@ import (
 
 type BufListener struct {
 	*bufconn.Listener
-	ctx context.Context
 }
 
-func NewBufListener(ctx context.Context, sz int) *BufListener {
+func NewBufListener(sz int) *BufListener {
 	return &BufListener{
 		Listener: bufconn.Listen(sz),
-		ctx:      ctx,
 	}
 }
 
-func (bl *BufListener) NewClientConn(opts ...grpc.DialOption) (*grpc.ClientConn, error) {
-	dialer := func(context.Context, string) (net.Conn, error) {
-		return bl.Dial()
-	}
+func (bl *BufListener) dialer(context.Context, string) (net.Conn, error) {
+	return bl.Dial()
+}
 
-	baseOpts := []grpc.DialOption{
+func (bl *BufListener) NewClientConn(ctx context.Context, opts ...grpc.DialOption) (*grpc.ClientConn, error) {
+	mendatoryOpts := []grpc.DialOption{
 		grpc.WithTransportCredentials(insecure.NewCredentials()),
-		grpc.WithContextDialer(dialer), // set pipe dialer
+		grpc.WithContextDialer(bl.dialer), // set pipe dialer
 	}
 
-	return grpc.DialContext(
-		bl.ctx,
-		"buf",
-		append(opts, baseOpts...)...)
+	return grpc.DialContext(ctx, "buf", append(opts, mendatoryOpts...)...)
 }
