@@ -21,3 +21,9 @@ golangci-lint 1.51.2
 # There is no contraindication for updating it.
 #-----
 jq 1.6
+
+#-----
+# buf 1.14.0 is simply the most recent version available to date (03/23).
+# There is no contraindication for updating it.
+#-----
+buf 1.14.0
