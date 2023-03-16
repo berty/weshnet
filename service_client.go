@@ -148,11 +148,8 @@ func NewClientFromService(ctx context.Context, s *grpc.Server, svc Service, opts
 
 	protocoltypes.RegisterProtocolServiceServer(s, svc)
 	go func() {
-		switch err := s.Serve(bl); err {
-		case nil, grpc.ErrServerStopped: // ok
-		default:
-			panic(err)
-		}
+		// we dont need to log the error
+		_ = s.Serve(bl)
 	}()
 
 	return &client{
