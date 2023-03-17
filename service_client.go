@@ -46,6 +46,11 @@ func NewServiceClient(opts Opts) (ServiceClient, error) {
 	}, nil
 }
 
+// NewInMemoryServiceClient creates a new in-memory Wesh protocol service and returns a gRPC
+// ServiceClient which uses a direct in-memory connection. When finished, you must call Close().
+// This creates a new Wesh account where the key store is in memory. (If you don't
+// export the data then it is lost when you call Close(). ) The IPFS node, cached data,
+// and configuration are also in memory.
 func NewInMemoryServiceClient() (ServiceClient, error) {
 	var opts Opts
 	opts.DatastoreDir = InMemoryDirectory
