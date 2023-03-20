@@ -11,12 +11,12 @@ require (
 	github.com/berty/emitter-go v0.0.0-20221031144724-5dae963c3622
 	github.com/berty/go-libp2p-rendezvous v0.4.1
 	github.com/buicongtan1997/protoc-gen-swagger-config v0.0.0-20200705084907-1342b78c1a7e
-	github.com/daixiang0/gci v0.10.1
+	github.com/daixiang0/gci v0.8.2
 	github.com/dgraph-io/badger/v2 v2.2007.3
 	github.com/gofrs/uuid v4.3.1+incompatible
 	github.com/gogo/protobuf v1.3.2
 	github.com/golang/protobuf v1.5.3
-	github.com/grpc-ecosystem/go-grpc-middleware v1.4.0
+	github.com/grpc-ecosystem/go-grpc-middleware v1.3.0
 	github.com/grpc-ecosystem/grpc-gateway v1.16.0
 	github.com/hyperledger/aries-framework-go v0.1.9-0.20221202141134-083803ecf0a3
 	github.com/ipfs/go-cid v0.3.2
@@ -56,7 +56,7 @@ require (
 	google.golang.org/grpc v1.50.1
 	google.golang.org/grpc/cmd/protoc-gen-go-grpc v1.3.0
 	google.golang.org/grpc/examples v0.0.0-20200922230038-4e932bbcb079
-	google.golang.org/protobuf v1.29.0
+	google.golang.org/protobuf v1.29.1
 	gopkg.in/square/go-jose.v2 v2.6.0
 	moul.io/openfiles v1.2.0
 	moul.io/srand v1.6.1
@@ -319,5 +319,3 @@ require (
 	moul.io/banner v1.0.1 // indirect
 	moul.io/motd v1.0.0 // indirect
 )
-
-replace github.com/mutecomm/go-sqlcipher/v4 => github.com/berty/go-sqlcipher/v4 v4.4.3-0.20220810151512-74ea78235b48 // plaintext header support

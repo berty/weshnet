@@ -16,7 +16,6 @@ import (
 	p2p_peer "github.com/libp2p/go-libp2p/core/peer"
 	"github.com/pkg/errors"
 
-	encrepo "berty.tech/go-ipfs-repo-encrypted"
 	"berty.tech/weshnet/pkg/errcode"
 )
 
@@ -36,7 +35,7 @@ const defaultConnMgrGracePeriod = time.Second * 20
 var plugins *ipfs_loader.PluginLoader
 
 func CreateMockedRepo(dstore ipfs_ds.Batching) (ipfs_repo.Repo, error) {
-	c, err := createBaseConfig()
+	c, err := CreateBaseConfig()
 	if err != nil {
 		return nil, err
 	}
@@ -48,7 +47,7 @@ func CreateMockedRepo(dstore ipfs_ds.Batching) (ipfs_repo.Repo, error) {
 }
 
 func CreateOrLoadMockedRepo(dstore ipfs_ds.Batching) (ipfs_repo.Repo, error) {
-	c, err := createBaseConfig()
+	c, err := CreateBaseConfig()
 	if err != nil {
 		return nil, err
 	}
@@ -61,12 +60,12 @@ func CreateOrLoadMockedRepo(dstore ipfs_ds.Batching) (ipfs_repo.Repo, error) {
 
 func LoadRepoFromPath(path string) (ipfs_repo.Repo, error) {
 	dir, _ := filepath.Split(path)
-	if _, err := loadPlugins(dir); err != nil {
+	if _, err := LoadPlugins(dir); err != nil {
 		return nil, errors.Wrap(err, "failed to load plugins")
 	}
 
 	if !ipfs_fsrepo.IsInitialized(path) {
-		cfg, err := createBaseConfig()
+		cfg, err := CreateBaseConfig()
 		if err != nil {
 			return nil, fmt.Errorf("failed to create base config: %w", err)
 		}
@@ -84,40 +83,6 @@ func LoadRepoFromPath(path string) (ipfs_repo.Repo, error) {
 	return ipfs_fsrepo.Open(path)
 }
 
-// LoadEncryptedRepoFromPath
-func LoadEncryptedRepoFromPath(path string, key []byte, salt []byte) (ipfs_repo.Repo, error) {
-	dir, _ := filepath.Split(path)
-	if _, err := loadPlugins(dir); err != nil {
-		return nil, errors.Wrap(err, "failed to load plugins")
-	}
-
-	// init repo if needed
-	sqldsOpts := encrepo.SQLCipherDatastoreOptions{JournalMode: "WAL", PlaintextHeader: len(salt) != 0, Salt: salt}
-	isInit, err := encrepo.IsInitialized(path, key, sqldsOpts)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to check if repo is initialized")
-	}
-	if !isInit {
-		cfg, err := createBaseConfig()
-		if err != nil {
-			return nil, errors.Wrap(err, "failed to create base config")
-		}
-
-		ucfg, err := upgradeToPersistentConfig(cfg)
-		if err != nil {
-			return nil, errors.Wrap(err, "failed to upgrade repo")
-		}
-
-		ucfg.Datastore.Spec = nil
-
-		if err := encrepo.Init(path, key, sqldsOpts, ucfg); err != nil {
-			return nil, errors.Wrap(err, "failed to init repo")
-		}
-	}
-
-	return encrepo.Open(path, key, sqldsOpts)
-}
-
 var DefaultSwarmListeners = []string{
 	"/ip4/0.0.0.0/udp/0/quic",
 	"/ip6/::/udp/0/quic",
@@ -125,7 +90,7 @@ var DefaultSwarmListeners = []string{
 	// "/ip6/::/tcp/0",
 }
 
-func createBaseConfig() (*ipfs_cfg.Config, error) {
+func CreateBaseConfig() (*ipfs_cfg.Config, error) {
 	c := ipfs_cfg.Config{}
 
 	// set default bootstrap
@@ -133,7 +98,7 @@ func createBaseConfig() (*ipfs_cfg.Config, error) {
 	c.Peering.Peers = []p2p_peer.AddrInfo{}
 
 	// Identity
-	if err := resetRepoIdentity(&c); err != nil {
+	if err := ResetRepoIdentity(&c); err != nil {
 		return nil, errcode.TODO.Wrap(err)
 	}
 
@@ -159,38 +124,7 @@ func createBaseConfig() (*ipfs_cfg.Config, error) {
 	return &c, nil
 }
 
-func ResetExistingRepoIdentity(repo ipfs_repo.Repo, path string, key []byte, salt []byte) (ipfs_repo.Repo, error) {
-	cfg, err := repo.Config()
-	if err != nil {
-		_ = repo.Close()
-		return nil, errcode.ErrInternal.Wrap(err)
-	}
-
-	if err := resetRepoIdentity(cfg); err != nil {
-		return nil, errcode.TODO.Wrap(err)
-	}
-
-	updatedCfg, err := upgradeToPersistentConfig(cfg)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to upgrade repo")
-	}
-
-	err = repo.SetConfig(updatedCfg)
-	_ = repo.Close()
-	if err != nil {
-		return nil, errcode.ErrInternal.Wrap(err)
-	}
-
-	sqldsOpts := encrepo.SQLCipherDatastoreOptions{JournalMode: "WAL", PlaintextHeader: len(salt) != 0, Salt: salt}
-	repo, err = encrepo.Open(path, key, sqldsOpts)
-	if err != nil {
-		return nil, errcode.ErrInternal.Wrap(err)
-	}
-
-	return repo, nil
-}
-
-func resetRepoIdentity(c *ipfs_cfg.Config) error {
+func ResetRepoIdentity(c *ipfs_cfg.Config) error {
 	priv, pub, err := p2p_ci.GenerateKeyPairWithReader(p2p_ci.Ed25519, 2048, crand.Reader) // nolint:staticcheck
 	if err != nil {
 		return errcode.TODO.Wrap(err)
@@ -270,7 +204,31 @@ func upgradeToPersistentConfig(cfg *ipfs_cfg.Config) (*ipfs_cfg.Config, error) {
 	return cfgCopy, nil
 }
 
-func loadPlugins(repoPath string) (*ipfs_loader.PluginLoader, error) { // nolint:unparam
+func ResetExistingRepoIdentity(repo ipfs_repo.Repo) (ipfs_repo.Repo, error) {
+	cfg, err := repo.Config()
+	if err != nil {
+		_ = repo.Close()
+		return nil, errcode.ErrInternal.Wrap(err)
+	}
+
+	if err := ResetRepoIdentity(cfg); err != nil {
+		return nil, errcode.TODO.Wrap(err)
+	}
+
+	updatedCfg, err := upgradeToPersistentConfig(cfg)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to upgrade repo")
+	}
+
+	err = repo.SetConfig(updatedCfg)
+	if err != nil {
+		return nil, errcode.ErrInternal.Wrap(err)
+	}
+
+	return repo, nil
+}
+
+func LoadPlugins(repoPath string) (*ipfs_loader.PluginLoader, error) { // nolint:unparam
 	if plugins != nil {
 		return plugins, nil
 	}
