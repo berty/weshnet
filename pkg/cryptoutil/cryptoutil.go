@@ -5,9 +5,10 @@ import (
 	"crypto/cipher"
 	crand "crypto/rand"
 	"crypto/sha256"
+	"crypto/sha512"
 	"fmt"
 
-	cconv "github.com/agl/ed25519/extra25519"
+	"filippo.io/edwards25519"
 	"github.com/libp2p/go-libp2p/core/crypto"
 	pb "github.com/libp2p/go-libp2p/core/crypto/pb"
 	"golang.org/x/crypto/ed25519"
@@ -121,23 +122,22 @@ func EdwardsToMontgomery(privKey crypto.PrivKey, pubKey crypto.PubKey) (*[32]byt
 
 // EdwardsToMontgomeryPub converts ed25519 pub key to X25519 pub key.
 func EdwardsToMontgomeryPub(pubKey crypto.PubKey) (*[KeySize]byte, error) {
-	var edPub, mongPub [KeySize]byte
+	var mongPub [KeySize]byte
 
 	if pubKey.Type() != pb.KeyType_Ed25519 {
 		return nil, errcode.ErrInvalidInput
 	}
 
-	pubKeyBytes, err := pubKey.Raw()
+	rawPublicKey, err := pubKey.Raw()
 	if err != nil {
-		return nil, errcode.ErrSerialization.Wrap(err)
-	} else if len(pubKeyBytes) != KeySize {
-		return nil, errcode.ErrInvalidInput
+		return nil, fmt.Errorf("unable to get raw public key: %w", err)
+	} else if len(rawPublicKey) != ed25519.PublicKeySize {
+		return nil, fmt.Errorf("invalid ed25519 public key size: %w", err)
 	}
 
-	copy(edPub[:], pubKeyBytes)
-
-	if !cconv.PublicKeyToCurve25519(&mongPub, &edPub) {
-		return nil, errcode.ErrInvalidInput.Wrap(err)
+	err = PublicKeyToCurve25519(&mongPub, (ed25519.PublicKey)(rawPublicKey))
+	if err != nil {
+		return nil, fmt.Errorf("unable to get publickey to curve 25519: %w", err)
 	}
 
 	return &mongPub, nil
@@ -145,23 +145,20 @@ func EdwardsToMontgomeryPub(pubKey crypto.PubKey) (*[KeySize]byte, error) {
 
 // EdwardsToMontgomeryPriv converts ed25519 priv key to X25519 priv key.
 func EdwardsToMontgomeryPriv(privKey crypto.PrivKey) (*[KeySize]byte, error) {
-	var edPriv [64]byte
 	var mongPriv [KeySize]byte
 
 	if privKey.Type() != pb.KeyType_Ed25519 {
 		return nil, errcode.ErrInvalidInput
 	}
 
-	privKeyBytes, err := privKey.Raw()
+	rawPrivateKey, err := privKey.Raw()
 	if err != nil {
 		return nil, errcode.ErrSerialization.Wrap(err)
-	} else if len(privKeyBytes) != 64 {
+	} else if len(rawPrivateKey) != ed25519.PrivateKeySize {
 		return nil, errcode.ErrInvalidInput
 	}
 
-	copy(edPriv[:], privKeyBytes)
-
-	cconv.PrivateKeyToCurve25519(&mongPriv, &edPriv)
+	PrivateKeyToCurve25519(&mongPriv, rawPrivateKey)
 
 	return &mongPriv, nil
 }
@@ -246,4 +243,30 @@ func DeriveKey(passphrase, salt []byte) ([]byte, []byte, error) {
 	}
 
 	return key, salt, nil
+}
+
+// PublicKeyToCurve25519 converts an Ed25519 public key into the curve25519
+// public key that would be generated from the same private key.
+func PublicKeyToCurve25519(ret *[32]byte, publicKey ed25519.PublicKey) error {
+	point, err := edwards25519.NewGeneratorPoint().SetBytes(publicKey)
+	if err != nil {
+		return fmt.Errorf("unable to generate point from publicKey: %w", err)
+	}
+
+	copy(ret[:], point.BytesMontgomery())
+	return nil
+}
+
+// from: https://github.com/agl/ed25519/blob/5312a61534124124185d41f09206b9fef1d88403/extra25519/extra25519.go#LL16C11-L16C11
+// PrivateKeyToCurve25519 converts an ed25519 private key into a corresponding
+// curve25519 private key such that the resulting curve25519 public key will
+// equal the result from PublicKeyToCurve25519.
+func PrivateKeyToCurve25519(ret *[32]byte, privateKey ed25519.PrivateKey) {
+	h := sha512.New()
+	h.Write(privateKey.Seed())
+	copy(ret[:], h.Sum(nil))
+
+	ret[0] &= 248
+	ret[31] &= 127
+	ret[31] |= 64
 }
