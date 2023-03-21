@@ -7,8 +7,6 @@
 package tools
 
 import (
-	// required by Makefile
-	_ "github.com/bufbuild/buf/cmd/buf"
 	// build tool
 	_ "github.com/buicongtan1997/protoc-gen-swagger-config"
 	// required by Makefile

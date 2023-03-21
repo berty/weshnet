@@ -8,7 +8,7 @@ RUN     apk --no-cache add make git go rsync libc-dev openssh docker npm
 WORKDIR $GOPATH/src/berty.tech/weshnet
 COPY    go.mod go.sum ./
 RUN     go install -mod=readonly \
-          github.com/bufbuild/buf/cmd/buf \
+          github.com/bufbuild/buf/cmd/buf \ # @TODO(gfanton): use asdf version
           google.golang.org/protobuf/cmd/protoc-gen-go \
           github.com/gogo/protobuf/protoc-gen-gogo \
           google.golang.org/grpc/cmd/protoc-gen-go-grpc \

@@ -57,7 +57,7 @@ jobs:
         env:
           TEST_SPEED: any
           GO_TEST_PATH: ./internal/benchmark
-          GO_TEST_OPTS: -bench=. -test.benchmem -cpuprofile cpu_head.prof -memprofile mem_head.prof -test.timeout=1200s -count=5 -tags "fts5 sqlite sqlite_unlock_notify"
+          GO_TEST_OPTS: -bench=. -test.benchmem -cpuprofile cpu_head.prof -memprofile mem_head.prof -test.timeout=1200s -count=5
 
       - name: Checkout base commit
         run: git checkout ${{ github.event.pull_request.base.sha }}
@@ -78,7 +78,7 @@ jobs:
         env:
           TEST_SPEED: any
           GO_TEST_PATH: ./internal/benchmark
-          GO_TEST_OPTS: -bench=. -test.benchmem -cpuprofile cpu_base.prof -memprofile mem_base.prof -test.timeout=1200s -count=5 -tags "fts5 sqlite sqlite_unlock_notify"
+          GO_TEST_OPTS: -bench=. -test.benchmem -cpuprofile cpu_base.prof -memprofile mem_base.prof -test.timeout=1200s -count=5
 
       - name: Benchstat
         id: benchstat-main

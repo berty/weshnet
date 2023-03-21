@@ -93,5 +93,5 @@ func TestNetManagerFilterUpdate(t *testing.T) {
 
 	require.Equal(t, b, netmanager.GetCurrentState())
 	require.True(t, ok)
-	require.Equal(t, ConnectivityStateChanged | ConnectivityNetTypeChanged | ConnectivityCellularTypeChanged, eventType)
+	require.Equal(t, ConnectivityStateChanged|ConnectivityNetTypeChanged|ConnectivityCellularTypeChanged, eventType)
 }

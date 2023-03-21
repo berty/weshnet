@@ -1,15 +1,34 @@
 package cryptoutil
 
 import (
+	"bytes"
 	"crypto/aes"
 	"crypto/rand"
 	"testing"
 
 	"github.com/libp2p/go-libp2p/core/crypto"
 	"github.com/stretchr/testify/require"
+	"golang.org/x/crypto/curve25519"
+	"golang.org/x/crypto/ed25519"
 
 	"berty.tech/weshnet/pkg/errcode"
 )
+
+// from: https://github.com/agl/ed25519/blob/5312a61534124124185d41f09206b9fef1d88403/extra25519/extra25519_test.go#L16-L30
+func TestCurve25519Conversion(t *testing.T) {
+	public, private, err := ed25519.GenerateKey(rand.Reader)
+	require.NoError(t, err)
+
+	var curve25519Public, curve25519Public2, curve25519Private [32]byte
+	PrivateKeyToCurve25519(&curve25519Private, private)
+	curve25519.ScalarBaseMult(&curve25519Public, &curve25519Private)
+
+	err = PublicKeyToCurve25519(&curve25519Public2, public)
+	require.NoError(t, err)
+
+	require.Truef(t, bytes.Equal(curve25519Public[:], curve25519Public2[:]),
+		"Values didn't match: curve25519 produced %x, conversion produced %x", curve25519Public[:], curve25519Public2[:])
+}
 
 func TestSeedFromEd25519PrivateKey(t *testing.T) {
 	priv, _, _ := crypto.GenerateECDSAKeyPair(rand.Reader)
