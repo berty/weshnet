@@ -9,14 +9,11 @@
 ## by folders
 ##
 
-# root files (config, doc, etc)
-/* @moul
-
 # doc
 /docs/ @berty/tech
 
 # golang files
-/*.go @berty/go-owners @moul
+/*.go @berty/go-owners
 /internal/ @berty/go-owners
 /pkg/ @berty/go-owners
 
@@ -37,4 +34,4 @@ Makefile @berty/build-owners
 ##
 
 # public APIs
-/api/protocol/bertyprotocol.proto @berty/go-owners @berty/js-owners @moul
+/api/protocol/bertyprotocol.proto @berty/go-owners @berty/js-owners
