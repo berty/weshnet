@@ -90,13 +90,13 @@
     - [DebugListGroups](#weshnet-protocol-v1-DebugListGroups)
     - [DebugListGroups.Reply](#weshnet-protocol-v1-DebugListGroups-Reply)
     - [DebugListGroups.Request](#weshnet-protocol-v1-DebugListGroups-Request)
-    - [DeviceSecret](#weshnet-protocol-v1-DeviceSecret)
+    - [DeviceChainKey](#weshnet-protocol-v1-DeviceChainKey)
     - [EncryptedMessage](#weshnet-protocol-v1-EncryptedMessage)
     - [EventContext](#weshnet-protocol-v1-EventContext)
     - [FirstLastCounters](#weshnet-protocol-v1-FirstLastCounters)
     - [Group](#weshnet-protocol-v1-Group)
     - [GroupAddAdditionalRendezvousSeed](#weshnet-protocol-v1-GroupAddAdditionalRendezvousSeed)
-    - [GroupAddDeviceSecret](#weshnet-protocol-v1-GroupAddDeviceSecret)
+    - [GroupAddDeviceChainKey](#weshnet-protocol-v1-GroupAddDeviceChainKey)
     - [GroupAddMemberDevice](#weshnet-protocol-v1-GroupAddMemberDevice)
     - [GroupDeviceStatus](#weshnet-protocol-v1-GroupDeviceStatus)
     - [GroupDeviceStatus.Reply](#weshnet-protocol-v1-GroupDeviceStatus-Reply)
@@ -146,6 +146,12 @@
     - [OrbitDBMessageHeads](#weshnet-protocol-v1-OrbitDBMessageHeads)
     - [OrbitDBMessageHeads.Box](#weshnet-protocol-v1-OrbitDBMessageHeads-Box)
     - [OutOfStoreMessage](#weshnet-protocol-v1-OutOfStoreMessage)
+    - [OutOfStoreReceive](#weshnet-protocol-v1-OutOfStoreReceive)
+    - [OutOfStoreReceive.Reply](#weshnet-protocol-v1-OutOfStoreReceive-Reply)
+    - [OutOfStoreReceive.Request](#weshnet-protocol-v1-OutOfStoreReceive-Request)
+    - [OutOfStoreSeal](#weshnet-protocol-v1-OutOfStoreSeal)
+    - [OutOfStoreSeal.Reply](#weshnet-protocol-v1-OutOfStoreSeal-Reply)
+    - [OutOfStoreSeal.Request](#weshnet-protocol-v1-OutOfStoreSeal-Request)
     - [PeerList](#weshnet-protocol-v1-PeerList)
     - [PeerList.Peer](#weshnet-protocol-v1-PeerList-Peer)
     - [PeerList.Reply](#weshnet-protocol-v1-PeerList-Reply)
@@ -157,23 +163,8 @@
     - [PushDeviceServerRegistered](#weshnet-protocol-v1-PushDeviceServerRegistered)
     - [PushDeviceTokenRegistered](#weshnet-protocol-v1-PushDeviceTokenRegistered)
     - [PushMemberTokenUpdate](#weshnet-protocol-v1-PushMemberTokenUpdate)
-    - [PushReceive](#weshnet-protocol-v1-PushReceive)
-    - [PushReceive.Reply](#weshnet-protocol-v1-PushReceive-Reply)
-    - [PushReceive.Request](#weshnet-protocol-v1-PushReceive-Request)
-    - [PushSend](#weshnet-protocol-v1-PushSend)
-    - [PushSend.Reply](#weshnet-protocol-v1-PushSend-Reply)
-    - [PushSend.Request](#weshnet-protocol-v1-PushSend-Request)
     - [PushServer](#weshnet-protocol-v1-PushServer)
     - [PushServiceReceiver](#weshnet-protocol-v1-PushServiceReceiver)
-    - [PushSetDeviceToken](#weshnet-protocol-v1-PushSetDeviceToken)
-    - [PushSetDeviceToken.Reply](#weshnet-protocol-v1-PushSetDeviceToken-Reply)
-    - [PushSetDeviceToken.Request](#weshnet-protocol-v1-PushSetDeviceToken-Request)
-    - [PushSetServer](#weshnet-protocol-v1-PushSetServer)
-    - [PushSetServer.Reply](#weshnet-protocol-v1-PushSetServer-Reply)
-    - [PushSetServer.Request](#weshnet-protocol-v1-PushSetServer-Request)
-    - [PushShareToken](#weshnet-protocol-v1-PushShareToken)
-    - [PushShareToken.Reply](#weshnet-protocol-v1-PushShareToken-Reply)
-    - [PushShareToken.Request](#weshnet-protocol-v1-PushShareToken-Request)
     - [RefreshContactRequest](#weshnet-protocol-v1-RefreshContactRequest)
     - [RefreshContactRequest.Peer](#weshnet-protocol-v1-RefreshContactRequest-Peer)
     - [RefreshContactRequest.Reply](#weshnet-protocol-v1-RefreshContactRequest-Reply)
@@ -253,7 +244,7 @@ AccountContactBlocked indicates that a contact is blocked
 
 ### AccountContactRequestAccepted
 This event should be followed by an AccountGroupJoined event
-This event should be followed by GroupAddMemberDevice and GroupAddDeviceSecret events within the AccountGroup
+This event should be followed by GroupAddMemberDevice and GroupAddDeviceChainKey events within the AccountGroup
 AccountContactRequestAccepted indicates that a contact request has been accepted
 
 | Field | Type | Label | Description |
@@ -295,7 +286,7 @@ AccountContactRequestDisabled indicates that the account should be advertised on
 ### AccountContactRequestEnqueued
 This event should be followed by an AccountGroupJoined event
 This event should be followed by a GroupAddMemberDevice event within the AccountGroup
-This event should be followed by a GroupAddDeviceSecret event within the AccountGroup
+This event should be followed by a GroupAddDeviceChainKey event within the AccountGroup
 AccountContactRequestEnqueued indicates that the account will attempt to send a contact request when a matching peer is discovered
 
 | Field | Type | Label | Description |
@@ -840,10 +831,10 @@ ContactAddAliasKey is an event type where ones shares their alias public key
 
 ### DebugListGroups.Request
 
-<a name="weshnet-protocol-v1-DeviceSecret"></a>
+<a name="weshnet-protocol-v1-DeviceChainKey"></a>
 
-### DeviceSecret
-DeviceSecret is encrypted for a specific member of the group
+### DeviceChainKey
+DeviceChainKey is a chain key, which will be encrypted for a specific member of the group
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
@@ -890,7 +881,7 @@ Group define a group and is enough to invite someone to it
 | public_key | [bytes](#bytes) |  | public_key is the identifier of the group, it signs the group secret and the initial member of a multi-member group |
 | secret | [bytes](#bytes) |  | secret is the symmetric secret of the group, which is used to encrypt the metadata |
 | secret_sig | [bytes](#bytes) |  | secret_sig is the signature of the secret used to ensure the validity of the group |
-| group_type | [GroupType](#weshnet-protocol-v1-GroupType) |  | group_type specifies the type of the group, used to determine how device secrets are generated |
+| group_type | [GroupType](#weshnet-protocol-v1-GroupType) |  | group_type specifies the type of the group, used to determine how device chain key is generated |
 | sign_pub | [bytes](#bytes) |  | sign_pub is the signature public key used to verify entries, not required when secret and secret_sig are provided |
 | link_key | [bytes](#bytes) |  | link_key is the secret key used to exchange group updates and links to attachments, useful for replication services |
 | link_key_sig | [bytes](#bytes) |  | link_key_sig is the signature of the link_key using the group private key |
@@ -905,10 +896,10 @@ GroupAddAdditionalRendezvousSeed indicates that an additional rendezvous point s
 | device_pk | [bytes](#bytes) |  | device_pk is the device sending the event, signs the message, must be the device of an admin of the group |
 | seed | [bytes](#bytes) |  | seed is the additional rendezvous point seed which should be used |
 
-<a name="weshnet-protocol-v1-GroupAddDeviceSecret"></a>
+<a name="weshnet-protocol-v1-GroupAddDeviceChainKey"></a>
 
-### GroupAddDeviceSecret
-GroupAddDeviceSecret is an event which indicates to a group member a device secret
+### GroupAddDeviceChainKey
+GroupAddDeviceChainKey is an event which indicates to a group member a device chain key
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
@@ -920,7 +911,7 @@ GroupAddDeviceSecret is an event which indicates to a group member a device secr
 
 ### GroupAddMemberDevice
 GroupAddMemberDevice is an event which indicates to a group a new device (and eventually a new member) is joining it
-When added on AccountGroup, this event should be followed by appropriate GroupAddMemberDevice and GroupAddDeviceSecret events
+When added on AccountGroup, this event should be followed by appropriate GroupAddMemberDevice and GroupAddDeviceChainKey events
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
@@ -1316,6 +1307,50 @@ OrbitDBMessageHeads is the payload sent on orbitdb to share peer&#39;s heads
 | encrypted_payload | [bytes](#bytes) |  |  |
 | nonce | [bytes](#bytes) |  |  |
 
+<a name="weshnet-protocol-v1-OutOfStoreReceive"></a>
+
+### OutOfStoreReceive
+
+<a name="weshnet-protocol-v1-OutOfStoreReceive-Reply"></a>
+
+### OutOfStoreReceive.Reply
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| message | [OutOfStoreMessage](#weshnet-protocol-v1-OutOfStoreMessage) |  |  |
+| cleartext | [bytes](#bytes) |  |  |
+| group_public_key | [bytes](#bytes) |  |  |
+| already_received | [bool](#bool) |  |  |
+
+<a name="weshnet-protocol-v1-OutOfStoreReceive-Request"></a>
+
+### OutOfStoreReceive.Request
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| payload | [bytes](#bytes) |  |  |
+
+<a name="weshnet-protocol-v1-OutOfStoreSeal"></a>
+
+### OutOfStoreSeal
+
+<a name="weshnet-protocol-v1-OutOfStoreSeal-Reply"></a>
+
+### OutOfStoreSeal.Reply
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| encrypted | [bytes](#bytes) |  |  |
+
+<a name="weshnet-protocol-v1-OutOfStoreSeal-Request"></a>
+
+### OutOfStoreSeal.Request
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| cid | [bytes](#bytes) |  |  |
+| group_public_key | [bytes](#bytes) |  |  |
+
 <a name="weshnet-protocol-v1-PeerList"></a>
 
 ### PeerList
@@ -1412,51 +1447,6 @@ Progress define a generic object that can be used to display a progress bar for 
 | token | [bytes](#bytes) |  |  |
 | device_pk | [bytes](#bytes) |  | device_pk is the public key of the device sending the message |
 
-<a name="weshnet-protocol-v1-PushReceive"></a>
-
-### PushReceive
-
-<a name="weshnet-protocol-v1-PushReceive-Reply"></a>
-
-### PushReceive.Reply
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| message | [OutOfStoreMessage](#weshnet-protocol-v1-OutOfStoreMessage) |  |  |
-| cleartext | [bytes](#bytes) |  |  |
-| group_public_key | [bytes](#bytes) |  |  |
-| already_received | [bool](#bool) |  |  |
-
-<a name="weshnet-protocol-v1-PushReceive-Request"></a>
-
-### PushReceive.Request
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| payload | [bytes](#bytes) |  |  |
-
-<a name="weshnet-protocol-v1-PushSend"></a>
-
-### PushSend
-
-<a name="weshnet-protocol-v1-PushSend-Reply"></a>
-
-### PushSend.Reply
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| group_members | [MemberWithDevices](#weshnet-protocol-v1-MemberWithDevices) | repeated |  |
-
-<a name="weshnet-protocol-v1-PushSend-Request"></a>
-
-### PushSend.Request
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| cid | [bytes](#bytes) |  |  |
-| group_public_key | [bytes](#bytes) |  |  |
-| group_members | [MemberWithDevices](#weshnet-protocol-v1-MemberWithDevices) | repeated |  |
-
 <a name="weshnet-protocol-v1-PushServer"></a>
 
 ### PushServer
@@ -1476,56 +1466,6 @@ Progress define a generic object that can be used to display a progress bar for 
 | bundle_id | [string](#string) |  | bundle_id is the app identifier |
 | token | [bytes](#bytes) |  | token is the device identifier used |
 | recipient_public_key | [bytes](#bytes) |  | recipient_public_key is the public key which will be used to encrypt the payload |
-
-<a name="weshnet-protocol-v1-PushSetDeviceToken"></a>
-
-### PushSetDeviceToken
-
-<a name="weshnet-protocol-v1-PushSetDeviceToken-Reply"></a>
-
-### PushSetDeviceToken.Reply
-
-<a name="weshnet-protocol-v1-PushSetDeviceToken-Request"></a>
-
-### PushSetDeviceToken.Request
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| receiver | [PushServiceReceiver](#weshnet-protocol-v1-PushServiceReceiver) |  |  |
-
-<a name="weshnet-protocol-v1-PushSetServer"></a>
-
-### PushSetServer
-
-<a name="weshnet-protocol-v1-PushSetServer-Reply"></a>
-
-### PushSetServer.Reply
-
-<a name="weshnet-protocol-v1-PushSetServer-Request"></a>
-
-### PushSetServer.Request
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| server | [PushServer](#weshnet-protocol-v1-PushServer) |  |  |
-
-<a name="weshnet-protocol-v1-PushShareToken"></a>
-
-### PushShareToken
-
-<a name="weshnet-protocol-v1-PushShareToken-Reply"></a>
-
-### PushShareToken.Reply
-
-<a name="weshnet-protocol-v1-PushShareToken-Request"></a>
-
-### PushShareToken.Request
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| group_pk | [bytes](#bytes) |  |  |
-| server | [PushServer](#weshnet-protocol-v1-PushServer) |  |  |
-| receiver | [PushServiceReceiver](#weshnet-protocol-v1-PushServiceReceiver) |  |  |
 
 <a name="weshnet-protocol-v1-RefreshContactRequest"></a>
 
@@ -1835,7 +1775,7 @@ Progress define a generic object that can be used to display a progress bar for 
 | ---- | ------ | ----------- |
 | EventTypeUndefined | 0 | EventTypeUndefined indicates that the value has not been set. Should not happen. |
 | EventTypeGroupMemberDeviceAdded | 1 | EventTypeGroupMemberDeviceAdded indicates the payload includes that a member has added their device to the group |
-| EventTypeGroupDeviceSecretAdded | 2 | EventTypeGroupDeviceSecretAdded indicates the payload includes that a member has sent their device secret to another member |
+| EventTypeGroupDeviceChainKeyAdded | 2 | EventTypeGroupDeviceChainKeyAdded indicates the payload includes that a member has sent their device chain key to another member |
 | EventTypeAccountGroupJoined | 101 | EventTypeAccountGroupJoined indicates the payload includes that the account has joined a group |
 | EventTypeAccountGroupLeft | 102 | EventTypeAccountGroupLeft indicates the payload includes that the account has left a group |
 | EventTypeAccountContactRequestDisabled | 103 | EventTypeAccountContactRequestDisabled indicates the payload includes that the account has disabled incoming contact requests |
@@ -1969,11 +1909,8 @@ Each active Wesh protocol service is considered as a Wesh device and is associat
 | ServicesTokenList | [ServicesTokenList.Request](#weshnet-protocol-v1-ServicesTokenList-Request) | [ServicesTokenList.Reply](#weshnet-protocol-v1-ServicesTokenList-Reply) stream | ServicesTokenList Retrieves the list of services tokens |
 | ReplicationServiceRegisterGroup | [ReplicationServiceRegisterGroup.Request](#weshnet-protocol-v1-ReplicationServiceRegisterGroup-Request) | [ReplicationServiceRegisterGroup.Reply](#weshnet-protocol-v1-ReplicationServiceRegisterGroup-Reply) | ReplicationServiceRegisterGroup Asks a replication service to distribute a group contents |
 | PeerList | [PeerList.Request](#weshnet-protocol-v1-PeerList-Request) | [PeerList.Reply](#weshnet-protocol-v1-PeerList-Reply) | PeerList returns a list of P2P peers |
-| PushReceive | [PushReceive.Request](#weshnet-protocol-v1-PushReceive-Request) | [PushReceive.Reply](#weshnet-protocol-v1-PushReceive-Reply) | PushReceive handles a push payload, decrypts it if possible |
-| PushSend | [PushSend.Request](#weshnet-protocol-v1-PushSend-Request) | [PushSend.Reply](#weshnet-protocol-v1-PushSend-Reply) | PushSend sends a push payload to a specified list of group members |
-| PushShareToken | [PushShareToken.Request](#weshnet-protocol-v1-PushShareToken-Request) | [PushShareToken.Reply](#weshnet-protocol-v1-PushShareToken-Reply) | PushShareToken sends push tokens of own devices to a group |
-| PushSetDeviceToken | [PushSetDeviceToken.Request](#weshnet-protocol-v1-PushSetDeviceToken-Request) | [PushSetDeviceToken.Reply](#weshnet-protocol-v1-PushSetDeviceToken-Reply) | PushSetDeviceToken registers a push token for the current device |
-| PushSetServer | [PushSetServer.Request](#weshnet-protocol-v1-PushSetServer-Request) | [PushSetServer.Reply](#weshnet-protocol-v1-PushSetServer-Reply) | PushSetServer registers a push server for the current device |
+| OutOfStoreReceive | [OutOfStoreReceive.Request](#weshnet-protocol-v1-OutOfStoreReceive-Request) | [OutOfStoreReceive.Reply](#weshnet-protocol-v1-OutOfStoreReceive-Reply) | OutOfStoreReceive parses a payload received outside a synchronized store |
+| OutOfStoreSeal | [OutOfStoreSeal.Request](#weshnet-protocol-v1-OutOfStoreSeal-Request) | [OutOfStoreSeal.Reply](#weshnet-protocol-v1-OutOfStoreSeal-Reply) | OutOfStoreSeal creates a payload of a message present in store to be sent outside a synchronized store |
 | RefreshContactRequest | [RefreshContactRequest.Request](#weshnet-protocol-v1-RefreshContactRequest-Request) | [RefreshContactRequest.Reply](#weshnet-protocol-v1-RefreshContactRequest-Reply) | RefreshContactRequest try to refresh the contact request for the given contact |
 
  

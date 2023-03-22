@@ -4,7 +4,6 @@ import (
 	"testing"
 	"time"
 
-	keystore "github.com/ipfs/go-ipfs-keystore"
 	mocknet "github.com/libp2p/go-libp2p/p2p/net/mock"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -12,8 +11,8 @@ import (
 	"berty.tech/go-ipfs-log/enc"
 	"berty.tech/go-ipfs-log/entry"
 	"berty.tech/go-orbit-db/iface"
-	"berty.tech/weshnet/pkg/cryptoutil"
 	"berty.tech/weshnet/pkg/rendezvous"
+	"berty.tech/weshnet/pkg/secretstore"
 )
 
 var (
@@ -37,8 +36,8 @@ func TestRotationMessageMarshaler(t *testing.T) {
 	require.NoError(t, err)
 
 	// generate keystore
-	ks1 := keystore.NewMemKeystore()
-	acc1 := cryptoutil.NewDeviceKeystore(ks1, nil)
+	acc1, err := secretstore.NewInMemSecretStore(nil)
+	require.NoError(t, err)
 
 	rp := rendezvous.NewStaticRotationInterval()
 	m := NewOrbitDBMessageMarshaler(p.ID(), acc1, rp, false)
@@ -76,8 +75,8 @@ func TestRotationMessageMarshalUnknownTopic(t *testing.T) {
 	require.NoError(t, err)
 
 	// generate keystore
-	ks := keystore.NewMemKeystore()
-	acc := cryptoutil.NewDeviceKeystore(ks, nil)
+	acc, err := secretstore.NewInMemSecretStore(nil)
+	require.NoError(t, err)
 
 	rp := rendezvous.NewStaticRotationInterval()
 	m := NewOrbitDBMessageMarshaler(p.ID(), acc, rp, false)
@@ -109,11 +108,11 @@ func TestRotationMessageUnmarshalUnknownTopic(t *testing.T) {
 	require.NoError(t, err)
 
 	// generate keystore
-	ks1 := keystore.NewMemKeystore()
-	acc1 := cryptoutil.NewDeviceKeystore(ks1, nil)
+	acc1, err := secretstore.NewInMemSecretStore(nil)
+	require.NoError(t, err)
 
-	ks2 := keystore.NewMemKeystore()
-	acc2 := cryptoutil.NewDeviceKeystore(ks2, nil)
+	acc2, err := secretstore.NewInMemSecretStore(nil)
+	require.NoError(t, err)
 
 	g1, _, err := NewGroupMultiMember()
 	require.NoError(t, err)
@@ -175,11 +174,11 @@ func TestRotationMessageMarshalWrongKey(t *testing.T) {
 	require.NoError(t, err)
 
 	// generate keystore
-	ks1 := keystore.NewMemKeystore()
-	acc1 := cryptoutil.NewDeviceKeystore(ks1, nil)
+	acc1, err := secretstore.NewInMemSecretStore(nil)
+	require.NoError(t, err)
 
-	ks2 := keystore.NewMemKeystore()
-	acc2 := cryptoutil.NewDeviceKeystore(ks2, nil)
+	acc2, err := secretstore.NewInMemSecretStore(nil)
+	require.NoError(t, err)
 
 	rp1 := rendezvous.NewStaticRotationInterval()
 	rp1.RegisterRotation(time.Now(), msg.Address, testSeed1)

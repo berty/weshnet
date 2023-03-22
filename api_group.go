@@ -47,17 +47,17 @@ func (s *service) GroupInfo(ctx context.Context, req *protocoltypes.GroupInfo_Re
 		return nil, errcode.ErrInvalidInput
 	}
 
-	md, err := s.deviceKeystore.MemberDeviceForGroup(g)
+	memberDevice, err := s.secretStore.GetOwnMemberDeviceForGroup(g)
 	if err != nil {
 		return nil, errcode.TODO.Wrap(err)
 	}
 
-	member, err := md.PrivateMember().GetPublic().Raw()
+	member, err := memberDevice.Member().Raw()
 	if err != nil {
 		return nil, errcode.ErrSerialization.Wrap(err)
 	}
 
-	device, err := md.PrivateDevice().GetPublic().Raw()
+	device, err := memberDevice.Device().Raw()
 	if err != nil {
 		return nil, errcode.ErrSerialization.Wrap(err)
 	}

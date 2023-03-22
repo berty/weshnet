@@ -15,7 +15,6 @@ import (
 	"github.com/libp2p/go-libp2p/core/event"
 	"github.com/libp2p/go-libp2p/p2p/host/eventbus"
 	"go.uber.org/zap"
-	"golang.org/x/crypto/nacl/box"
 
 	ipfslog "berty.tech/go-ipfs-log"
 	"berty.tech/go-ipfs-log/identityprovider"
@@ -25,10 +24,10 @@ import (
 	"berty.tech/go-orbit-db/stores"
 	"berty.tech/go-orbit-db/stores/basestore"
 	"berty.tech/go-orbit-db/stores/operation"
-	"berty.tech/weshnet/pkg/cryptoutil"
 	"berty.tech/weshnet/pkg/errcode"
 	"berty.tech/weshnet/pkg/logutil"
 	"berty.tech/weshnet/pkg/protocoltypes"
+	"berty.tech/weshnet/pkg/secretstore"
 	"berty.tech/weshnet/pkg/tyber"
 )
 
@@ -40,25 +39,26 @@ type MetadataStore struct {
 		metadataReceived event.Emitter
 	}
 
-	g      *protocoltypes.Group
-	devKS  cryptoutil.DeviceKeystore
-	mks    *cryptoutil.MessageKeystore
-	logger *zap.Logger
+	group              *protocoltypes.Group
+	memberDevice       secretstore.OwnMemberDevice
+	devicePublicKeyRaw []byte
+	secretStore        secretstore.SecretStore
+	logger             *zap.Logger
 
 	ctx    context.Context
 	cancel context.CancelFunc
 }
 
 func isMultiMemberGroup(m *MetadataStore) bool {
-	return m.g.GroupType == protocoltypes.GroupTypeMultiMember
+	return m.group.GroupType == protocoltypes.GroupTypeMultiMember
 }
 
 func isAccountGroup(m *MetadataStore) bool {
-	return m.g.GroupType == protocoltypes.GroupTypeAccount
+	return m.group.GroupType == protocoltypes.GroupTypeAccount
 }
 
 func isContactGroup(m *MetadataStore) bool {
-	return m.g.GroupType == protocoltypes.GroupTypeContact
+	return m.group.GroupType == protocoltypes.GroupTypeContact
 }
 
 func (m *MetadataStore) typeChecker(types ...func(m *MetadataStore) bool) bool {
@@ -76,7 +76,7 @@ func (m *MetadataStore) setLogger(l *zap.Logger) {
 		return
 	}
 
-	// m.logger = l.Named("store").With(logutil.PrivateString("group-id", fmt.Sprintf("%.6s", base64.StdEncoding.EncodeToString(m.g.PublicKey))))
+	// m.logger = l.Named("store").With(logutil.PrivateString("group-id", fmt.Sprintf("%.6s", base64.StdEncoding.EncodeToString(m.group.PublicKey))))
 	m.logger = l.Named("metastore")
 
 	if index, ok := m.Index().(loggable); ok {
@@ -105,7 +105,7 @@ func openMetadataEntry(log ipfslog.Log, e ipfslog.Entry, g *protocoltypes.Group)
 
 // not used
 // func (m *MetadataStore) openMetadataEntry(e ipfslog.Entry) (*protocoltypes.GroupMetadataEvent, proto.Message, error) {
-// 	return openMetadataEntry(m.OpLog(), e, m.g, m.devKS)
+// 	return openMetadataEntry(m.OpLog(), e, m.group, m.devKS)
 // }
 
 // FIXME: use iterator instead to reduce resource usage (require go-ipfs-log improvements)
@@ -122,7 +122,7 @@ func (m *MetadataStore) ListEvents(ctx context.Context, since, until []byte, rev
 			entries,
 			reverse,
 			func(entry ipliface.IPFSLogEntry) {
-				event, _, err := openMetadataEntry(m.OpLog(), entry, m.g)
+				event, _, err := openMetadataEntry(m.OpLog(), entry, m.group)
 				if err != nil {
 					m.logger.Error("unable to open metadata event", zap.Error(err))
 				} else {
@@ -139,31 +139,31 @@ func (m *MetadataStore) ListEvents(ctx context.Context, since, until []byte, rev
 }
 
 func (m *MetadataStore) AddDeviceToGroup(ctx context.Context) (operation.Operation, error) {
-	md, err := m.devKS.MemberDeviceForGroup(m.g)
+	md, err := m.secretStore.GetOwnMemberDeviceForGroup(m.group)
 	if err != nil {
 		return nil, errcode.ErrInternal.Wrap(err)
 	}
 
-	return MetadataStoreAddDeviceToGroup(ctx, m, m.g, md)
+	return MetadataStoreAddDeviceToGroup(ctx, m, m.group, md)
 }
 
-func MetadataStoreAddDeviceToGroup(ctx context.Context, m *MetadataStore, g *protocoltypes.Group, md *cryptoutil.OwnMemberDevice) (operation.Operation, error) {
-	device, err := md.PrivateDevice().GetPublic().Raw()
+func MetadataStoreAddDeviceToGroup(ctx context.Context, m *MetadataStore, g *protocoltypes.Group, md secretstore.OwnMemberDevice) (operation.Operation, error) {
+	device, err := md.Device().Raw()
 	if err != nil {
 		return nil, errcode.ErrSerialization.Wrap(err)
 	}
 
-	member, err := md.PrivateMember().GetPublic().Raw()
+	member, err := md.Member().Raw()
 	if err != nil {
 		return nil, errcode.ErrSerialization.Wrap(err)
 	}
 
-	k, err := m.GetMemberByDevice(md.PrivateDevice().GetPublic())
+	k, err := m.GetMemberByDevice(md.Device())
 	if err == nil && k != nil {
 		return nil, nil
 	}
 
-	memberSig, err := md.PrivateMember().Sign(device)
+	memberSig, err := md.MemberSign(device)
 	if err != nil {
 		return nil, errcode.ErrCryptoSignature.Wrap(err)
 	}
@@ -174,7 +174,7 @@ func MetadataStoreAddDeviceToGroup(ctx context.Context, m *MetadataStore, g *pro
 		MemberSig: memberSig,
 	}
 
-	sig, err := signProto(event, md.PrivateDevice())
+	sig, err := signProtoWithDevice(event, md)
 	if err != nil {
 		return nil, errcode.ErrCryptoSignature.Wrap(err)
 	}
@@ -185,11 +185,6 @@ func MetadataStoreAddDeviceToGroup(ctx context.Context, m *MetadataStore, g *pro
 }
 
 func (m *MetadataStore) SendSecret(ctx context.Context, memberPK crypto.PubKey) (operation.Operation, error) {
-	md, err := m.devKS.MemberDeviceForGroup(m.g)
-	if err != nil {
-		return nil, errcode.ErrInternal.Wrap(err)
-	}
-
 	ok, err := m.Index().(*metadataStoreIndex).areSecretsAlreadySent(memberPK)
 	if err != nil {
 		return nil, errcode.ErrInvalidInput.Wrap(err)
@@ -203,21 +198,16 @@ func (m *MetadataStore) SendSecret(ctx context.Context, memberPK crypto.PubKey) 
 		m.logger.Warn("sending secret to an unknown group member")
 	}
 
-	ds, err := m.mks.GetDeviceSecret(ctx, m.g, m.devKS)
+	encryptedSecret, err := m.secretStore.GetShareableChainKey(ctx, m.group, memberPK)
 	if err != nil {
-		return nil, errcode.ErrInvalidInput.Wrap(err)
+		return nil, errcode.ErrCryptoEncrypt.Wrap(err)
 	}
 
-	return MetadataStoreSendSecret(ctx, m, m.g, md, memberPK, ds)
+	return MetadataStoreSendSecret(ctx, m, m.group, m.memberDevice, memberPK, encryptedSecret)
 }
 
-func MetadataStoreSendSecret(ctx context.Context, m *MetadataStore, g *protocoltypes.Group, md *cryptoutil.OwnMemberDevice, memberPK crypto.PubKey, ds *protocoltypes.DeviceSecret) (operation.Operation, error) {
-	payload, err := newSecretEntryPayload(md.PrivateDevice(), memberPK, ds, g)
-	if err != nil {
-		return nil, errcode.ErrInternal.Wrap(err)
-	}
-
-	devicePKRaw, err := md.PrivateDevice().GetPublic().Raw()
+func MetadataStoreSendSecret(ctx context.Context, m *MetadataStore, g *protocoltypes.Group, md secretstore.OwnMemberDevice, memberPK crypto.PubKey, encryptedSecret []byte) (operation.Operation, error) {
+	devicePKRaw, err := md.Device().Raw()
 	if err != nil {
 		return nil, errcode.ErrSerialization.Wrap(err)
 	}
@@ -227,18 +217,18 @@ func MetadataStoreSendSecret(ctx context.Context, m *MetadataStore, g *protocolt
 		return nil, errcode.ErrSerialization.Wrap(err)
 	}
 
-	event := &protocoltypes.GroupAddDeviceSecret{
+	event := &protocoltypes.GroupAddDeviceChainKey{
 		DevicePK:     devicePKRaw,
 		DestMemberPK: memberPKRaw,
-		Payload:      payload,
+		Payload:      encryptedSecret,
 	}
 
-	sig, err := signProto(event, md.PrivateDevice())
+	sig, err := signProtoWithDevice(event, md)
 	if err != nil {
 		return nil, errcode.ErrCryptoSignature.Wrap(err)
 	}
 
-	return metadataStoreAddEvent(ctx, m, g, protocoltypes.EventTypeGroupDeviceSecretAdded, event, sig)
+	return metadataStoreAddEvent(ctx, m, g, protocoltypes.EventTypeGroupDeviceChainKeyAdded, event, sig)
 }
 
 func (m *MetadataStore) ClaimGroupOwnership(ctx context.Context, groupSK crypto.PrivKey) (operation.Operation, error) {
@@ -246,29 +236,33 @@ func (m *MetadataStore) ClaimGroupOwnership(ctx context.Context, groupSK crypto.
 		return nil, errcode.ErrGroupInvalidType
 	}
 
-	md, err := m.devKS.MemberDeviceForGroup(m.g)
-	if err != nil {
-		return nil, errcode.ErrInternal.Wrap(err)
-	}
-
-	memberPK, err := md.PrivateMember().GetPublic().Raw()
-	if err != nil {
-		return nil, errcode.ErrSerialization.Wrap(err)
-	}
-
 	event := &protocoltypes.MultiMemberInitialMember{
-		MemberPK: memberPK,
+		MemberPK: m.devicePublicKeyRaw,
 	}
 
-	sig, err := signProto(event, groupSK)
+	sig, err := signProtoWithPrivateKey(event, groupSK)
 	if err != nil {
 		return nil, errcode.ErrCryptoSignature.Wrap(err)
 	}
 
-	return metadataStoreAddEvent(ctx, m, m.g, protocoltypes.EventTypeMultiMemberGroupInitialMemberAnnounced, event, sig)
+	return metadataStoreAddEvent(ctx, m, m.group, protocoltypes.EventTypeMultiMemberGroupInitialMemberAnnounced, event, sig)
 }
 
-func signProto(message proto.Message, sk crypto.PrivKey) ([]byte, error) {
+func signProtoWithDevice(message proto.Message, memberDevice secretstore.OwnMemberDevice) ([]byte, error) {
+	data, err := proto.Marshal(message)
+	if err != nil {
+		return nil, errcode.ErrSerialization.Wrap(err)
+	}
+
+	sig, err := memberDevice.DeviceSign(data)
+	if err != nil {
+		return nil, errcode.ErrCryptoSignature.Wrap(err)
+	}
+
+	return sig, nil
+}
+
+func signProtoWithPrivateKey(message proto.Message, sk crypto.PrivKey) ([]byte, error) {
 	data, err := proto.Marshal(message)
 	if err != nil {
 		return nil, errcode.ErrSerialization.Wrap(err)
@@ -348,20 +342,14 @@ func (m *MetadataStore) GetIncomingContactRequestsStatus() (bool, *protocoltypes
 	enabled := m.Index().(*metadataStoreIndex).contactRequestsEnabled()
 	seed := m.Index().(*metadataStoreIndex).contactRequestsSeed()
 
-	md, err := m.devKS.MemberDeviceForGroup(m.g)
-	if err != nil {
-		m.logger.Error("unable to get member device for group", zap.Error(err))
-		return enabled, nil
-	}
-
-	pkBytes, err := md.PrivateMember().GetPublic().Raw()
+	rawMemberDevice, err := m.memberDevice.Member().Raw()
 	if err != nil {
 		m.logger.Error("unable to serialize member public key", zap.Error(err))
 		return enabled, nil
 	}
 
 	contactRef := &protocoltypes.ShareableContact{
-		PK:                   pkBytes,
+		PK:                   rawMemberDevice,
 		PublicRendezvousSeed: seed,
 	}
 
@@ -572,7 +560,7 @@ func (m *MetadataStore) ContactRequestReferenceReset(ctx context.Context) (opera
 func (m *MetadataStore) ContactRequestOutgoingEnqueue(ctx context.Context, contact *protocoltypes.ShareableContact, ownMetadata []byte) (operation.Operation, error) {
 	ctx, _ = tyber.ContextWithTraceID(ctx)
 
-	b64GroupPK := base64.RawURLEncoding.EncodeToString(m.g.PublicKey)
+	b64GroupPK := base64.RawURLEncoding.EncodeToString(m.group.PublicKey)
 	m.logger.Debug("Enqueuing contact request", tyber.FormatStepLogFields(ctx, []tyber.Detail{{Name: "GroupPK", Description: fmt.Sprint(b64GroupPK)}})...)
 
 	if !m.typeChecker(isAccountGroup) {
@@ -583,12 +571,8 @@ func (m *MetadataStore) ContactRequestOutgoingEnqueue(ctx context.Context, conta
 		return nil, errcode.ErrInvalidInput.Wrap(err)
 	}
 
-	accSK, err := m.devKS.AccountPrivKey()
-	if err != nil {
-		return nil, errcode.ErrInternal.Wrap(err)
-	}
-
-	if contact.IsSamePK(accSK.GetPublic()) {
+	accountPublicKey := m.memberDevice.Member()
+	if contact.IsSamePK(accountPublicKey) {
 		return nil, errcode.ErrContactRequestSameAccount
 	}
 
@@ -656,12 +640,8 @@ func (m *MetadataStore) ContactRequestIncomingReceived(ctx context.Context, cont
 		return nil, errcode.ErrInvalidInput.Wrap(err)
 	}
 
-	accSK, err := m.devKS.AccountPrivKey()
-	if err != nil {
-		return nil, errcode.ErrInternal.Wrap(err)
-	}
-
-	if contact.IsSamePK(accSK.GetPublic()) {
+	accountPublicKey := m.memberDevice.Member()
+	if contact.IsSamePK(accountPublicKey) {
 		return nil, errcode.ErrContactRequestSameAccount
 	}
 
@@ -730,12 +710,8 @@ func (m *MetadataStore) ContactBlock(ctx context.Context, pk crypto.PubKey) (ope
 		return nil, errcode.ErrGroupInvalidType
 	}
 
-	accSK, err := m.devKS.AccountPrivKey()
-	if err != nil {
-		return nil, errcode.ErrInternal.Wrap(err)
-	}
-
-	if accSK.GetPublic().Equals(pk) {
+	accountPublicKey := m.memberDevice.Member()
+	if accountPublicKey.Equals(pk) {
 		return nil, errcode.ErrInvalidInput
 	}
 
@@ -764,12 +740,12 @@ func (m *MetadataStore) ContactSendAliasKey(ctx context.Context) (operation.Oper
 		return nil, errcode.ErrGroupInvalidType
 	}
 
-	sk, err := m.devKS.AccountProofPrivKey()
+	accountProofPublicKey, err := m.secretStore.GetAccountProofPublicKey()
 	if err != nil {
 		return nil, errcode.ErrInternal.Wrap(err)
 	}
 
-	alias, err := sk.GetPublic().Raw()
+	alias, err := accountProofPublicKey.Raw()
 	if err != nil {
 		return nil, errcode.ErrInternal.Wrap(err)
 	}
@@ -869,30 +845,16 @@ type accountGroupEvent interface {
 }
 
 func (m *MetadataStore) attributeSignAndAddEvent(ctx context.Context, evt accountSignableEvent, eventType protocoltypes.EventType) (operation.Operation, error) {
-	md, err := m.devKS.MemberDeviceForGroup(m.g)
-	if err != nil {
-		return nil, errcode.ErrInternal.Wrap(err)
-	}
+	evt.SetDevicePK(m.devicePublicKeyRaw)
 
-	m.logger.Debug("Got member device", tyber.FormatStepLogFields(ctx, []tyber.Detail{{Name: "MemberDevice", Description: fmt.Sprint(md)}})...)
-
-	device, err := md.PrivateDevice().GetPublic().Raw()
-	if err != nil {
-		return nil, errcode.ErrSerialization.Wrap(err)
-	}
-
-	m.logger.Debug("Got member device public key", tyber.FormatStepLogFields(ctx, []tyber.Detail{{Name: "MemberDevicePublicKey", Description: base64.RawURLEncoding.EncodeToString(device)}})...)
-
-	evt.SetDevicePK(device)
-
-	sig, err := signProto(evt, md.PrivateDevice())
+	sig, err := signProtoWithDevice(evt, m.memberDevice)
 	if err != nil {
 		return nil, errcode.ErrCryptoSignature.Wrap(err)
 	}
 
 	m.logger.Debug("Signed event", tyber.FormatStepLogFields(ctx, []tyber.Detail{{Name: "Signature", Description: base64.RawURLEncoding.EncodeToString(sig)}})...)
 
-	return metadataStoreAddEvent(ctx, m, m.g, eventType, evt, sig)
+	return metadataStoreAddEvent(ctx, m, m.group, eventType, evt, sig)
 }
 
 func (m *MetadataStore) contactAction(ctx context.Context, pk crypto.PubKey, event accountContactEvent, evtType protocoltypes.EventType) (operation.Operation, error) {
@@ -994,37 +956,40 @@ func constructorFactoryGroupMetadata(s *WeshOrbitDB, logger *zap.Logger) iface.S
 		shortGroupType := strings.TrimPrefix(g.GetGroupType().String(), "GroupType")
 		b64GroupPK := base64.RawURLEncoding.EncodeToString(g.PublicKey)
 
-		var (
-			md          *cryptoutil.OwnMemberDevice
-			replication = false
-		)
+		replication := false
 
 		if options.EventBus == nil {
 			options.EventBus = eventbus.NewBus()
 		}
 
-		if s.deviceKeystore == nil {
+		store := &MetadataStore{
+			eventBus:    options.EventBus,
+			group:       g,
+			logger:      logger,
+			secretStore: s.secretStore,
+		}
+
+		if s.replicationMode {
 			replication = true
 		} else {
-			md, err = s.deviceKeystore.MemberDeviceForGroup(g)
-			if errcode.Is(err, errcode.ErrInvalidInput) {
-				replication = true
-			} else if err != nil {
-				return nil, errcode.TODO.Wrap(err)
+			var err error
+
+			store.memberDevice, err = s.secretStore.GetOwnMemberDeviceForGroup(g)
+			if err != nil {
+				if errcode.Is(err, errcode.ErrInvalidInput) {
+					replication = true
+				} else {
+					return nil, errcode.ErrOrbitDBInit.Wrap(err)
+				}
+			} else {
+				store.devicePublicKeyRaw, err = store.memberDevice.Device().Raw()
+				if err != nil {
+					return nil, errcode.ErrOrbitDBInit.Wrap(err)
+				}
 			}
 		}
 
-		ctx, cancel := context.WithCancel(context.Background())
-
-		store := &MetadataStore{
-			ctx:      ctx,
-			cancel:   cancel,
-			eventBus: options.EventBus,
-			g:        g,
-			mks:      s.messageKeystore,
-			devKS:    s.deviceKeystore,
-			logger:   logger,
-		}
+		store.ctx, store.cancel = context.WithCancel(context.Background())
 
 		if err := store.initEmitter(); err != nil {
 			return nil, fmt.Errorf("unable to init emitters: %w", err)
@@ -1033,7 +998,7 @@ func constructorFactoryGroupMetadata(s *WeshOrbitDB, logger *zap.Logger) iface.S
 		if replication {
 			options.Index = basestore.NewNoopIndex
 			if err := store.InitBaseStore(ipfs, identity, addr, options); err != nil {
-				cancel()
+				store.cancel()
 				return nil, errcode.ErrOrbitDBInit.Wrap(err)
 			}
 
@@ -1045,7 +1010,7 @@ func constructorFactoryGroupMetadata(s *WeshOrbitDB, logger *zap.Logger) iface.S
 			new(stores.EventReplicated),
 		}, eventbus.BufSize(128))
 		if err != nil {
-			cancel()
+			store.cancel()
 			return nil, fmt.Errorf("unable to subscribe to store events")
 		}
 
@@ -1105,33 +1070,16 @@ func constructorFactoryGroupMetadata(s *WeshOrbitDB, logger *zap.Logger) iface.S
 					}
 				}
 			}
-		}(ctx)
+		}(store.ctx)
 
-		options.Index = newMetadataIndex(ctx, g, md.Public(), s.deviceKeystore)
+		options.Index = newMetadataIndex(store.ctx, g, store.memberDevice, s.secretStore)
 		if err := store.InitBaseStore(ipfs, identity, addr, options); err != nil {
-			cancel()
+			store.cancel()
 			return nil, errcode.ErrOrbitDBInit.Wrap(err)
 		}
 
 		return store, nil
 	}
-}
-
-func newSecretEntryPayload(localDevicePrivKey crypto.PrivKey, remoteMemberPubKey crypto.PubKey, secret *protocoltypes.DeviceSecret, group *protocoltypes.Group) ([]byte, error) {
-	message, err := secret.Marshal()
-	if err != nil {
-		return nil, errcode.ErrSerialization.Wrap(err)
-	}
-
-	mongPriv, mongPub, err := cryptoutil.EdwardsToMontgomery(localDevicePrivKey, remoteMemberPubKey)
-	if err != nil {
-		return nil, errcode.ErrCryptoKeyConversion.Wrap(err)
-	}
-
-	nonce := groupIDToNonce(group)
-	encryptedSecret := box.Seal(nil, message, nonce, mongPub, mongPriv)
-
-	return encryptedSecret, nil
 }
 
 func (m *MetadataStore) SendPushToken(ctx context.Context, t *protocoltypes.PushMemberTokenUpdate) (operation.Operation, error) {
@@ -1188,28 +1136,6 @@ func (m *MetadataStore) GetPushTokenForDevice(d crypto.PubKey) (*protocoltypes.P
 	}
 
 	return token, nil
-}
-
-func (m *MetadataStore) MemberPK() (crypto.PubKey, error) {
-	memDev, err := m.devKS.MemberDeviceForGroup(m.g)
-	if err != nil {
-		return nil, errcode.ErrInternal.Wrap(err)
-	}
-
-	return memDev.PrivateMember().GetPublic(), nil
-}
-
-func (m *MetadataStore) DevicePK() (crypto.PubKey, error) {
-	memDev, err := m.devKS.MemberDeviceForGroup(m.g)
-	if err != nil {
-		return nil, errcode.ErrInternal.Wrap(err)
-	}
-
-	return memDev.PrivateDevice().GetPublic(), nil
-}
-
-func (m *MetadataStore) Group() *protocoltypes.Group {
-	return m.g.Copy()
 }
 
 func (m *MetadataStore) initEmitter() (err error) {

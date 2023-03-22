@@ -13,7 +13,6 @@ import (
 	"github.com/libp2p/go-libp2p/core/event"
 	"github.com/libp2p/go-libp2p/p2p/host/eventbus"
 	"go.uber.org/zap"
-	"golang.org/x/crypto/nacl/secretbox"
 	"golang.org/x/sync/semaphore"
 
 	ipfslog "berty.tech/go-ipfs-log"
@@ -24,11 +23,11 @@ import (
 	"berty.tech/go-orbit-db/stores"
 	"berty.tech/go-orbit-db/stores/basestore"
 	"berty.tech/go-orbit-db/stores/operation"
-	"berty.tech/weshnet/pkg/cryptoutil"
 	"berty.tech/weshnet/pkg/errcode"
 	"berty.tech/weshnet/pkg/logutil"
 	"berty.tech/weshnet/pkg/protocoltypes"
 	"berty.tech/weshnet/pkg/pushtypes"
+	"berty.tech/weshnet/pkg/secretstore"
 	"berty.tech/weshnet/pkg/tyber"
 )
 
@@ -41,10 +40,12 @@ type MessageStore struct {
 		groupCacheMessage event.Emitter
 	}
 
-	devKS  cryptoutil.DeviceKeystore
-	mks    *cryptoutil.MessageKeystore
-	g      *protocoltypes.Group
-	logger *zap.Logger
+	secretStore               secretstore.SecretStore
+	currentDevicePublicKey    crypto.PubKey
+	currentDevicePublicKeyRaw []byte
+	group                     *protocoltypes.Group
+	groupPublicKey            crypto.PubKey
+	logger                    *zap.Logger
 
 	deviceCaches   map[string]*groupCache
 	muDeviceCaches sync.RWMutex
@@ -60,7 +61,7 @@ func (m *MessageStore) setLogger(l *zap.Logger) {
 		return
 	}
 
-	m.logger = l.With(logutil.PrivateString("group-id", fmt.Sprintf("%.6s", base64.StdEncoding.EncodeToString(m.g.PublicKey))))
+	m.logger = l.With(logutil.PrivateString("group-id", fmt.Sprintf("%.6s", base64.StdEncoding.EncodeToString(m.group.PublicKey))))
 }
 
 func (m *MessageStore) openMessage(ctx context.Context, e ipfslog.Entry) (*protocoltypes.GroupMessageEvent, error) {
@@ -74,18 +75,17 @@ func (m *MessageStore) openMessage(ctx context.Context, e ipfslog.Entry) (*proto
 		return nil, err
 	}
 
-	ownPK := crypto.PubKey(nil)
-	md, inErr := m.devKS.MemberDeviceForGroup(m.g)
-	if inErr == nil {
-		ownPK = md.PrivateDevice().GetPublic()
-	}
-
-	env, headers, err := cryptoutil.OpenEnvelopeHeaders(op.GetValue(), m.g)
+	env, headers, err := m.secretStore.OpenEnvelopeHeaders(op.GetValue(), m.group)
 	if err != nil {
 		return nil, errcode.ErrCryptoDecrypt.Wrap(err)
 	}
 
-	if !m.mks.HasSecretForRawDevicePK(ctx, m.g.PublicKey, headers.DevicePK) {
+	devicePublicKey, err := crypto.UnmarshalEd25519PublicKey(headers.DevicePK)
+	if err != nil {
+		return nil, errcode.ErrDeserialization.Wrap(err)
+	}
+
+	if !m.secretStore.IsChainKeyKnownForDevice(ctx, m.groupPublicKey, devicePublicKey) {
 		if err := m.addToMessageQueue(ctx, e); err != nil {
 			m.logger.Error("unable to add message to cache", zap.Error(err))
 		}
@@ -93,19 +93,18 @@ func (m *MessageStore) openMessage(ctx context.Context, e ipfslog.Entry) (*proto
 		return nil, fmt.Errorf("no secret for device")
 	}
 
-	return m.processMessage(ctx, ownPK, &messageItem{
+	return m.processMessage(ctx, &messageItem{
 		op:      op,
 		env:     env,
 		headers: headers,
-		ownPK:   ownPK,
 		hash:    e.GetHash(),
 	})
 }
 
 type groupCache struct {
-	self, hasSecret bool
-	locker          sync.Locker
-	queue           *priorityMessageQueue
+	self, hasKnownChainKey bool
+	locker                 sync.Locker
+	queue                  *priorityMessageQueue
 }
 
 func (m *MessageStore) CacheSizeForDevicePK(devicePK []byte) (size int, ok bool) {
@@ -121,7 +120,11 @@ func (m *MessageStore) CacheSizeForDevicePK(devicePK []byte) (size int, ok bool)
 func (m *MessageStore) ProcessMessageQueueForDevicePK(ctx context.Context, devicePK []byte) {
 	m.muDeviceCaches.Lock()
 	if device, ok := m.deviceCaches[string(devicePK)]; ok {
-		if device.hasSecret = m.mks.HasSecretForRawDevicePK(ctx, m.g.PublicKey, devicePK); !device.hasSecret {
+		devicePublicKey, errDevice := crypto.UnmarshalEd25519PublicKey(devicePK)
+
+		if errDevice != nil {
+			m.logger.Error("unable to process message, unmarshal of device pk failed", logutil.PrivateBinary("devicepk", devicePK))
+		} else if device.hasKnownChainKey = m.secretStore.IsChainKeyKnownForDevice(ctx, m.groupPublicKey, devicePublicKey); !device.hasKnownChainKey {
 			m.logger.Error("unable to process message, no secret found for device pk", logutil.PrivateBinary("devicepk", devicePK))
 		} else if next := device.queue.Next(); next != nil {
 			m.cmessage <- next
@@ -130,20 +133,20 @@ func (m *MessageStore) ProcessMessageQueueForDevicePK(ctx context.Context, devic
 	m.muDeviceCaches.Unlock()
 }
 
-func (m *MessageStore) processMessage(ctx context.Context, ownPK crypto.PubKey, message *messageItem) (*protocoltypes.GroupMessageEvent, error) {
+func (m *MessageStore) processMessage(ctx context.Context, message *messageItem) (*protocoltypes.GroupMessageEvent, error) {
 	// process message
-	msg, err := m.mks.OpenEnvelopePayload(ctx, message.env, message.headers, m.g, ownPK, message.hash)
+	msg, err := m.secretStore.OpenEnvelopePayload(ctx, message.env, message.headers, m.groupPublicKey, m.currentDevicePublicKey, message.hash)
 	if err != nil {
 		return nil, err
 	}
 
-	err = m.mks.UpdatePushGroupReferences(ctx, message.headers.DevicePK, message.headers.Counter, m.g)
+	err = m.secretStore.UpdateOutOfStoreGroupReferences(ctx, message.headers.DevicePK, message.headers.Counter, m.group)
 	if err != nil {
 		m.logger.Error("unable to update push group references", zap.Error(err))
 	}
 
 	entry := message.op.GetEntry()
-	eventContext := newEventContext(entry.GetHash(), entry.GetNext(), m.g)
+	eventContext := newEventContext(entry.GetHash(), entry.GetNext(), m.group)
 	return &protocoltypes.GroupMessageEvent{
 		EventContext: eventContext,
 		Headers:      message.headers,
@@ -152,14 +155,6 @@ func (m *MessageStore) processMessage(ctx context.Context, ownPK crypto.PubKey, 
 }
 
 func (m *MessageStore) processMessageLoop(ctx context.Context) {
-	var ownPK crypto.PubKey
-	var rawOwnPK []byte
-	md, inErr := m.devKS.MemberDeviceForGroup(m.g)
-	if inErr == nil {
-		ownPK = md.PrivateDevice().GetPublic()
-		rawOwnPK, _ = ownPK.Raw()
-	}
-
 	semProcess := semaphore.NewWeighted(32)
 
 	for {
@@ -170,23 +165,29 @@ func (m *MessageStore) processMessageLoop(ctx context.Context) {
 			return
 		}
 
-		devicepk := string(message.headers.DevicePK)
+		devicePublicKeyString := string(message.headers.DevicePK)
 
 		m.muDeviceCaches.Lock()
-		device, ok := m.deviceCaches[devicepk]
+		device, ok := m.deviceCaches[devicePublicKeyString]
 		if !ok {
-			hasSecret := m.mks.HasSecretForRawDevicePK(ctx, m.g.PublicKey, message.headers.DevicePK)
-			device = &groupCache{
-				self:      bytes.Equal(rawOwnPK, message.headers.DevicePK),
-				queue:     newPriorityMessageQueue(),
-				locker:    &sync.RWMutex{},
-				hasSecret: hasSecret,
+			devicePublicKey, err := crypto.UnmarshalEd25519PublicKey(message.headers.DevicePK)
+			if err != nil {
+				m.logger.Error("unable to process message, unmarshal of device pk failed", logutil.PrivateBinary("devicepk", message.headers.DevicePK))
+				continue
 			}
-			m.deviceCaches[devicepk] = device
+
+			hasSecret := m.secretStore.IsChainKeyKnownForDevice(ctx, m.groupPublicKey, devicePublicKey)
+			device = &groupCache{
+				self:             bytes.Equal(m.currentDevicePublicKeyRaw, message.headers.DevicePK),
+				queue:            newPriorityMessageQueue(),
+				locker:           &sync.RWMutex{},
+				hasKnownChainKey: hasSecret,
+			}
+			m.deviceCaches[devicePublicKeyString] = device
 		}
 
-		// check for device secret, if unavailable add message to cache queue
-		if !device.hasSecret {
+		// check for device chain key, if unavailable add message to cache queue
+		if !device.hasKnownChainKey {
 			device.queue.Add(message)
 			_ = m.emitters.groupCacheMessage.Emit(*message)
 			m.muDeviceCaches.Unlock()
@@ -205,7 +206,7 @@ func (m *MessageStore) processMessageLoop(ctx context.Context) {
 			defer semProcess.Release(1)
 
 			// process the message
-			evt, err := m.processMessage(ctx, ownPK, message)
+			evt, err := m.processMessage(ctx, message)
 			if err != nil {
 				if errcode.Is(err, errcode.ErrCryptoDecryptPayload) {
 					// @FIXME(gfanton): this should not happen
@@ -245,13 +246,7 @@ func (m *MessageStore) addToMessageQueue(ctx context.Context, e ipfslog.Entry) e
 		return err
 	}
 
-	ownPK := crypto.PubKey(nil)
-	md, inErr := m.devKS.MemberDeviceForGroup(m.g)
-	if inErr == nil {
-		ownPK = md.PrivateDevice().GetPublic()
-	}
-
-	env, headers, err := cryptoutil.OpenEnvelopeHeaders(op.GetValue(), m.g)
+	env, headers, err := m.secretStore.OpenEnvelopeHeaders(op.GetValue(), m.group)
 	if err != nil {
 		return errcode.ErrCryptoDecrypt.Wrap(err)
 	}
@@ -260,7 +255,6 @@ func (m *MessageStore) addToMessageQueue(ctx context.Context, e ipfslog.Entry) e
 		hash:    e.GetHash(),
 		env:     env,
 		headers: headers,
-		ownPK:   ownPK,
 		op:      op,
 	}
 
@@ -305,7 +299,7 @@ func (m *MessageStore) AddMessage(ctx context.Context, payload []byte) (operatio
 	ctx, newTrace := tyber.ContextWithTraceID(ctx)
 
 	if newTrace {
-		m.logger.Debug("Sending message to group "+base64.RawURLEncoding.EncodeToString(m.g.PublicKey), tyber.FormatTraceLogFields(ctx)...)
+		m.logger.Debug("Sending message to group "+base64.RawURLEncoding.EncodeToString(m.group.PublicKey), tyber.FormatTraceLogFields(ctx)...)
 	}
 
 	m.logger.Debug(
@@ -318,15 +312,10 @@ func (m *MessageStore) AddMessage(ctx context.Context, payload []byte) (operatio
 		)...,
 	)
 
-	md, err := m.devKS.MemberDeviceForGroup(m.g)
-	if err != nil {
-		return nil, errcode.ErrInternal.Wrap(err)
-	}
-
-	return messageStoreAddMessage(ctx, m.g, md, m, payload)
+	return messageStoreAddMessage(ctx, m.group, m, payload)
 }
 
-func messageStoreAddMessage(ctx context.Context, g *protocoltypes.Group, md *cryptoutil.OwnMemberDevice, m *MessageStore, payload []byte) (operation.Operation, error) {
+func messageStoreAddMessage(ctx context.Context, g *protocoltypes.Group, m *MessageStore, payload []byte) (operation.Operation, error) {
 	msg, err := (&protocoltypes.EncryptedMessage{
 		Plaintext:        payload,
 		ProtocolMetadata: &protocoltypes.ProtocolMetadata{},
@@ -335,7 +324,7 @@ func messageStoreAddMessage(ctx context.Context, g *protocoltypes.Group, md *cry
 		return nil, errcode.ErrInternal.Wrap(err)
 	}
 
-	env, err := m.mks.SealEnvelope(ctx, g, md.PrivateDevice(), msg)
+	sealedEnvelope, err := m.secretStore.SealEnvelope(ctx, g, msg)
 	if err != nil {
 		return nil, errcode.ErrCryptoEncrypt.Wrap(err)
 	}
@@ -345,12 +334,12 @@ func messageStoreAddMessage(ctx context.Context, g *protocoltypes.Group, md *cry
 			ctx,
 			[]tyber.Detail{
 				{Name: "Cleartext size", Description: fmt.Sprintf("%d bytes", len(msg))},
-				{Name: "Cyphertext size", Description: fmt.Sprintf("%d bytes", len(env))},
+				{Name: "Cyphertext size", Description: fmt.Sprintf("%d bytes", len(sealedEnvelope))},
 			},
 		)...,
 	)
 
-	op := operation.NewOperation(nil, "ADD", env)
+	op := operation.NewOperation(nil, "ADD", sealedEnvelope)
 
 	e, err := m.AddOperation(ctx, op, nil)
 	if err != nil {
@@ -381,56 +370,69 @@ func constructorFactoryGroupMessage(s *WeshOrbitDB, logger *zap.Logger) iface.St
 			return nil, errcode.ErrInvalidInput.Wrap(err)
 		}
 
+		groupPublicKey, err := g.GetPubKey()
+		if err != nil {
+			return nil, errcode.ErrDeserialization.Wrap(err)
+		}
+
 		if options.EventBus == nil {
 			options.EventBus = eventbus.NewBus()
 		}
 
 		replication := false
 
-		if s.deviceKeystore == nil {
+		store := &MessageStore{
+			eventBus:       options.EventBus,
+			secretStore:    s.secretStore,
+			cmessage:       make(chan *messageItem),
+			group:          g,
+			groupPublicKey: groupPublicKey,
+			logger:         logger,
+			deviceCaches:   make(map[string]*groupCache),
+		}
+
+		if s.replicationMode {
 			replication = true
 		} else {
-			if _, err := s.deviceKeystore.MemberDeviceForGroup(g); errcode.Is(err, errcode.ErrInvalidInput) {
-				replication = true
-			} else if err != nil {
-				return nil, errcode.ErrOrbitDBInit.Wrap(err)
+			currentMemberDevice, err := s.secretStore.GetOwnMemberDeviceForGroup(g)
+
+			if err != nil {
+				if errcode.Is(err, errcode.ErrInvalidInput) {
+					replication = true
+				} else {
+					return nil, errcode.ErrOrbitDBInit.Wrap(err)
+				}
+			} else {
+				store.currentDevicePublicKey = currentMemberDevice.Device()
+				store.currentDevicePublicKeyRaw, err = store.currentDevicePublicKey.Raw()
+				if err != nil {
+					return nil, errcode.ErrOrbitDBInit.Wrap(err)
+				}
 			}
 		}
 
-		ctx, cancel := context.WithCancel(context.Background())
-
-		store := &MessageStore{
-			ctx:          ctx,
-			cancel:       cancel,
-			eventBus:     options.EventBus,
-			devKS:        s.deviceKeystore,
-			mks:          s.messageKeystore,
-			cmessage:     make(chan *messageItem),
-			g:            g,
-			logger:       logger,
-			deviceCaches: make(map[string]*groupCache),
-		}
+		store.ctx, store.cancel = context.WithCancel(context.Background())
 
 		go func() {
-			store.processMessageLoop(ctx)
-			logger.Debug("store message process loop ended", zap.Error(ctx.Err()))
+			store.processMessageLoop(store.ctx)
+			logger.Debug("store message process loop ended", zap.Error(store.ctx.Err()))
 		}()
 
 		if store.emitters.groupMessage, err = store.eventBus.Emitter(new(protocoltypes.GroupMessageEvent)); err != nil {
-			cancel()
+			store.cancel()
 			return nil, errcode.ErrOrbitDBInit.Wrap(err)
 		}
 
 		// for debug/test purpose
 		if store.emitters.groupCacheMessage, err = store.eventBus.Emitter(new(messageItem)); err != nil {
-			cancel()
+			store.cancel()
 			return nil, errcode.ErrOrbitDBInit.Wrap(err)
 		}
 
 		options.Index = basestore.NewNoopIndex
 
 		if err := store.InitBaseStore(ipfs, identity, addr, options); err != nil {
-			cancel()
+			store.cancel()
 			return nil, errcode.ErrOrbitDBInit.Wrap(err)
 		}
 
@@ -479,87 +481,43 @@ func constructorFactoryGroupMessage(s *WeshOrbitDB, logger *zap.Logger) iface.St
 					}
 				}
 			}
-		}(ctx)
+		}(store.ctx)
 
 		return store, nil
 	}
 }
 
-func (m *MessageStore) GetMessageByCID(c cid.Cid) (*protocoltypes.MessageEnvelope, *protocoltypes.MessageHeaders, error) {
+func (m *MessageStore) GetMessageByCID(c cid.Cid) (operation.Operation, error) {
 	logEntry, ok := m.OpLog().Get(c)
 	if !ok {
-		return nil, nil, errcode.ErrInvalidInput.Wrap(fmt.Errorf("unable to find message entry"))
+		return nil, errcode.ErrInvalidInput.Wrap(fmt.Errorf("unable to find message entry"))
 	}
 
 	op, err := operation.ParseOperation(logEntry)
 	if err != nil {
-		return nil, nil, errcode.ErrDeserialization.Wrap(err)
+		return nil, errcode.ErrDeserialization.Wrap(err)
 	}
 
-	env, headers, err := cryptoutil.OpenEnvelopeHeaders(op.GetValue(), m.g)
-	if err != nil {
-		return nil, nil, errcode.ErrDeserialization.Wrap(err)
-	}
-
-	return env, headers, nil
+	return op, nil
 }
 
 func (m *MessageStore) GetOutOfStoreMessageEnvelope(ctx context.Context, c cid.Cid) (*pushtypes.OutOfStoreMessageEnvelope, error) {
-	env, headers, err := m.GetMessageByCID(c)
+	op, err := m.GetMessageByCID(c)
 	if err != nil {
 		return nil, errcode.ErrInvalidInput.Wrap(err)
 	}
 
-	sealedMessageEnvelope, err := SealOutOfStoreMessageEnvelope(c, env, headers, m.g)
+	env, headers, err := m.secretStore.OpenEnvelopeHeaders(op.GetValue(), m.group)
+	if err != nil {
+		return nil, errcode.ErrDeserialization.Wrap(err)
+	}
+
+	sealedMessageEnvelope, err := m.secretStore.SealOutOfStoreMessageEnvelope(c, env, headers, m.group)
 	if err != nil {
 		return nil, errcode.ErrInternal.Wrap(err)
 	}
 
 	return sealedMessageEnvelope, nil
-}
-
-func SealOutOfStoreMessageEnvelope(id cid.Cid, env *protocoltypes.MessageEnvelope, headers *protocoltypes.MessageHeaders, g *protocoltypes.Group) (*pushtypes.OutOfStoreMessageEnvelope, error) {
-	oosMessage := &protocoltypes.OutOfStoreMessage{
-		CID:              id.Bytes(),
-		DevicePK:         headers.DevicePK,
-		Counter:          headers.Counter,
-		Sig:              headers.Sig,
-		EncryptedPayload: env.Message,
-		Nonce:            env.Nonce,
-	}
-
-	data, err := oosMessage.Marshal()
-	if err != nil {
-		return nil, errcode.ErrSerialization.Wrap(err)
-	}
-
-	nonce, err := cryptoutil.GenerateNonce()
-	if err != nil {
-		return nil, errcode.ErrCryptoNonceGeneration.Wrap(err)
-	}
-
-	secret, err := cryptoutil.KeySliceToArray(g.Secret)
-	if err != nil {
-		return nil, errcode.ErrSerialization.Wrap(err)
-	}
-
-	encryptedData := secretbox.Seal(nil, data, nonce, secret)
-
-	groupPushSecret, err := cryptoutil.GetGroupPushSecret(g)
-	if err != nil {
-		return nil, errcode.ErrCryptoKeyGeneration.Wrap(err)
-	}
-
-	pushGroupRef, err := cryptoutil.CreatePushGroupReference(headers.DevicePK, headers.Counter, groupPushSecret)
-	if err != nil {
-		return nil, errcode.ErrCryptoKeyGeneration.Wrap(err)
-	}
-
-	return &pushtypes.OutOfStoreMessageEnvelope{
-		Nonce:          nonce[:],
-		Box:            encryptedData,
-		GroupReference: pushGroupRef,
-	}, nil
 }
 
 func (m *MessageStore) Close() error {

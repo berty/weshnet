@@ -12,7 +12,6 @@ import (
 	"google.golang.org/grpc/credentials/insecure"
 
 	"berty.tech/weshnet/pkg/authtypes"
-	"berty.tech/weshnet/pkg/cryptoutil"
 	"berty.tech/weshnet/pkg/errcode"
 	"berty.tech/weshnet/pkg/grpcutil"
 	"berty.tech/weshnet/pkg/logutil"
@@ -32,7 +31,7 @@ func FilterGroupForReplication(m *protocoltypes.Group) (*protocoltypes.Group, er
 		return nil, errcode.ErrSerialization.Wrap(err)
 	}
 
-	linkKey, err := cryptoutil.GetLinkKeyArray(m)
+	linkKey, err := m.GetLinkKeyArray()
 	if err != nil {
 		return nil, errcode.TODO.Wrap(err)
 	}

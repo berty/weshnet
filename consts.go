@@ -5,7 +5,6 @@ import (
 )
 
 const (
-	NamespaceDeviceKeystore   = "device_keystore"
 	NamespaceOrbitDBDatastore = "orbitdb_datastore"
 	NamespaceOrbitDBDirectory = "orbitdb"
 	NamespaceIPFSDatastore    = "ipfs_datastore"

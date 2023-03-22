@@ -91,16 +91,10 @@ type ProtocolServiceClient interface {
 	ReplicationServiceRegisterGroup(ctx context.Context, in *ReplicationServiceRegisterGroup_Request, opts ...grpc.CallOption) (*ReplicationServiceRegisterGroup_Reply, error)
 	// PeerList returns a list of P2P peers
 	PeerList(ctx context.Context, in *PeerList_Request, opts ...grpc.CallOption) (*PeerList_Reply, error)
-	// PushReceive handles a push payload, decrypts it if possible
-	PushReceive(ctx context.Context, in *PushReceive_Request, opts ...grpc.CallOption) (*PushReceive_Reply, error)
-	// PushSend sends a push payload to a specified list of group members
-	PushSend(ctx context.Context, in *PushSend_Request, opts ...grpc.CallOption) (*PushSend_Reply, error)
-	// PushShareToken sends push tokens of own devices to a group
-	PushShareToken(ctx context.Context, in *PushShareToken_Request, opts ...grpc.CallOption) (*PushShareToken_Reply, error)
-	// PushSetDeviceToken registers a push token for the current device
-	PushSetDeviceToken(ctx context.Context, in *PushSetDeviceToken_Request, opts ...grpc.CallOption) (*PushSetDeviceToken_Reply, error)
-	// PushSetServer registers a push server for the current device
-	PushSetServer(ctx context.Context, in *PushSetServer_Request, opts ...grpc.CallOption) (*PushSetServer_Reply, error)
+	// OutOfStoreReceive parses a payload received outside a synchronized store
+	OutOfStoreReceive(ctx context.Context, in *OutOfStoreReceive_Request, opts ...grpc.CallOption) (*OutOfStoreReceive_Reply, error)
+	// OutOfStoreSeal creates a payload of a message present in store to be sent outside a synchronized store
+	OutOfStoreSeal(ctx context.Context, in *OutOfStoreSeal_Request, opts ...grpc.CallOption) (*OutOfStoreSeal_Reply, error)
 	// RefreshContactRequest try to refresh the contact request for the given contact
 	RefreshContactRequest(ctx context.Context, in *RefreshContactRequest_Request, opts ...grpc.CallOption) (*RefreshContactRequest_Reply, error)
 }
@@ -648,45 +642,18 @@ func (c *protocolServiceClient) PeerList(ctx context.Context, in *PeerList_Reque
 	return out, nil
 }
 
-func (c *protocolServiceClient) PushReceive(ctx context.Context, in *PushReceive_Request, opts ...grpc.CallOption) (*PushReceive_Reply, error) {
-	out := new(PushReceive_Reply)
-	err := c.cc.Invoke(ctx, "/weshnet.protocol.v1.ProtocolService/PushReceive", in, out, opts...)
+func (c *protocolServiceClient) OutOfStoreReceive(ctx context.Context, in *OutOfStoreReceive_Request, opts ...grpc.CallOption) (*OutOfStoreReceive_Reply, error) {
+	out := new(OutOfStoreReceive_Reply)
+	err := c.cc.Invoke(ctx, "/weshnet.protocol.v1.ProtocolService/OutOfStoreReceive", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *protocolServiceClient) PushSend(ctx context.Context, in *PushSend_Request, opts ...grpc.CallOption) (*PushSend_Reply, error) {
-	out := new(PushSend_Reply)
-	err := c.cc.Invoke(ctx, "/weshnet.protocol.v1.ProtocolService/PushSend", in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *protocolServiceClient) PushShareToken(ctx context.Context, in *PushShareToken_Request, opts ...grpc.CallOption) (*PushShareToken_Reply, error) {
-	out := new(PushShareToken_Reply)
-	err := c.cc.Invoke(ctx, "/weshnet.protocol.v1.ProtocolService/PushShareToken", in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *protocolServiceClient) PushSetDeviceToken(ctx context.Context, in *PushSetDeviceToken_Request, opts ...grpc.CallOption) (*PushSetDeviceToken_Reply, error) {
-	out := new(PushSetDeviceToken_Reply)
-	err := c.cc.Invoke(ctx, "/weshnet.protocol.v1.ProtocolService/PushSetDeviceToken", in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *protocolServiceClient) PushSetServer(ctx context.Context, in *PushSetServer_Request, opts ...grpc.CallOption) (*PushSetServer_Reply, error) {
-	out := new(PushSetServer_Reply)
-	err := c.cc.Invoke(ctx, "/weshnet.protocol.v1.ProtocolService/PushSetServer", in, out, opts...)
+func (c *protocolServiceClient) OutOfStoreSeal(ctx context.Context, in *OutOfStoreSeal_Request, opts ...grpc.CallOption) (*OutOfStoreSeal_Reply, error) {
+	out := new(OutOfStoreSeal_Reply)
+	err := c.cc.Invoke(ctx, "/weshnet.protocol.v1.ProtocolService/OutOfStoreSeal", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -779,16 +746,10 @@ type ProtocolServiceServer interface {
 	ReplicationServiceRegisterGroup(context.Context, *ReplicationServiceRegisterGroup_Request) (*ReplicationServiceRegisterGroup_Reply, error)
 	// PeerList returns a list of P2P peers
 	PeerList(context.Context, *PeerList_Request) (*PeerList_Reply, error)
-	// PushReceive handles a push payload, decrypts it if possible
-	PushReceive(context.Context, *PushReceive_Request) (*PushReceive_Reply, error)
-	// PushSend sends a push payload to a specified list of group members
-	PushSend(context.Context, *PushSend_Request) (*PushSend_Reply, error)
-	// PushShareToken sends push tokens of own devices to a group
-	PushShareToken(context.Context, *PushShareToken_Request) (*PushShareToken_Reply, error)
-	// PushSetDeviceToken registers a push token for the current device
-	PushSetDeviceToken(context.Context, *PushSetDeviceToken_Request) (*PushSetDeviceToken_Reply, error)
-	// PushSetServer registers a push server for the current device
-	PushSetServer(context.Context, *PushSetServer_Request) (*PushSetServer_Reply, error)
+	// OutOfStoreReceive parses a payload received outside a synchronized store
+	OutOfStoreReceive(context.Context, *OutOfStoreReceive_Request) (*OutOfStoreReceive_Reply, error)
+	// OutOfStoreSeal creates a payload of a message present in store to be sent outside a synchronized store
+	OutOfStoreSeal(context.Context, *OutOfStoreSeal_Request) (*OutOfStoreSeal_Reply, error)
 	// RefreshContactRequest try to refresh the contact request for the given contact
 	RefreshContactRequest(context.Context, *RefreshContactRequest_Request) (*RefreshContactRequest_Reply, error)
 	mustEmbedUnimplementedProtocolServiceServer()
@@ -915,20 +876,11 @@ func (UnimplementedProtocolServiceServer) ReplicationServiceRegisterGroup(contex
 func (UnimplementedProtocolServiceServer) PeerList(context.Context, *PeerList_Request) (*PeerList_Reply, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method PeerList not implemented")
 }
-func (UnimplementedProtocolServiceServer) PushReceive(context.Context, *PushReceive_Request) (*PushReceive_Reply, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method PushReceive not implemented")
+func (UnimplementedProtocolServiceServer) OutOfStoreReceive(context.Context, *OutOfStoreReceive_Request) (*OutOfStoreReceive_Reply, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method OutOfStoreReceive not implemented")
 }
-func (UnimplementedProtocolServiceServer) PushSend(context.Context, *PushSend_Request) (*PushSend_Reply, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method PushSend not implemented")
-}
-func (UnimplementedProtocolServiceServer) PushShareToken(context.Context, *PushShareToken_Request) (*PushShareToken_Reply, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method PushShareToken not implemented")
-}
-func (UnimplementedProtocolServiceServer) PushSetDeviceToken(context.Context, *PushSetDeviceToken_Request) (*PushSetDeviceToken_Reply, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method PushSetDeviceToken not implemented")
-}
-func (UnimplementedProtocolServiceServer) PushSetServer(context.Context, *PushSetServer_Request) (*PushSetServer_Reply, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method PushSetServer not implemented")
+func (UnimplementedProtocolServiceServer) OutOfStoreSeal(context.Context, *OutOfStoreSeal_Request) (*OutOfStoreSeal_Reply, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method OutOfStoreSeal not implemented")
 }
 func (UnimplementedProtocolServiceServer) RefreshContactRequest(context.Context, *RefreshContactRequest_Request) (*RefreshContactRequest_Reply, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method RefreshContactRequest not implemented")
@@ -1672,92 +1624,38 @@ func _ProtocolService_PeerList_Handler(srv interface{}, ctx context.Context, dec
 	return interceptor(ctx, in, info, handler)
 }
 
-func _ProtocolService_PushReceive_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(PushReceive_Request)
+func _ProtocolService_OutOfStoreReceive_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(OutOfStoreReceive_Request)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(ProtocolServiceServer).PushReceive(ctx, in)
+		return srv.(ProtocolServiceServer).OutOfStoreReceive(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/weshnet.protocol.v1.ProtocolService/PushReceive",
+		FullMethod: "/weshnet.protocol.v1.ProtocolService/OutOfStoreReceive",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ProtocolServiceServer).PushReceive(ctx, req.(*PushReceive_Request))
+		return srv.(ProtocolServiceServer).OutOfStoreReceive(ctx, req.(*OutOfStoreReceive_Request))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _ProtocolService_PushSend_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(PushSend_Request)
+func _ProtocolService_OutOfStoreSeal_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(OutOfStoreSeal_Request)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(ProtocolServiceServer).PushSend(ctx, in)
+		return srv.(ProtocolServiceServer).OutOfStoreSeal(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/weshnet.protocol.v1.ProtocolService/PushSend",
+		FullMethod: "/weshnet.protocol.v1.ProtocolService/OutOfStoreSeal",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ProtocolServiceServer).PushSend(ctx, req.(*PushSend_Request))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _ProtocolService_PushShareToken_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(PushShareToken_Request)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(ProtocolServiceServer).PushShareToken(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: "/weshnet.protocol.v1.ProtocolService/PushShareToken",
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ProtocolServiceServer).PushShareToken(ctx, req.(*PushShareToken_Request))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _ProtocolService_PushSetDeviceToken_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(PushSetDeviceToken_Request)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(ProtocolServiceServer).PushSetDeviceToken(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: "/weshnet.protocol.v1.ProtocolService/PushSetDeviceToken",
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ProtocolServiceServer).PushSetDeviceToken(ctx, req.(*PushSetDeviceToken_Request))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _ProtocolService_PushSetServer_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(PushSetServer_Request)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(ProtocolServiceServer).PushSetServer(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: "/weshnet.protocol.v1.ProtocolService/PushSetServer",
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ProtocolServiceServer).PushSetServer(ctx, req.(*PushSetServer_Request))
+		return srv.(ProtocolServiceServer).OutOfStoreSeal(ctx, req.(*OutOfStoreSeal_Request))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -1912,24 +1810,12 @@ var ProtocolService_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _ProtocolService_PeerList_Handler,
 		},
 		{
-			MethodName: "PushReceive",
-			Handler:    _ProtocolService_PushReceive_Handler,
+			MethodName: "OutOfStoreReceive",
+			Handler:    _ProtocolService_OutOfStoreReceive_Handler,
 		},
 		{
-			MethodName: "PushSend",
-			Handler:    _ProtocolService_PushSend_Handler,
-		},
-		{
-			MethodName: "PushShareToken",
-			Handler:    _ProtocolService_PushShareToken_Handler,
-		},
-		{
-			MethodName: "PushSetDeviceToken",
-			Handler:    _ProtocolService_PushSetDeviceToken_Handler,
-		},
-		{
-			MethodName: "PushSetServer",
-			Handler:    _ProtocolService_PushSetServer_Handler,
+			MethodName: "OutOfStoreSeal",
+			Handler:    _ProtocolService_OutOfStoreSeal_Handler,
 		},
 		{
 			MethodName: "RefreshContactRequest",

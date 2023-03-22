@@ -18,7 +18,7 @@ var eventTypesMapper = map[protocoltypes.EventType]struct {
 	SigChecker sigChecker
 }{
 	protocoltypes.EventTypeGroupMemberDeviceAdded:                 {Message: &protocoltypes.GroupAddMemberDevice{}, SigChecker: sigCheckerMemberDeviceAdded},
-	protocoltypes.EventTypeGroupDeviceSecretAdded:                 {Message: &protocoltypes.GroupAddDeviceSecret{}, SigChecker: sigCheckerDeviceSigned},
+	protocoltypes.EventTypeGroupDeviceChainKeyAdded:               {Message: &protocoltypes.GroupAddDeviceChainKey{}, SigChecker: sigCheckerDeviceSigned},
 	protocoltypes.EventTypeAccountGroupJoined:                     {Message: &protocoltypes.AccountGroupJoined{}, SigChecker: sigCheckerDeviceSigned},
 	protocoltypes.EventTypeAccountGroupLeft:                       {Message: &protocoltypes.AccountGroupLeft{}, SigChecker: sigCheckerDeviceSigned},
 	protocoltypes.EventTypeAccountContactRequestDisabled:          {Message: &protocoltypes.AccountContactRequestDisabled{}, SigChecker: sigCheckerDeviceSigned},
@@ -98,7 +98,7 @@ func newGroupMetadataEventFromEntry(_ ipfslog.Log, e ipfslog.Entry, metadata *pr
 	}
 
 	// TODO(gfanton): getParentsCID use a lot of ressources, disable it until we need it
-	// evtCtx := newEventContext(e.GetHash(), getParentsForCID(log, e.GetHash()), g, attachmentsCIDs)
+	// evtCtx := newEventContext(e.GetHash(), getParentsForCID(log, e.GetHash()), group, attachmentsCIDs)
 	evtCtx := newEventContext(e.GetHash(), []cid.Cid{}, g)
 
 	gme := protocoltypes.GroupMetadataEvent{
@@ -121,7 +121,7 @@ func openGroupEnvelope(g *protocoltypes.Group, envelopeBytes []byte) (*protocolt
 		return nil, nil, errcode.ErrSerialization.Wrap(err)
 	}
 
-	data, ok := secretbox.Open(nil, env.Event, nonce, cryptoutil.GetSharedSecret(g))
+	data, ok := secretbox.Open(nil, env.Event, nonce, g.GetSharedSecret())
 	if !ok {
 		return nil, nil, errcode.ErrGroupMemberLogEventOpen
 	}
@@ -173,7 +173,7 @@ func sealGroupEnvelope(g *protocoltypes.Group, eventType protocoltypes.EventType
 		return nil, errcode.ErrSerialization.Wrap(err)
 	}
 
-	eventBytes := secretbox.Seal(nil, eventClearBytes, nonce, cryptoutil.GetSharedSecret(g))
+	eventBytes := secretbox.Seal(nil, eventClearBytes, nonce, g.GetSharedSecret())
 
 	env := &protocoltypes.GroupEnvelope{
 		Event: eventBytes,

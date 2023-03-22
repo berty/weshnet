@@ -163,7 +163,7 @@ func (s *service) AuthServiceCompleteFlow(ctx context.Context, request *protocol
 	}
 
 	// @FIXME(gfanton):  should be handle on the client (js) side
-	registeredPushServer := 0
+	// registeredPushServer := 0
 	for _, service := range services {
 		if service.ServiceType != authtypes.ServicePushID {
 			continue
@@ -185,25 +185,25 @@ func (s *service) AuthServiceCompleteFlow(ctx context.Context, request *protocol
 			continue
 		}
 
-		_, err = s.PushSetServer(ctx, &protocoltypes.PushSetServer_Request{
-			Server: &protocoltypes.PushServer{
-				ServerKey:   repl.PublicKey,
-				ServiceAddr: service.ServiceEndpoint,
-			},
-		})
+		// _, err = s.PushSetServer(ctx, &protocoltypes.PushSetServer_Request{
+		// 	Server: &protocoltypes.PushServer{
+		// 		ServerKey:   repl.PublicKey,
+		// 		ServiceAddr: service.ServiceEndpoint,
+		// 	},
+		// })
 
-		if err != nil {
-			s.logger.Warn("unable to set push server", zap.Error(err))
-			continue
-		}
-
-		registeredPushServer++
-		s.logger.Debug("push server registered", logutil.PrivateString("endpoint", service.GetServiceEndpoint()))
+		// if err != nil {
+		// 	s.logger.Warn("unable to set push server", zap.Error(err))
+		// 	continue
+		// }
+		//
+		// registeredPushServer++
+		// s.logger.Debug("push server registered", logutil.PrivateString("endpoint", service.GetServiceEndpoint()))
 	}
 
-	if registeredPushServer == 0 {
-		s.logger.Warn("no push server found/registered")
-	}
+	// if registeredPushServer == 0 {
+	// 	s.logger.Warn("no push server found/registered")
+	// }
 
 	return &protocoltypes.AuthServiceCompleteFlow_Reply{
 		TokenID: svcToken.TokenID(),

@@ -890,12 +890,13 @@ func sendMessageOnGroup(ctx context.Context, t *testing.T, senders, receivers []
 func getAccountPubKey(t *testing.T, tp *weshnet.TestingProtocol) []byte {
 	t.Helper()
 
-	tpSK, err := tp.Opts.DeviceKeystore.AccountPrivKey()
-	require.NoError(t, err)
-	tpPK, err := tpSK.GetPublic().Raw()
+	_, accMemberDevice, err := tp.Opts.SecretStore.GetGroupForAccount()
 	require.NoError(t, err)
 
-	return tpPK
+	publicKeyBytes, err := accMemberDevice.Member().Raw()
+	require.NoError(t, err)
+
+	return publicKeyBytes
 }
 
 func getAccountB64PubKey(t *testing.T, tp *weshnet.TestingProtocol) string {

@@ -15,12 +15,13 @@ import (
 	"berty.tech/weshnet/pkg/cryptoutil"
 	"berty.tech/weshnet/pkg/errcode"
 	"berty.tech/weshnet/pkg/protocoltypes"
+	"berty.tech/weshnet/pkg/secretstore"
 )
 
 // FIXME: replace members, devices, sentSecrets, contacts and groups by a circular buffer to avoid an attack by RAM saturation
 type metadataStoreIndex struct {
-	members                  map[string][]*cryptoutil.MemberDevice
-	devices                  map[string]*cryptoutil.MemberDevice
+	members                  map[string][]secretstore.MemberDevice
+	devices                  map[string]secretstore.MemberDevice
 	handledEvents            map[string]struct{}
 	sentSecrets              map[string]struct{}
 	admins                   map[crypto.PubKey]struct{}
@@ -40,9 +41,9 @@ type metadataStoreIndex struct {
 	eventsContactAddAliasKey []*protocoltypes.ContactAddAliasKey
 	ownAliasKeySent          bool
 	otherAliasKey            []byte
-	g                        *protocoltypes.Group
-	ownMemberDevice          *cryptoutil.MemberDevice
-	deviceKeystore           cryptoutil.DeviceKeystore
+	group                    *protocoltypes.Group
+	ownMemberDevice          secretstore.MemberDevice
+	secretStore              secretstore.SecretStore
 	ctx                      context.Context
 	lock                     sync.RWMutex
 	logger                   *zap.Logger
@@ -86,11 +87,11 @@ func (m *metadataStoreIndex) UpdateIndex(log ipfslog.Log, _ []ipfslog.Entry) err
 		_, alreadyHandledEvent := m.handledEvents[e.GetHash().String()]
 
 		// TODO: improve account events handling
-		if m.g.GroupType != protocoltypes.GroupTypeAccount && alreadyHandledEvent {
+		if m.group.GroupType != protocoltypes.GroupTypeAccount && alreadyHandledEvent {
 			continue
 		}
 
-		metaEvent, event, err := openMetadataEntry(log, e, m.g)
+		metaEvent, event, err := openMetadataEntry(log, e, m.group)
 		if err != nil {
 			m.logger.Error("unable to open metadata entry", zap.Error(err))
 			continue
@@ -150,21 +151,16 @@ func (m *metadataStoreIndex) handleGroupAddMemberDevice(event proto.Message) err
 		return nil
 	}
 
-	m.devices[string(e.DevicePK)] = &cryptoutil.MemberDevice{
-		Member: member,
-		Device: device,
-	}
+	memberDevice := secretstore.NewMemberDevice(member, device)
 
-	m.members[string(e.MemberPK)] = append(m.members[string(e.MemberPK)], &cryptoutil.MemberDevice{
-		Member: member,
-		Device: device,
-	})
+	m.devices[string(e.DevicePK)] = memberDevice
+	m.members[string(e.MemberPK)] = append(m.members[string(e.MemberPK)], memberDevice)
 
 	return nil
 }
 
-func (m *metadataStoreIndex) handleGroupAddDeviceSecret(event proto.Message) error {
-	e, ok := event.(*protocoltypes.GroupAddDeviceSecret)
+func (m *metadataStoreIndex) handleGroupAddDeviceChainKey(event proto.Message) error {
+	e, ok := event.(*protocoltypes.GroupAddDeviceChainKey)
 	if !ok {
 		return errcode.ErrInvalidInput
 	}
@@ -179,32 +175,36 @@ func (m *metadataStoreIndex) handleGroupAddDeviceSecret(event proto.Message) err
 		return errcode.ErrDeserialization.Wrap(err)
 	}
 
-	if m.ownMemberDevice.Device.Equals(senderPK) {
+	if m.ownMemberDevice.Device().Equals(senderPK) {
 		m.sentSecrets[string(e.DestMemberPK)] = struct{}{}
 	}
 
 	return nil
 }
 
-func (m *metadataStoreIndex) getMemberByDevice(pk crypto.PubKey) (crypto.PubKey, error) {
+func (m *metadataStoreIndex) getMemberByDevice(devicePublicKey crypto.PubKey) (crypto.PubKey, error) {
 	m.lock.RLock()
 	defer m.lock.RUnlock()
 
-	return m.unsafeGetMemberByDevice(pk)
-}
-
-func (m *metadataStoreIndex) unsafeGetMemberByDevice(pk crypto.PubKey) (crypto.PubKey, error) {
-	id, err := pk.Raw()
+	publicKeyBytes, err := devicePublicKey.Raw()
 	if err != nil {
 		return nil, errcode.ErrInvalidInput.Wrap(err)
 	}
 
-	device, ok := m.devices[string(id)]
+	return m.unsafeGetMemberByDevice(publicKeyBytes)
+}
+
+func (m *metadataStoreIndex) unsafeGetMemberByDevice(publicKeyBytes []byte) (crypto.PubKey, error) {
+	if l := len(publicKeyBytes); l != cryptoutil.KeySize {
+		return nil, errcode.ErrInvalidInput.Wrap(fmt.Errorf("invalid private key size, expected %d got %d", cryptoutil.KeySize, l))
+	}
+
+	device, ok := m.devices[string(publicKeyBytes)]
 	if !ok {
 		return nil, errcode.ErrMissingInput
 	}
 
-	return device.Member, nil
+	return device.Member(), nil
 }
 
 func (m *metadataStoreIndex) getDevicesForMember(pk crypto.PubKey) ([]crypto.PubKey, error) {
@@ -223,7 +223,7 @@ func (m *metadataStoreIndex) getDevicesForMember(pk crypto.PubKey) ([]crypto.Pub
 
 	ret := make([]crypto.PubKey, len(mds))
 	for i, md := range mds {
-		ret[i] = md.Device
+		ret[i] = md.Device()
 	}
 
 	return ret, nil
@@ -278,7 +278,7 @@ func (m *metadataStoreIndex) listMembers() []crypto.PubKey {
 	i := 0
 
 	for _, md := range m.members {
-		members[i] = md[0].Member
+		members[i] = md[0].Member()
 		i++
 	}
 
@@ -293,7 +293,7 @@ func (m *metadataStoreIndex) listDevices() []crypto.PubKey {
 	i := 0
 
 	for _, md := range m.devices {
-		devices[i] = md.Device
+		devices[i] = md.Device()
 		i++
 	}
 
@@ -415,7 +415,7 @@ func (m *metadataStoreIndex) handleContactRequestReferenceReset(event proto.Mess
 }
 
 func (m *metadataStoreIndex) registerContactFromGroupPK(ac *AccountContact) error {
-	if m.g.GroupType != protocoltypes.GroupTypeAccount {
+	if m.group.GroupType != protocoltypes.GroupTypeAccount {
 		return errcode.ErrGroupInvalidType
 	}
 
@@ -424,17 +424,12 @@ func (m *metadataStoreIndex) registerContactFromGroupPK(ac *AccountContact) erro
 		return errcode.ErrDeserialization.Wrap(err)
 	}
 
-	sk, err := m.deviceKeystore.ContactGroupPrivKey(contactPK)
-	if err != nil {
-		return err
-	}
-
-	g, err := cryptoutil.GetGroupForContact(sk)
+	group, err := m.secretStore.GetGroupForContact(contactPK)
 	if err != nil {
 		return errcode.ErrOrbitDBOpen.Wrap(err)
 	}
 
-	m.contactsFromGroupPK[string(g.PublicKey)] = ac
+	m.contactsFromGroupPK[string(group.PublicKey)] = ac
 
 	return nil
 }
@@ -725,7 +720,7 @@ func (m *metadataStoreIndex) handlePushDeviceTokenRegistered(event proto.Message
 		return errcode.ErrInvalidInput
 	}
 
-	devicePK, err := m.ownMemberDevice.Device.Raw()
+	devicePK, err := m.ownMemberDevice.Device().Raw()
 	if err != nil {
 		return errcode.ErrSerialization.Wrap(err)
 	}
@@ -753,7 +748,7 @@ func (m *metadataStoreIndex) handlePushServerTokenRegistered(event proto.Message
 		return errcode.ErrInvalidInput
 	}
 
-	devicePK, err := m.ownMemberDevice.Device.Raw()
+	devicePK, err := m.ownMemberDevice.Device().Raw()
 	if err != nil {
 		return errcode.ErrSerialization.Wrap(err)
 	}
@@ -801,11 +796,11 @@ func (m *metadataStoreIndex) listOtherMembersDevices() []crypto.PubKey {
 	m.lock.RLock()
 	defer m.lock.RUnlock()
 
-	if m.ownMemberDevice == nil || m.ownMemberDevice.Member == nil {
+	if m.ownMemberDevice == nil || m.ownMemberDevice.Member() == nil {
 		return nil
 	}
 
-	ownMemberPK, err := m.ownMemberDevice.Member.Raw()
+	ownMemberPK, err := m.ownMemberDevice.Member().Raw()
 	if err != nil {
 		m.logger.Warn("unable to serialize member pubkey", zap.Error(err))
 		return nil
@@ -818,7 +813,7 @@ func (m *metadataStoreIndex) listOtherMembersDevices() []crypto.PubKey {
 		}
 
 		for _, md := range devicesForMember {
-			devices = append(devices, md.Device)
+			devices = append(devices, md.Device())
 		}
 	}
 
@@ -872,23 +867,18 @@ func (m *metadataStoreIndex) getCurrentDevicePushServer() *protocoltypes.PushDev
 
 func (m *metadataStoreIndex) postHandlerSentAliases() error {
 	for _, evt := range m.eventsContactAddAliasKey {
-		pk, err := crypto.UnmarshalEd25519PublicKey(evt.DevicePK)
-		if err != nil {
-			return errcode.ErrDeserialization.Wrap(err)
-		}
-
-		memberPK, err := m.unsafeGetMemberByDevice(pk)
+		memberPublicKey, err := m.unsafeGetMemberByDevice(evt.DevicePK)
 		if err != nil {
 			return fmt.Errorf("couldn't get member for device")
 		}
 
-		if memberPK.Equals(m.ownMemberDevice.Member) {
+		if memberPublicKey.Equals(m.ownMemberDevice.Member()) {
 			m.ownAliasKeySent = true
 			continue
 		}
 
-		if _, err = crypto.UnmarshalEd25519PublicKey(evt.AliasPK); err != nil {
-			return errcode.ErrDeserialization.Wrap(err)
+		if l := len(evt.AliasPK); l != cryptoutil.KeySize {
+			return errcode.ErrInvalidInput.Wrap(fmt.Errorf("invalid alias key size, expected %d, got %d", cryptoutil.KeySize, l))
 		}
 
 		m.otherAliasKey = evt.AliasPK
@@ -901,11 +891,11 @@ func (m *metadataStoreIndex) postHandlerSentAliases() error {
 
 // nolint:staticcheck
 // newMetadataIndex returns a new index to manage the list of the group members
-func newMetadataIndex(ctx context.Context, g *protocoltypes.Group, md *cryptoutil.MemberDevice, devKS cryptoutil.DeviceKeystore) iface.IndexConstructor {
+func newMetadataIndex(ctx context.Context, g *protocoltypes.Group, md secretstore.MemberDevice, secretStore secretstore.SecretStore) iface.IndexConstructor {
 	return func(publicKey []byte) iface.StoreIndex {
 		m := &metadataStoreIndex{
-			members:                map[string][]*cryptoutil.MemberDevice{},
-			devices:                map[string]*cryptoutil.MemberDevice{},
+			members:                map[string][]secretstore.MemberDevice{},
+			devices:                map[string]secretstore.MemberDevice{},
 			admins:                 map[crypto.PubKey]struct{}{},
 			sentSecrets:            map[string]struct{}{},
 			handledEvents:          map[string]struct{}{},
@@ -915,9 +905,9 @@ func newMetadataIndex(ctx context.Context, g *protocoltypes.Group, md *cryptouti
 			serviceTokens:          map[string]*protocoltypes.ServiceToken{},
 			contactRequestMetadata: map[string][]byte{},
 			membersPushTokens:      map[string]*protocoltypes.PushMemberTokenUpdate{},
-			g:                      g,
+			group:                  g,
 			ownMemberDevice:        md,
-			deviceKeystore:         devKS,
+			secretStore:            secretStore,
 			ctx:                    ctx,
 			logger:                 zap.NewNop(),
 		}
@@ -936,7 +926,7 @@ func newMetadataIndex(ctx context.Context, g *protocoltypes.Group, md *cryptouti
 			protocoltypes.EventTypeAccountGroupJoined:                     {m.handleGroupJoined},
 			protocoltypes.EventTypeAccountGroupLeft:                       {m.handleGroupLeft},
 			protocoltypes.EventTypeContactAliasKeyAdded:                   {m.handleContactAliasKeyAdded},
-			protocoltypes.EventTypeGroupDeviceSecretAdded:                 {m.handleGroupAddDeviceSecret},
+			protocoltypes.EventTypeGroupDeviceChainKeyAdded:               {m.handleGroupAddDeviceChainKey},
 			protocoltypes.EventTypeGroupMemberDeviceAdded:                 {m.handleGroupAddMemberDevice},
 			protocoltypes.EventTypeMultiMemberGroupAdminRoleGranted:       {m.handleMultiMemberGrantAdminRole},
 			protocoltypes.EventTypeMultiMemberGroupInitialMemberAnnounced: {m.handleMultiMemberInitialMember},

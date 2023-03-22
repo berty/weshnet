@@ -42,7 +42,7 @@ type contactRequestsManager struct {
 	enabled bool
 
 	ownRendezvousSeed []byte
-	accSK             crypto.PrivKey
+	accountPrivateKey crypto.PrivKey
 
 	ipfs          ipfsutil.ExtendedCoreAPI
 	swiper        *Swiper
@@ -50,7 +50,7 @@ type contactRequestsManager struct {
 }
 
 func newContactRequestsManager(s *Swiper, store *MetadataStore, ipfs ipfsutil.ExtendedCoreAPI, logger *zap.Logger) (*contactRequestsManager, error) {
-	sk, err := store.devKS.AccountPrivKey()
+	accountPrivateKey, err := store.secretStore.GetAccountPrivateKey()
 	if err != nil {
 		return nil, err
 	}
@@ -58,14 +58,14 @@ func newContactRequestsManager(s *Swiper, store *MetadataStore, ipfs ipfsutil.Ex
 	ctx, cancel := context.WithCancel(context.Background())
 
 	cm := &contactRequestsManager{
-		lookupProcess: make(map[string]context.CancelFunc),
-		metadataStore: store,
-		ipfs:          ipfs,
-		logger:        logger.Named("req-mngr"),
-		accSK:         sk,
-		ctx:           ctx,
-		cancel:        cancel,
-		swiper:        s,
+		lookupProcess:     make(map[string]context.CancelFunc),
+		metadataStore:     store,
+		ipfs:              ipfs,
+		logger:            logger.Named("req-mngr"),
+		accountPrivateKey: accountPrivateKey,
+		ctx:               ctx,
+		cancel:            cancel,
+		swiper:            s,
 	}
 
 	go cm.metadataWatcher(ctx)
@@ -199,7 +199,7 @@ func (c *contactRequestsManager) enableContactRequest(ctx context.Context) error
 		return nil
 	}
 
-	pkBytes, err := c.accSK.GetPublic().Raw()
+	pkBytes, err := c.accountPrivateKey.GetPublic().Raw()
 	if err != nil {
 		return fmt.Errorf("unable to get raw pk: %w", err)
 	}
@@ -236,7 +236,7 @@ func (c *contactRequestsManager) metadataRequestReset(ctx context.Context, evt *
 		return errcode.ErrDeserialization.Wrap(err)
 	}
 
-	accPK, err := c.accSK.GetPublic().Raw()
+	accPK, err := c.accountPrivateKey.GetPublic().Raw()
 	if err != nil {
 		return fmt.Errorf("unable to get raw pk: %w", err)
 	}
@@ -452,7 +452,7 @@ func (c *contactRequestsManager) SendContactRequest(ctx context.Context, to *pro
 	c.logger.Debug("performing handshake")
 
 	tyber.LogStep(ctx, c.logger, "performing handshake")
-	if err := handshake.RequestUsingReaderWriter(ctx, c.logger, reader, writer, c.accSK, otherPK); err != nil {
+	if err := handshake.RequestUsingReaderWriter(ctx, c.logger, reader, writer, c.accountPrivateKey, otherPK); err != nil {
 		return fmt.Errorf("an error occurred during handshake: %w", err)
 	}
 
@@ -463,7 +463,7 @@ func (c *contactRequestsManager) SendContactRequest(ctx context.Context, to *pro
 	}
 
 	tyber.LogStep(ctx, c.logger, "mark contact request has sent")
-	// mark this contact request has send
+	// mark this contact request as sent
 	if _, err := c.metadataStore.ContactRequestOutgoingSent(ctx, otherPK); err != nil {
 		return fmt.Errorf("an error occurred while marking contact request as sent: %w", err)
 	}
@@ -477,7 +477,7 @@ func (c *contactRequestsManager) handleIncomingRequest(ctx context.Context, stre
 
 	tyber.LogStep(ctx, c.logger, "responding to handshake")
 
-	otherPK, err := handshake.ResponseUsingReaderWriter(ctx, c.logger, reader, writer, c.accSK)
+	otherPK, err := handshake.ResponseUsingReaderWriter(ctx, c.logger, reader, writer, c.accountPrivateKey)
 	if err != nil {
 		return fmt.Errorf("handshake failed: %w", err)
 	}

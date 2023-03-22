@@ -127,20 +127,11 @@ service ProtocolService {
   // PeerList returns a list of P2P peers
   rpc PeerList(PeerList.Request) returns (PeerList.Reply);
 
-  // PushReceive handles a push payload, decrypts it if possible
-  rpc PushReceive(PushReceive.Request) returns (PushReceive.Reply);
+  // OutOfStoreReceive parses a payload received outside a synchronized store
+  rpc OutOfStoreReceive(OutOfStoreReceive.Request) returns (OutOfStoreReceive.Reply);
 
-  // PushSend sends a push payload to a specified list of group members
-  rpc PushSend(PushSend.Request) returns (PushSend.Reply);
-
-  // PushShareToken sends push tokens of own devices to a group
-  rpc PushShareToken(PushShareToken.Request) returns (PushShareToken.Reply);
-
-  // PushSetDeviceToken registers a push token for the current device
-  rpc PushSetDeviceToken(PushSetDeviceToken.Request) returns (PushSetDeviceToken.Reply);
-
-  // PushSetServer registers a push server for the current device
-  rpc PushSetServer(PushSetServer.Request) returns (PushSetServer.Reply);
+  // OutOfStoreSeal creates a payload of a message present in store to be sent outside a synchronized store
+  rpc OutOfStoreSeal(OutOfStoreSeal.Request) returns (OutOfStoreSeal.Reply);
 
   // RefreshContactRequest try to refresh the contact request for the given contact
   rpc RefreshContactRequest(RefreshContactRequest.Request) returns (RefreshContactRequest.Reply);
@@ -175,8 +166,8 @@ enum EventType {
   // EventTypeGroupMemberDeviceAdded indicates the payload includes that a member has added their device to the group
   EventTypeGroupMemberDeviceAdded = 1;
 
-  // EventTypeGroupDeviceSecretAdded indicates the payload includes that a member has sent their device secret to another member
-  EventTypeGroupDeviceSecretAdded = 2;
+  // EventTypeGroupDeviceChainKeyAdded indicates the payload includes that a member has sent their device chain key to another member
+  EventTypeGroupDeviceChainKeyAdded = 2;
 
   // EventTypeGroupAdditionalRendezvousSeedAdded adds a new rendezvous seed to a group
   // Might be implemented later, could be useful for replication services
@@ -285,7 +276,7 @@ message Group {
   // secret_sig is the signature of the secret used to ensure the validity of the group
   bytes secret_sig = 3;
 
-  // group_type specifies the type of the group, used to determine how device secrets are generated
+  // group_type specifies the type of the group, used to determine how device chain key is generated
   GroupType group_type = 4;
 
   // sign_pub is the signature public key used to verify entries, not required when secret and secret_sig are provided
@@ -423,7 +414,7 @@ message ContactAddAliasKey {
 }
 
 // GroupAddMemberDevice is an event which indicates to a group a new device (and eventually a new member) is joining it
-// When added on AccountGroup, this event should be followed by appropriate GroupAddMemberDevice and GroupAddDeviceSecret events
+// When added on AccountGroup, this event should be followed by appropriate GroupAddMemberDevice and GroupAddDeviceChainKey events
 message GroupAddMemberDevice {
   // member_pk is the member sending the event
   bytes member_pk = 1 [(gogoproto.customname) = "MemberPK"];
@@ -435,8 +426,8 @@ message GroupAddMemberDevice {
   bytes member_sig = 3; // TODO: signature of what ??? ensure it can't be replayed
 }
 
-// DeviceSecret is encrypted for a specific member of the group
-message DeviceSecret {
+// DeviceChainKey is a chain key, which will be encrypted for a specific member of the group
+message DeviceChainKey {
   // chain_key is the current value of the chain key of the group device
   bytes chain_key = 1;
 
@@ -444,8 +435,8 @@ message DeviceSecret {
   uint64 counter = 2;
 }
 
-// GroupAddDeviceSecret is an event which indicates to a group member a device secret
-message GroupAddDeviceSecret {
+// GroupAddDeviceChainKey is an event which indicates to a group member a device chain key
+message GroupAddDeviceChainKey {
   // device_pk is the device sending the event, signs the message
   bytes device_pk = 1 [(gogoproto.customname) = "DevicePK"];
 
@@ -544,7 +535,7 @@ message AccountContactRequestReferenceReset {
 
 // This event should be followed by an AccountGroupJoined event
 // This event should be followed by a GroupAddMemberDevice event within the AccountGroup
-// This event should be followed by a GroupAddDeviceSecret event within the AccountGroup
+// This event should be followed by a GroupAddDeviceChainKey event within the AccountGroup
 // AccountContactRequestEnqueued indicates that the account will attempt to send a contact request when a matching peer is discovered
 message AccountContactRequestEnqueued {
   // device_pk is the device sending the event, signs the message
@@ -596,7 +587,7 @@ message AccountContactRequestDiscarded {
 }
 
 // This event should be followed by an AccountGroupJoined event
-// This event should be followed by GroupAddMemberDevice and GroupAddDeviceSecret events within the AccountGroup
+// This event should be followed by GroupAddMemberDevice and GroupAddDeviceChainKey events within the AccountGroup
 // AccountContactRequestAccepted indicates that a contact request has been accepted
 message AccountContactRequestAccepted {
   // device_pk is the device sending the event, signs the message
@@ -1436,7 +1427,7 @@ message PushMemberTokenUpdate {
   bytes device_pk = 3 [(gogoproto.customname) = "DevicePK"];
 }
 
-message PushReceive {
+message OutOfStoreReceive {
   message Request {
     bytes payload = 1;
   }
@@ -1448,38 +1439,14 @@ message PushReceive {
   }
 }
 
-message PushSend {
+message OutOfStoreSeal {
   message Request {
     bytes cid = 1 [(gogoproto.customname) = "CID"];
     bytes group_public_key = 2;
-    repeated MemberWithDevices group_members = 3;
   }
   message Reply {
-    repeated MemberWithDevices group_members = 1;
+    bytes encrypted = 1;
   }
-}
-
-message PushShareToken {
-  message Request {
-    bytes group_pk = 1 [(gogoproto.customname) = "GroupPK"];
-    PushServer server = 2;
-    PushServiceReceiver receiver = 3;
-  }
-  message Reply {}
-}
-
-message PushSetDeviceToken {
-  message Request {
-    PushServiceReceiver receiver = 1;
-  }
-  message Reply {}
-}
-
-message PushSetServer {
-  message Request {
-    PushServer server = 1;
-  }
-  message Reply {}
 }
 
 message FirstLastCounters {

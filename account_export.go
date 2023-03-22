@@ -12,14 +12,11 @@ import (
 	"github.com/ipfs/go-cid"
 	cbornode "github.com/ipfs/go-ipld-cbor"
 	ipfs_interface "github.com/ipfs/interface-go-ipfs-core"
-	"github.com/libp2p/go-libp2p/core/crypto"
-	crypto_pb "github.com/libp2p/go-libp2p/core/crypto/pb"
 	mh "github.com/multiformats/go-multihash"
 	"go.uber.org/multierr"
 	"go.uber.org/zap"
 
 	orbitdb "berty.tech/go-orbit-db"
-	"berty.tech/weshnet/pkg/cryptoutil"
 	"berty.tech/weshnet/pkg/errcode"
 	"berty.tech/weshnet/pkg/protocoltypes"
 )
@@ -35,11 +32,7 @@ func (s *service) export(ctx context.Context, output io.Writer) error {
 	tw := tar.NewWriter(output)
 	defer tw.Close()
 
-	if err := s.exportAccountKey(tw); err != nil {
-		return errcode.ErrInternal.Wrap(err)
-	}
-
-	if err := s.exportAccountProofKey(tw); err != nil {
+	if err := s.exportAccountKeys(tw); err != nil {
 		return errcode.ErrInternal.Wrap(err)
 	}
 
@@ -109,22 +102,23 @@ func (s *service) exportOrbitDBStore(ctx context.Context, store orbitdb.Store, t
 	return nil
 }
 
-func (s *service) exportAccountKey(tw *tar.Writer) error {
-	sk, err := s.deviceKeystore.AccountPrivKey()
+func (s *service) exportAccountKeys(tw *tar.Writer) error {
+	accountPrivateKeyBytes, accountProofPrivateKeyBytes, err := s.secretStore.ExportAccountKeysForBackup()
 	if err != nil {
 		return errcode.ErrInternal.Wrap(err)
 	}
 
-	return exportPrivateKey(tw, sk, exportAccountKeyFilename)
-}
-
-func (s *service) exportAccountProofKey(tw *tar.Writer) error {
-	sk, err := s.deviceKeystore.AccountProofPrivKey()
+	err = exportPrivateKey(tw, accountPrivateKeyBytes, exportAccountKeyFilename)
 	if err != nil {
-		return errcode.ErrInternal.Wrap(err)
+		return errcode.ErrStreamWrite.Wrap(err)
 	}
 
-	return exportPrivateKey(tw, sk, exportAccountProofKeyFilename)
+	err = exportPrivateKey(tw, accountProofPrivateKeyBytes, exportAccountProofKeyFilename)
+	if err != nil {
+		return errcode.ErrStreamWrite.Wrap(err)
+	}
+
+	return nil
 }
 
 func (s *service) exportOrbitDBGroupHeads(gc *GroupContext, headsMetadata []cid.Cid, headsMessages []cid.Cid, tw *tar.Writer) error {
@@ -148,7 +142,7 @@ func (s *service) exportOrbitDBGroupHeads(gc *GroupContext, headsMetadata []cid.
 		return errcode.ErrSerialization.Wrap(err)
 	}
 
-	linkKeyArr, err := cryptoutil.GetLinkKeyArray(gc.group)
+	linkKeyArr, err := gc.group.GetLinkKeyArray()
 	if err != nil {
 		return errcode.ErrSerialization.Wrap(err)
 	}
@@ -189,28 +183,23 @@ func (s *service) exportOrbitDBGroupHeads(gc *GroupContext, headsMetadata []cid.
 	return nil
 }
 
-func exportPrivateKey(tw *tar.Writer, sk crypto.PrivKey, filename string) error {
-	skBytes, err := crypto.MarshalPrivateKey(sk)
-	if err != nil {
-		return errcode.ErrSerialization.Wrap(err)
-	}
-
+func exportPrivateKey(tw *tar.Writer, marshalledPrivateKey []byte, filename string) error {
 	if err := tw.WriteHeader(&tar.Header{
 		Typeflag: tar.TypeReg,
 		Name:     filename,
 		Mode:     0o600,
-		Size:     int64(len(skBytes)),
+		Size:     int64(len(marshalledPrivateKey)),
 	}); err != nil {
 		return errcode.ErrStreamWrite.Wrap(err)
 	}
 
-	size, err := tw.Write(skBytes)
+	size, err := tw.Write(marshalledPrivateKey)
 	if err != nil {
 		return errcode.ErrStreamWrite.Wrap(err)
 	}
 
-	if size != len(skBytes) {
-		return errcode.ErrStreamWrite.Wrap(fmt.Errorf("wrote %d bytes instead of %d", size, len(skBytes)))
+	if size != len(marshalledPrivateKey) {
+		return errcode.ErrStreamWrite.Wrap(fmt.Errorf("wrote %d bytes instead of %d", size, len(marshalledPrivateKey)))
 	}
 
 	return nil
@@ -250,7 +239,7 @@ func (s *service) exportOrbitDBEntry(ctx context.Context, tw *tar.Writer, idStr 
 	return nil
 }
 
-func readExportSecretKeyFile(expectedSize int64, reader *tar.Reader) (crypto.PrivKey, error) {
+func readExportSecretKeyFile(expectedSize int64, reader *tar.Reader) ([]byte, error) {
 	if expectedSize == 0 {
 		return nil, errcode.ErrInvalidInput.Wrap(fmt.Errorf("invalid expected key size"))
 	}
@@ -265,16 +254,7 @@ func readExportSecretKeyFile(expectedSize int64, reader *tar.Reader) (crypto.Pri
 		return nil, errcode.ErrInternal.Wrap(fmt.Errorf("unexpected file size"))
 	}
 
-	sk, err := crypto.UnmarshalPrivateKey(keyContents.Bytes())
-	if err != nil {
-		return nil, errcode.ErrDeserialization.Wrap(fmt.Errorf("unable to unmarshal private key"))
-	}
-
-	if sk.Type() != crypto_pb.KeyType_Ed25519 {
-		return nil, errcode.ErrInvalidInput.Wrap(fmt.Errorf("invalid key format"))
-	}
-
-	return sk, nil
+	return keyContents.Bytes(), nil
 }
 
 func readExportOrbitDBGroupHeads(expectedSize int64, reader *tar.Reader) (*protocoltypes.GroupHeadsExport, []cid.Cid, []cid.Cid, error) {
@@ -354,7 +334,7 @@ type RestoreAccountHandler struct {
 }
 
 type restoreAccountState struct {
-	keys map[string]crypto.PrivKey
+	keys map[string][]byte
 }
 
 func (state *restoreAccountState) readKey(keyName string) RestoreAccountHandler {
@@ -383,7 +363,7 @@ func (state *restoreAccountState) readKey(keyName string) RestoreAccountHandler 
 func (state *restoreAccountState) restoreKeys(odb *WeshOrbitDB) RestoreAccountHandler {
 	return RestoreAccountHandler{
 		PostProcess: func() error {
-			if err := odb.deviceKeystore.RestoreAccountKeys(state.keys[exportAccountKeyFilename], state.keys[exportAccountProofKeyFilename]); err != nil {
+			if err := odb.secretStore.ImportAccountKeys(state.keys[exportAccountKeyFilename], state.keys[exportAccountProofKeyFilename]); err != nil {
 				return errcode.ErrInternal.Wrap(err)
 			}
 
@@ -443,7 +423,7 @@ func restoreOrbitDBHeads(ctx context.Context, odb *WeshOrbitDB) RestoreAccountHa
 func RestoreAccountExport(ctx context.Context, reader io.Reader, coreAPI ipfs_interface.CoreAPI, odb *WeshOrbitDB, logger *zap.Logger, handlers ...RestoreAccountHandler) error {
 	tr := tar.NewReader(reader)
 	state := restoreAccountState{
-		keys: map[string]crypto.PrivKey{},
+		keys: map[string][]byte{},
 	}
 
 	handlers = append(
