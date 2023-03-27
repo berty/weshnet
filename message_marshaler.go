@@ -30,16 +30,20 @@ type OrbitDBMessageMarshaler struct {
 	muMarshall   sync.RWMutex
 	selfid       peer.ID
 	dk           cryptoutil.DeviceKeystore
+
+	// in Replication Mode DeviceKey should not be sent
+	useReplicationMode bool
 }
 
-func NewOrbitDBMessageMarshaler(selfid peer.ID, dk cryptoutil.DeviceKeystore, rp *rendezvous.RotationInterval) *OrbitDBMessageMarshaler {
+func NewOrbitDBMessageMarshaler(selfid peer.ID, dk cryptoutil.DeviceKeystore, rp *rendezvous.RotationInterval, useReplicationMode bool) *OrbitDBMessageMarshaler {
 	return &OrbitDBMessageMarshaler{
-		selfid:       selfid,
-		sharedKeys:   make(map[string]enc.SharedKey),
-		deviceCaches: make(map[peer.ID]*PeerDeviceGroup),
-		topicGroup:   make(map[string]*protocoltypes.Group),
-		rp:           rp,
-		dk:           dk,
+		selfid:             selfid,
+		sharedKeys:         make(map[string]enc.SharedKey),
+		deviceCaches:       make(map[peer.ID]*PeerDeviceGroup),
+		topicGroup:         make(map[string]*protocoltypes.Group),
+		rp:                 rp,
+		dk:                 dk,
+		useReplicationMode: useReplicationMode,
 	}
 }
 
@@ -86,14 +90,19 @@ func (m *OrbitDBMessageMarshaler) Marshal(msg *iface.MessageExchangeHeads) ([]by
 		return nil, fmt.Errorf("unknown group for topic: %s", topic)
 	}
 
-	ownDevice, err := m.dk.MemberDeviceForGroup(group)
-	if err != nil {
-		return nil, fmt.Errorf("unable to get own member device key for group: %w", err)
-	}
+	var ownPK []byte
 
-	ownPK, err := ownDevice.PrivateDevice().GetPublic().Raw()
-	if err != nil {
-		return nil, fmt.Errorf("unable to get raw pk for device: %w", err)
+	// in replication mode, it doesn't make sense to send DevicePK
+	if !m.useReplicationMode {
+		ownDevice, err := m.dk.MemberDeviceForGroup(group)
+		if err != nil {
+			return nil, fmt.Errorf("unable to get own member device key for group: %w", err)
+		}
+
+		ownPK, err = ownDevice.PrivateDevice().GetPublic().Raw()
+		if err != nil {
+			return nil, fmt.Errorf("unable to get raw pk for device: %w", err)
+		}
 	}
 
 	// @TODO(gfanton): use protobuf for this ?
@@ -151,16 +160,6 @@ func (m *OrbitDBMessageMarshaler) Unmarshal(payload []byte, msg *iface.MessageEx
 		return fmt.Errorf("unable to open sealed box: %w", err)
 	}
 
-	pid, err := peer.IDFromBytes(box.PeerID)
-	if err != nil {
-		return fmt.Errorf("unable to parse peer id: %w", err)
-	}
-
-	pub, err := crypto.UnmarshalEd25519PublicKey(box.DevicePK)
-	if err != nil {
-		return fmt.Errorf("unable to unmarshall key: %w", err)
-	}
-
 	var entries []*entry.Entry
 	if err := json.Unmarshal(box.Heads, &entries); err != nil {
 		return fmt.Errorf("unable to unmarshal entries: %w", err)
@@ -169,14 +168,33 @@ func (m *OrbitDBMessageMarshaler) Unmarshal(payload []byte, msg *iface.MessageEx
 	msg.Address = box.Address
 	msg.Heads = entries
 
+	if box.DevicePK == nil {
+		// @NOTE(gfanton): this is probably a message from a replication server
+		// which should not have a DevicePK
+		return nil
+	}
+
+	pid, err := peer.IDFromBytes(box.PeerID)
+	if err != nil {
+		return fmt.Errorf("unable to parse peer id: %w", err)
+	}
+
 	// store device into cache
 	var pdg PeerDeviceGroup
+
+	pub, err := crypto.UnmarshalEd25519PublicKey(box.DevicePK)
+	if err != nil {
+		return fmt.Errorf("unable to unmarshal remote device pk: %w", err)
+	}
+
 	pdg.DevicePK = pub
-	if g, ok := m.topicGroup[msg.Address]; ok {
+	group, ok := m.topicGroup[msg.Address]
+	if ok {
 		// @FIXME(gfanton): do we need to raise an error here ?
-		pdg.Group = g
+		pdg.Group = group
 	}
 	m.deviceCaches[pid] = &pdg
+
 	return nil
 }
 
