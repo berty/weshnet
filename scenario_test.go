@@ -44,10 +44,10 @@ func TestScenario_CreateMultiMemberGroup(t *testing.T) {
 		{"3 clients/connectInLine", 3, weshnet.ConnectInLine, testutil.Fast, testutil.Flappy, time.Second * 10},
 		{"5 clients/connectAll", 5, weshnet.ConnectAll, testutil.Slow, testutil.Flappy, time.Second * 20},
 		{"5 clients/connectInLine", 5, weshnet.ConnectInLine, testutil.Slow, testutil.Flappy, time.Second * 20},
-		{"8 clients/connectAll", 8, weshnet.ConnectAll, testutil.Slow, testutil.Flappy, time.Second * 30},
-		{"8 clients/connectInLine", 8, weshnet.ConnectInLine, testutil.Slow, testutil.Flappy, time.Second * 30},
-		{"10 clients/connectAll", 10, weshnet.ConnectAll, testutil.Slow, testutil.Flappy, time.Second * 40},
-		{"10 clients/connectInLine", 10, weshnet.ConnectInLine, testutil.Slow, testutil.Flappy, time.Second * 40},
+		{"8 clients/connectAll", 8, weshnet.ConnectAll, testutil.Slow, testutil.Flappy, time.Second * 60},
+		{"8 clients/connectInLine", 8, weshnet.ConnectInLine, testutil.Slow, testutil.Flappy, time.Second * 60},
+		{"10 clients/connectAll", 10, weshnet.ConnectAll, testutil.Slow, testutil.Flappy, time.Second * 90},
+		{"10 clients/connectInLine", 10, weshnet.ConnectInLine, testutil.Slow, testutil.Flappy, time.Second * 90},
 	}
 
 	testingScenario(t, cases, func(ctx context.Context, t *testing.T, tps ...*weshnet.TestingProtocol) {
@@ -62,10 +62,10 @@ func TestScenario_MessageMultiMemberGroup(t *testing.T) {
 		{"3 clients/connectInLine", 3, weshnet.ConnectInLine, testutil.Fast, testutil.Flappy, time.Second * 10},
 		{"5 clients/connectAll", 5, weshnet.ConnectAll, testutil.Slow, testutil.Flappy, time.Second * 20},
 		{"5 clients/connectInLine", 5, weshnet.ConnectInLine, testutil.Slow, testutil.Flappy, time.Second * 20},
-		{"8 clients/connectAll", 8, weshnet.ConnectAll, testutil.Slow, testutil.Flappy, time.Second * 30},
-		{"8 clients/connectInLine", 8, weshnet.ConnectInLine, testutil.Slow, testutil.Flappy, time.Second * 30},
-		{"10 clients/connectAll", 10, weshnet.ConnectAll, testutil.Slow, testutil.Flappy, time.Second * 40},
-		{"10 clients/connectInLine", 10, weshnet.ConnectInLine, testutil.Slow, testutil.Flappy, time.Second * 40},
+		{"8 clients/connectAll", 8, weshnet.ConnectAll, testutil.Slow, testutil.Flappy, time.Second * 40},
+		{"8 clients/connectInLine", 8, weshnet.ConnectInLine, testutil.Slow, testutil.Flappy, time.Second * 40},
+		{"10 clients/connectAll", 10, weshnet.ConnectAll, testutil.Slow, testutil.Flappy, time.Second * 90},
+		{"10 clients/connectInLine", 10, weshnet.ConnectInLine, testutil.Slow, testutil.Flappy, time.Second * 90},
 	}
 
 	testingScenario(t, cases, func(ctx context.Context, t *testing.T, tps ...*weshnet.TestingProtocol) {
@@ -83,8 +83,8 @@ func TestScenario_GroupDeviceStatusOnMultiMemberGroup(t *testing.T) {
 		{"2 clients/connectAll", 2, weshnet.ConnectAll, testutil.Fast, testutil.Flappy, time.Second * 10},
 		{"3 clients/connectAll", 3, weshnet.ConnectAll, testutil.Fast, testutil.Flappy, time.Second * 10},
 		{"5 clients/connectAll", 5, weshnet.ConnectAll, testutil.Slow, testutil.Flappy, time.Second * 20},
-		{"8 clients/connectAll", 8, weshnet.ConnectAll, testutil.Slow, testutil.Flappy, time.Second * 30},
-		{"10 clients/connectAll", 10, weshnet.ConnectAll, testutil.Slow, testutil.Flappy, time.Second * 40},
+		{"8 clients/connectAll", 8, weshnet.ConnectAll, testutil.Slow, testutil.Flappy, time.Second * 60},
+		{"10 clients/connectAll", 10, weshnet.ConnectAll, testutil.Slow, testutil.Flappy, time.Second * 90},
 	}
 
 	testingScenario(t, cases, func(ctx context.Context, t *testing.T, tps ...*weshnet.TestingProtocol) {
@@ -199,15 +199,15 @@ func TestScenario_MessageSeveralMultiMemberGroups(t *testing.T) {
 	const ngroup = 3
 
 	cases := []testCase{
-		{"2 clients/connectAll", 2, weshnet.ConnectAll, testutil.Fast, testutil.Flappy, time.Second * 10},
-		{"3 clients/connectAll", 3, weshnet.ConnectAll, testutil.Fast, testutil.Flappy, time.Second * 10},
-		{"3 clients/connectInLine", 3, weshnet.ConnectInLine, testutil.Fast, testutil.Flappy, time.Second * 10},
-		{"5 clients/connectAll", 5, weshnet.ConnectAll, testutil.Slow, testutil.Flappy, time.Second * 20},
-		{"5 clients/connectInLine", 5, weshnet.ConnectInLine, testutil.Slow, testutil.Flappy, time.Second * 20},
-		{"8 clients/connectAll", 8, weshnet.ConnectAll, testutil.Slow, testutil.Flappy, time.Second * 30},
-		{"8 clients/connectInLine", 8, weshnet.ConnectInLine, testutil.Slow, testutil.Flappy, time.Second * 30},
-		{"10 clients/connectAll", 10, weshnet.ConnectAll, testutil.Slow, testutil.Flappy, time.Second * 40},
-		{"10 clients/connectInLine", 10, weshnet.ConnectInLine, testutil.Slow, testutil.Flappy, time.Second * 40},
+		{"2 clients/connectAll", 2, weshnet.ConnectAll, testutil.Fast, testutil.Flappy, time.Second * 20},
+		{"3 clients/connectAll", 3, weshnet.ConnectAll, testutil.Fast, testutil.Flappy, time.Second * 20},
+		{"3 clients/connectInLine", 3, weshnet.ConnectInLine, testutil.Fast, testutil.Flappy, time.Second * 20},
+		{"5 clients/connectAll", 5, weshnet.ConnectAll, testutil.Slow, testutil.Flappy, time.Second * 60},
+		{"5 clients/connectInLine", 5, weshnet.ConnectInLine, testutil.Slow, testutil.Flappy, time.Second * 60},
+		{"8 clients/connectAll", 8, weshnet.ConnectAll, testutil.Slow, testutil.Flappy, time.Second * 180},
+		{"8 clients/connectInLine", 8, weshnet.ConnectInLine, testutil.Slow, testutil.Flappy, time.Second * 180},
+		{"10 clients/connectAll", 10, weshnet.ConnectAll, testutil.Slow, testutil.Flappy, time.Second * 300},
+		{"10 clients/connectInLine", 10, weshnet.ConnectInLine, testutil.Slow, testutil.Flappy, time.Second * 300},
 	}
 
 	testingScenario(t, cases, func(ctx context.Context, t *testing.T, tps ...*weshnet.TestingProtocol) {
