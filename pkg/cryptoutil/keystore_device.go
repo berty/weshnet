@@ -5,8 +5,6 @@ import (
 	crand "crypto/rand"
 	"encoding/hex"
 	"fmt"
-	"math"
-	"math/big"
 	"strings"
 	"sync"
 
@@ -283,20 +281,15 @@ type MemberDevice struct {
 }
 
 func NewDeviceSecret() (*protocoltypes.DeviceSecret, error) {
-	counter, err := crand.Int(crand.Reader, big.NewInt(0).SetUint64(math.MaxUint64))
-	if err != nil {
-		return nil, errcode.ErrCryptoRandomGeneration.Wrap(err)
-	}
-
 	chainKey := make([]byte, 32)
-	_, err = crand.Read(chainKey)
+	_, err := crand.Read(chainKey)
 	if err != nil {
 		return nil, errcode.ErrCryptoRandomGeneration.Wrap(err)
 	}
 
 	return &protocoltypes.DeviceSecret{
 		ChainKey: chainKey,
-		Counter:  counter.Uint64(),
+		Counter:  0,
 	}, nil
 }
 
