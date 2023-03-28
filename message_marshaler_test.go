@@ -41,7 +41,7 @@ func TestRotationMessageMarshaler(t *testing.T) {
 	acc1 := cryptoutil.NewDeviceKeystore(ks1, nil)
 
 	rp := rendezvous.NewStaticRotationInterval()
-	m := NewOrbitDBMessageMarshaler(p.ID(), acc1, rp)
+	m := NewOrbitDBMessageMarshaler(p.ID(), acc1, rp, false)
 
 	g, _, err := NewGroupMultiMember()
 	require.NoError(t, err)
@@ -80,7 +80,7 @@ func TestRotationMessageMarshalUnknownTopic(t *testing.T) {
 	acc := cryptoutil.NewDeviceKeystore(ks, nil)
 
 	rp := rendezvous.NewStaticRotationInterval()
-	m := NewOrbitDBMessageMarshaler(p.ID(), acc, rp)
+	m := NewOrbitDBMessageMarshaler(p.ID(), acc, rp, false)
 
 	// marshal without register topic, should fail
 	payload, err := m.Marshal(msg)
@@ -126,7 +126,7 @@ func TestRotationMessageUnmarshalUnknownTopic(t *testing.T) {
 
 	rp2 := rendezvous.NewStaticRotationInterval()
 
-	m1 := NewOrbitDBMessageMarshaler(p1.ID(), acc1, rp1)
+	m1 := NewOrbitDBMessageMarshaler(p1.ID(), acc1, rp1, false)
 	m1.RegisterSharedKeyForTopic(msg.Address, key1)
 
 	m1.RegisterGroup(msg.Address, g1)
@@ -134,7 +134,7 @@ func TestRotationMessageUnmarshalUnknownTopic(t *testing.T) {
 	payload, err := m1.Marshal(msg)
 	require.NoError(t, err)
 
-	m2 := NewOrbitDBMessageMarshaler(p2.ID(), acc2, rp2)
+	m2 := NewOrbitDBMessageMarshaler(p2.ID(), acc2, rp2, false)
 	m2.RegisterSharedKeyForTopic(msg.Address, key2)
 
 	m2.RegisterGroup(msg.Address, g2)
@@ -186,14 +186,14 @@ func TestRotationMessageMarshalWrongKey(t *testing.T) {
 	rp2 := rendezvous.NewStaticRotationInterval()
 	rp2.RegisterRotation(time.Now(), msg.Address, testSeed2)
 
-	m1 := NewOrbitDBMessageMarshaler(p1.ID(), acc1, rp1)
+	m1 := NewOrbitDBMessageMarshaler(p1.ID(), acc1, rp1, false)
 	m1.RegisterSharedKeyForTopic(msg.Address, key1)
 	m1.RegisterGroup(msg.Address, g1)
 
 	payload, err := m1.Marshal(msg)
 	require.NoError(t, err)
 
-	m2 := NewOrbitDBMessageMarshaler(p2.ID(), acc2, rp2)
+	m2 := NewOrbitDBMessageMarshaler(p2.ID(), acc2, rp2, false)
 	m2.RegisterSharedKeyForTopic(msg.Address, key2)
 	m2.RegisterGroup(msg.Address, g2)
 

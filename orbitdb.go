@@ -56,6 +56,7 @@ type NewOrbitDBOptions struct {
 	MessageKeystore  *cryptoutil.MessageKeystore
 	DeviceKeystore   cryptoutil.DeviceKeystore
 	RotationInterval *rendezvous.RotationInterval
+	ReplicationMode  bool
 
 	GroupMetadataStoreType string
 	GroupMessageStoreType  string
@@ -188,7 +189,7 @@ func NewWeshOrbitDB(ctx context.Context, ipfs coreapi.CoreAPI, options *NewOrbit
 		options.PubSub = pubsubcoreapi.NewPubSub(ipfs, self.ID(), time.Second, options.Logger, options.Tracer)
 	}
 
-	mm := NewOrbitDBMessageMarshaler(self.ID(), options.DeviceKeystore, options.RotationInterval)
+	mm := NewOrbitDBMessageMarshaler(self.ID(), options.DeviceKeystore, options.RotationInterval, options.ReplicationMode)
 	options.MessageMarshaler = mm
 
 	orbitDB, err := baseorbitdb.NewOrbitDB(ctx, ipfs, &options.NewOrbitDBOptions)
