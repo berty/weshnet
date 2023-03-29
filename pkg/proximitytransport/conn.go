@@ -43,9 +43,18 @@ type Conn struct {
 }
 
 // newConn returns an inbound or outbound tpt.CapableConn upgraded from a Conn.
-func newConn(ctx context.Context, t *proximityTransport, remoteMa ma.Multiaddr, remotePID peer.ID, inbound bool,
+func newConn(ctx context.Context, t *proximityTransport, remoteMa ma.Multiaddr, remotePID peer.ID, netdir network.Direction,
 ) (tpt.CapableConn, error) {
-	t.logger.Debug("newConn()", logutil.PrivateString("remoteMa", remoteMa.String()), zap.Bool("inbound", inbound))
+	t.logger.Debug("newConn()", logutil.PrivateString("remoteMa", remoteMa.String()), zap.Bool("inbound", netdir == network.DirInbound))
+
+	if netdir == network.DirUnknown {
+		return nil, fmt.Errorf("invalid network direction")
+	}
+
+	connScope, err := t.rcmgr.OpenConnection(netdir, false, remoteMa)
+	if err != nil {
+		return nil, fmt.Errorf("resource manager blocked connection : %w", err)
+	}
 
 	// Creates a manet.Conn
 	pr, pw := io.Pipe()
@@ -75,11 +84,7 @@ func newConn(ctx context.Context, t *proximityTransport, remoteMa ma.Multiaddr, 
 	maconn.mp.setOutput(pw)
 
 	// Returns an upgraded CapableConn (muxed, addr filtered, secured, etc...)
-	if inbound {
-		return t.upgrader.Upgrade(ctx, t, maconn, network.DirInbound, remotePID, network.NullScope)
-	}
-
-	return t.upgrader.Upgrade(ctx, t, maconn, network.DirOutbound, remotePID, network.NullScope)
+	return t.upgrader.Upgrade(ctx, t, maconn, netdir, remotePID, connScope)
 }
 
 // Read reads data from the connection.

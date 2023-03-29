@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"sync"
 
+	network "github.com/libp2p/go-libp2p/core/network"
 	host "github.com/libp2p/go-libp2p/core/host"
 	peer "github.com/libp2p/go-libp2p/core/peer"
 	pstore "github.com/libp2p/go-libp2p/core/peerstore"
@@ -51,6 +52,7 @@ type ProximityTransport interface {
 type proximityTransport struct {
 	host     host.Host
 	upgrader tpt.Upgrader
+	rcmgr    network.ResourceManager
 
 	connMap      map[string]*Conn
 	connMapMutex sync.RWMutex
@@ -62,7 +64,7 @@ type proximityTransport struct {
 	ctx          context.Context
 }
 
-func NewTransport(ctx context.Context, l *zap.Logger, driver ProximityDriver) func(h host.Host, u tpt.Upgrader) (*proximityTransport, error) {
+func NewTransport(ctx context.Context, l *zap.Logger, driver ProximityDriver) func(h host.Host, u tpt.Upgrader, rcmgr network.ResourceManager) (*proximityTransport, error) {
 	if l == nil {
 		l = zap.NewNop()
 	}
@@ -74,11 +76,12 @@ func NewTransport(ctx context.Context, l *zap.Logger, driver ProximityDriver) fu
 		driver = &NoopProximityDriver{}
 	}
 
-	return func(h host.Host, u tpt.Upgrader) (*proximityTransport, error) {
+	return func(h host.Host, u tpt.Upgrader, rcmgr network.ResourceManager) (*proximityTransport, error) {
 		l.Debug("NewTransport called", zap.String("driver", driver.ProtocolName()))
 		transport := &proximityTransport{
 			host:     h,
 			upgrader: u,
+			rcmgr:    rcmgr,
 			connMap:  make(map[string]*Conn),
 			cache:    NewRingBufferMap(l, 128),
 			driver:   driver,
@@ -123,7 +126,7 @@ func (t *proximityTransport) Dial(ctx context.Context, remoteMa ma.Multiaddr, re
 	}
 
 	// Returns an outbound conn.
-	return newConn(ctx, t, remoteMa, remotePID, false)
+	return newConn(ctx, t, remoteMa, remotePID, network.DirOutbound)
 }
 
 // CanDial returns true if this transport believes it can dial the given
