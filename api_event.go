@@ -141,14 +141,14 @@ func (s *service) GroupMessageList(req *protocoltypes.GroupMessageList_Request, 
 	// Subscribe to new message events if requested
 	var newEvents <-chan interface{}
 	if req.UntilID == nil && !req.UntilNow {
-		sub, err := cg.MessageStore().EventBus().Subscribe([]interface{}{
+		messageStoreSub, err := cg.MessageStore().EventBus().Subscribe([]interface{}{
 			new(protocoltypes.GroupMessageEvent),
 		}, eventbus.BufSize(32))
 		if err != nil {
 			return fmt.Errorf("unable to subscribe to new events")
 		}
-		defer sub.Close()
-		newEvents = sub.Out()
+		defer messageStoreSub.Close()
+		newEvents = messageStoreSub.Out()
 	} else {
 		noop := make(chan interface{})
 		newEvents = noop
