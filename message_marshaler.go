@@ -12,9 +12,9 @@ import (
 	"berty.tech/go-ipfs-log/enc"
 	"berty.tech/go-ipfs-log/entry"
 	"berty.tech/go-orbit-db/iface"
-	"berty.tech/weshnet/pkg/cryptoutil"
 	"berty.tech/weshnet/pkg/protocoltypes"
 	"berty.tech/weshnet/pkg/rendezvous"
+	"berty.tech/weshnet/pkg/secretstore"
 )
 
 type PeerDeviceGroup struct {
@@ -29,20 +29,20 @@ type OrbitDBMessageMarshaler struct {
 	deviceCaches map[peer.ID]*PeerDeviceGroup
 	muMarshall   sync.RWMutex
 	selfid       peer.ID
-	dk           cryptoutil.DeviceKeystore
+	secretStore  secretstore.SecretStore
 
 	// in Replication Mode DeviceKey should not be sent
 	useReplicationMode bool
 }
 
-func NewOrbitDBMessageMarshaler(selfid peer.ID, dk cryptoutil.DeviceKeystore, rp *rendezvous.RotationInterval, useReplicationMode bool) *OrbitDBMessageMarshaler {
+func NewOrbitDBMessageMarshaler(selfid peer.ID, secretStore secretstore.SecretStore, rp *rendezvous.RotationInterval, useReplicationMode bool) *OrbitDBMessageMarshaler {
 	return &OrbitDBMessageMarshaler{
 		selfid:             selfid,
 		sharedKeys:         make(map[string]enc.SharedKey),
 		deviceCaches:       make(map[peer.ID]*PeerDeviceGroup),
 		topicGroup:         make(map[string]*protocoltypes.Group),
 		rp:                 rp,
-		dk:                 dk,
+		secretStore:        secretStore,
 		useReplicationMode: useReplicationMode,
 	}
 }
@@ -94,12 +94,12 @@ func (m *OrbitDBMessageMarshaler) Marshal(msg *iface.MessageExchangeHeads) ([]by
 
 	// in replication mode, it doesn't make sense to send DevicePK
 	if !m.useReplicationMode {
-		ownDevice, err := m.dk.MemberDeviceForGroup(group)
+		ownDevice, err := m.secretStore.GetOwnMemberDeviceForGroup(group)
 		if err != nil {
 			return nil, fmt.Errorf("unable to get own member device key for group: %w", err)
 		}
 
-		ownPK, err = ownDevice.PrivateDevice().GetPublic().Raw()
+		ownPK, err = ownDevice.Device().Raw()
 		if err != nil {
 			return nil, fmt.Errorf("unable to get raw pk for device: %w", err)
 		}

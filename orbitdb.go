@@ -27,12 +27,11 @@ import (
 	"berty.tech/go-orbit-db/iface"
 	"berty.tech/go-orbit-db/pubsub/pubsubcoreapi"
 	"berty.tech/go-orbit-db/stores"
-	"berty.tech/weshnet/internal/datastoreutil"
-	"berty.tech/weshnet/pkg/cryptoutil"
 	"berty.tech/weshnet/pkg/errcode"
 	"berty.tech/weshnet/pkg/ipfsutil"
 	"berty.tech/weshnet/pkg/protocoltypes"
 	"berty.tech/weshnet/pkg/rendezvous"
+	"berty.tech/weshnet/pkg/secretstore"
 	"berty.tech/weshnet/pkg/tyber"
 )
 
@@ -53,13 +52,12 @@ type loggable interface {
 type NewOrbitDBOptions struct {
 	baseorbitdb.NewOrbitDBOptions
 	Datastore        datastore.Batching
-	MessageKeystore  *cryptoutil.MessageKeystore
-	DeviceKeystore   cryptoutil.DeviceKeystore
+	SecretStore      secretstore.SecretStore
 	RotationInterval *rendezvous.RotationInterval
-	ReplicationMode  bool
 
 	GroupMetadataStoreType string
 	GroupMessageStoreType  string
+	ReplicationMode        bool
 }
 
 func (n *NewOrbitDBOptions) applyDefaults() {
@@ -73,14 +71,6 @@ func (n *NewOrbitDBOptions) applyDefaults() {
 
 	if n.Logger == nil {
 		n.Logger = zap.NewNop()
-	}
-
-	if n.MessageKeystore == nil {
-		n.MessageKeystore = cryptoutil.NewMessageKeystore(datastoreutil.NewNamespacedDatastore(n.Datastore, datastore.NewKey(datastoreutil.NamespaceMessageKeystore)), n.Logger)
-	}
-
-	if n.DeviceKeystore == nil {
-		n.DeviceKeystore = cryptoutil.NewDeviceKeystore(ipfsutil.NewDatastoreKeystore(datastoreutil.NewNamespacedDatastore(n.Datastore, datastore.NewKey(NamespaceDeviceKeystore))), nil)
 	}
 
 	if n.RotationInterval == nil {
@@ -110,11 +100,11 @@ type (
 type WeshOrbitDB struct {
 	baseorbitdb.BaseOrbitDB
 	keyStore         *BertySignedKeyStore
-	messageKeystore  *cryptoutil.MessageKeystore
-	deviceKeystore   cryptoutil.DeviceKeystore
+	secretStore      secretstore.SecretStore
 	pubSub           iface.PubSubInterface
 	rotationInterval *rendezvous.RotationInterval
 	messageMarshaler *OrbitDBMessageMarshaler
+	replicationMode  bool
 
 	groupMetadataStoreType string
 	groupMessageStoreType  string
@@ -189,7 +179,7 @@ func NewWeshOrbitDB(ctx context.Context, ipfs coreapi.CoreAPI, options *NewOrbit
 		options.PubSub = pubsubcoreapi.NewPubSub(ipfs, self.ID(), time.Second, options.Logger, options.Tracer)
 	}
 
-	mm := NewOrbitDBMessageMarshaler(self.ID(), options.DeviceKeystore, options.RotationInterval, options.ReplicationMode)
+	mm := NewOrbitDBMessageMarshaler(self.ID(), options.SecretStore, options.RotationInterval, options.ReplicationMode)
 	options.MessageMarshaler = mm
 
 	orbitDB, err := baseorbitdb.NewOrbitDB(ctx, ipfs, &options.NewOrbitDBOptions)
@@ -198,20 +188,19 @@ func NewWeshOrbitDB(ctx context.Context, ipfs coreapi.CoreAPI, options *NewOrbit
 	}
 
 	bertyDB := &WeshOrbitDB{
-		ctx:              ctx,
-		messageMarshaler: mm,
-		BaseOrbitDB:      orbitDB,
-		keyStore:         ks,
-		deviceKeystore:   options.DeviceKeystore,
-		messageKeystore:  options.MessageKeystore,
-		rotationInterval: options.RotationInterval,
-		pubSub:           options.PubSub,
-		groups:           &GroupMap{},
-		groupContexts:    &GroupContextMap{},    // map[string]*GroupContext
-		groupsSigPubKey:  &GroupsSigPubKeyMap{}, // map[string]crypto.PubKey
-
+		ctx:                    ctx,
+		messageMarshaler:       mm,
+		BaseOrbitDB:            orbitDB,
+		keyStore:               ks,
+		secretStore:            options.SecretStore,
+		rotationInterval:       options.RotationInterval,
+		pubSub:                 options.PubSub,
+		groups:                 &GroupMap{},
+		groupContexts:          &GroupContextMap{},    // map[string]*GroupContext
+		groupsSigPubKey:        &GroupsSigPubKeyMap{}, // map[string]crypto.PubKey
 		groupMetadataStoreType: options.GroupMetadataStoreType,
 		groupMessageStoreType:  options.GroupMessageStoreType,
+		replicationMode:        options.ReplicationMode,
 	}
 
 	if err := bertyDB.RegisterAccessControllerType(NewSimpleAccessController); err != nil {
@@ -234,34 +223,21 @@ func (s *WeshOrbitDB) openAccountGroup(ctx context.Context, options *orbitdb.Cre
 		options.EventBus = s.EventBus()
 	}
 
-	sk, err := s.deviceKeystore.AccountPrivKey()
-	if err != nil {
-		return nil, errcode.ErrOrbitDBOpen.Wrap(err)
-	}
-	l.Debug("Got AccountPrivKey", tyber.FormatStepLogFields(ctx, []tyber.Detail{})...)
-
-	skProof, err := s.deviceKeystore.AccountProofPrivKey()
+	group, _, err := s.secretStore.GetGroupForAccount()
 	if err != nil {
 		return nil, errcode.ErrOrbitDBOpen.Wrap(err)
 	}
 
-	l.Debug("Got AccountProofPrivKey", tyber.FormatStepLogFields(ctx, []tyber.Detail{})...)
+	l.Debug("Got account group", tyber.FormatStepLogFields(ctx, []tyber.Detail{{Name: "Group", Description: group.String()}})...)
 
-	g, err := cryptoutil.GetGroupForAccount(sk, skProof)
-	if err != nil {
-		return nil, errcode.ErrOrbitDBOpen.Wrap(err)
-	}
-
-	l.Debug("Got account group", tyber.FormatStepLogFields(ctx, []tyber.Detail{{Name: "Group", Description: g.String()}})...)
-
-	gc, err := s.OpenGroup(ctx, g, options)
+	gc, err := s.OpenGroup(ctx, group, options)
 	if err != nil {
 		return nil, errcode.ErrGroupOpen.Wrap(err)
 	}
 
 	l.Debug("Opened account group", tyber.FormatStepLogFields(ctx, []tyber.Detail{})...)
 
-	if err := gc.ActivateGroupContext(nil); err != nil {
+	if err := gc.ActivateGroupContext(gc.ownMemberDevice.Member()); err != nil {
 		return nil, errcode.TODO.Wrap(err)
 	}
 
@@ -400,7 +376,7 @@ func (s *WeshOrbitDB) loadHeads(ctx context.Context, store iface.Store, heads []
 }
 
 func (s *WeshOrbitDB) OpenGroup(ctx context.Context, g *protocoltypes.Group, options *orbitdb.CreateDBOptions) (*GroupContext, error) {
-	if s.deviceKeystore == nil || s.messageKeystore == nil {
+	if s.secretStore == nil {
 		return nil, errcode.ErrInvalidInput.Wrap(fmt.Errorf("db open in naive mode"))
 	}
 
@@ -423,23 +399,23 @@ func (s *WeshOrbitDB) OpenGroup(ctx context.Context, g *protocoltypes.Group, opt
 
 	s.Logger().Debug("OpenGroup", tyber.FormatStepLogFields(s.ctx, tyber.ZapFieldsToDetails(zap.Any("public key", g.PublicKey), zap.Any("secret", g.Secret), zap.Stringer("type", g.GroupType)))...)
 
-	memberDevice, err := s.deviceKeystore.MemberDeviceForGroup(g)
+	memberDevice, err := s.secretStore.GetOwnMemberDeviceForGroup(g)
 	if err != nil {
 		return nil, errcode.ErrCryptoKeyGeneration.Wrap(err)
 	}
 
-	mpkb, err := crypto.MarshalPublicKey(memberDevice.Public().Member)
+	mpkb, err := crypto.MarshalPublicKey(memberDevice.Member())
 	if err != nil {
 		mpkb = []byte{}
 	}
 	s.Logger().Debug("Got member device", tyber.FormatStepLogFields(s.ctx, []tyber.Detail{{Name: "DevicePublicKey", Description: base64.RawURLEncoding.EncodeToString(mpkb)}})...)
 
 	// Force secret generation if missing
-	if _, err := s.messageKeystore.GetDeviceSecret(s.ctx, g, s.deviceKeystore); err != nil {
+	if _, err := s.secretStore.GetShareableChainKey(s.ctx, g, memberDevice.Member()); err != nil {
 		return nil, errcode.ErrCryptoKeyGeneration.Wrap(err)
 	}
 
-	s.Logger().Debug("Got device secret", tyber.FormatStepLogFields(s.ctx, []tyber.Detail{})...)
+	s.Logger().Debug("Got device chain key", tyber.FormatStepLogFields(s.ctx, []tyber.Detail{})...)
 
 	metaImpl, err := s.groupMetadataStore(ctx, g, options)
 	if err != nil {
@@ -464,7 +440,7 @@ func (s *WeshOrbitDB) OpenGroup(ctx context.Context, g *protocoltypes.Group, opt
 
 	s.Logger().Debug("Got message store", tyber.FormatStepLogFields(s.ctx, []tyber.Detail{})...)
 
-	gc := NewContextGroup(g, metaImpl, messagesImpl, s.messageKeystore, memberDevice, s.Logger())
+	gc := NewContextGroup(g, metaImpl, messagesImpl, s.secretStore, memberDevice, s.Logger())
 
 	s.Logger().Debug("Created group context", tyber.FormatStepLogFields(s.ctx, []tyber.Detail{})...)
 
@@ -562,7 +538,7 @@ func (s *WeshOrbitDB) storeForGroup(ctx context.Context, o iface.BaseOrbitDB, g 
 
 	s.messageMarshaler.RegisterGroup(addr.String(), g)
 
-	linkKey, err := cryptoutil.GetLinkKeyArray(g)
+	linkKey, err := g.GetLinkKeyArray()
 	if err != nil {
 		return nil, err
 	}

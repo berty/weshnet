@@ -102,7 +102,7 @@ func waitForBertyEventType(ctx context.Context, t *testing.T, ms *MetadataStore,
 
 			handledEvents[eID] = struct{}{}
 
-			e := &protocoltypes.GroupAddDeviceSecret{}
+			e := &protocoltypes.GroupAddDeviceChainKey{}
 			if err := e.Unmarshal(evt.Event); err != nil {
 				t.Fatalf(" err: %+v\n", err.Error())
 			}

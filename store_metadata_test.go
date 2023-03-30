@@ -17,7 +17,6 @@ import (
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap"
 
-	"berty.tech/weshnet/pkg/cryptoutil"
 	"berty.tech/weshnet/pkg/ipfsutil"
 	"berty.tech/weshnet/pkg/protocoltypes"
 	"berty.tech/weshnet/pkg/testutil"
@@ -43,8 +42,8 @@ func TestMetadataStoreSecret_Basic(t *testing.T) {
 
 	go peers[0].GC.WatchNewMembersAndSendSecrets()
 	go peers[1].GC.WatchNewMembersAndSendSecrets()
-	go waitForBertyEventType(ctx, t, msA, protocoltypes.EventTypeGroupDeviceSecretAdded, 2, secretsAdded)
-	go waitForBertyEventType(ctx, t, msB, protocoltypes.EventTypeGroupDeviceSecretAdded, 2, secretsAdded)
+	go waitForBertyEventType(ctx, t, msA, protocoltypes.EventTypeGroupDeviceChainKeyAdded, 2, secretsAdded)
+	go waitForBertyEventType(ctx, t, msB, protocoltypes.EventTypeGroupDeviceChainKeyAdded, 2, secretsAdded)
 	inviteAllPeersToGroup(ctx, t, peers, groupSK)
 
 	devPkA := peers[0].GC.DevicePubKey()
@@ -55,24 +54,6 @@ func TestMetadataStoreSecret_Basic(t *testing.T) {
 
 	_ = devPkA
 	_ = devPkB
-
-	// secretAForB, err := msB.DeviceSecret(devPkA)
-	// assert.NoError(t, err)
-	//
-	// secretBForA, err := msA.DeviceSecret(devPkB)
-	// assert.NoError(t, err)
-	//
-	// secretAForA, err := peers[0].GetGroupContext().DeviceSecret(ctx)
-	// assert.NoError(t, err)
-	//
-	// secretBForB, err := peers[1].GetGroupContext().DeviceSecret(ctx)
-	// assert.NoError(t, err)
-	//
-	// assert.Equal(t, secretAForA.ChainKey, secretAForB.ChainKey)
-	// assert.Equal(t, secretAForA.Counter, secretAForB.Counter)
-	//
-	// assert.Equal(t, secretBForB.ChainKey, secretBForA.ChainKey)
-	// assert.Equal(t, secretBForB.Counter, secretBForA.Counter)
 }
 
 func TestMetadataStoreMember(t *testing.T) {
@@ -193,9 +174,9 @@ func TestMetadataRendezvousPointLifecycle(t *testing.T) {
 
 	meta := ownCG.MetadataStore()
 
-	accSK, err := peers[0].DevKS.AccountPrivKey()
+	_, accountMemberDevice, err := peers[0].SecretStore.GetGroupForAccount()
 	assert.NoError(t, err)
-	accPK, err := accSK.GetPublic().Raw()
+	accPK, err := accountMemberDevice.Member().Raw()
 	assert.NoError(t, err)
 
 	enabled, shareableContact := meta.GetIncomingContactRequestsStatus()
@@ -521,10 +502,7 @@ func TestMetadataAliasLifecycle(t *testing.T) {
 	_, err := peers[0].GC.MetadataStore().ContactSendAliasKey(ctx)
 	require.Error(t, err)
 
-	sk, err := peers[0].DevKS.ContactGroupPrivKey(peers[1].GC.MemberPubKey())
-	require.NoError(t, err)
-
-	g, err := cryptoutil.GetGroupForContact(sk)
+	g, err := peers[0].SecretStore.GetGroupForContact(peers[1].GC.MemberPubKey())
 	require.NoError(t, err)
 
 	cg0, err := peers[0].DB.OpenGroup(ctx, g, nil)
@@ -542,10 +520,7 @@ func TestMetadataAliasLifecycle(t *testing.T) {
 	require.Empty(t, cg0.MetadataStore().Index().(*metadataStoreIndex).otherAliasKey)
 	require.True(t, cg0.MetadataStore().Index().(*metadataStoreIndex).ownAliasKeySent)
 
-	sk, err = peers[1].DevKS.ContactGroupPrivKey(peers[0].GC.MemberPubKey())
-	require.NoError(t, err)
-
-	g, err = cryptoutil.GetGroupForContact(sk)
+	g, err = peers[1].SecretStore.GetGroupForContact(peers[0].GC.MemberPubKey())
 	require.NoError(t, err)
 
 	cg1, err := peers[1].DB.OpenGroup(ctx, g, nil)

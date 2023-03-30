@@ -537,7 +537,7 @@
       "enum": [
         "EventTypeUndefined",
         "EventTypeGroupMemberDeviceAdded",
-        "EventTypeGroupDeviceSecretAdded",
+        "EventTypeGroupDeviceChainKeyAdded",
         "EventTypeAccountGroupJoined",
         "EventTypeAccountGroupLeft",
         "EventTypeAccountContactRequestDisabled",
@@ -564,7 +564,7 @@
         "EventTypeGroupMetadataPayloadSent"
       ],
       "default": "EventTypeUndefined",
-      "title": "- EventTypeUndefined: EventTypeUndefined indicates that the value has not been set. Should not happen.\n - EventTypeGroupMemberDeviceAdded: EventTypeGroupMemberDeviceAdded indicates the payload includes that a member has added their device to the group\n - EventTypeGroupDeviceSecretAdded: EventTypeGroupDeviceSecretAdded indicates the payload includes that a member has sent their device secret to another member\n - EventTypeAccountGroupJoined: EventTypeAccountGroupJoined indicates the payload includes that the account has joined a group\n - EventTypeAccountGroupLeft: EventTypeAccountGroupLeft indicates the payload includes that the account has left a group\n - EventTypeAccountContactRequestDisabled: EventTypeAccountContactRequestDisabled indicates the payload includes that the account has disabled incoming contact requests\n - EventTypeAccountContactRequestEnabled: EventTypeAccountContactRequestEnabled indicates the payload includes that the account has enabled incoming contact requests\n - EventTypeAccountContactRequestReferenceReset: EventTypeAccountContactRequestReferenceReset indicates the payload includes that the account has a new contact request rendezvous seed\n - EventTypeAccountContactRequestOutgoingEnqueued: EventTypeAccountContactRequestEnqueued indicates the payload includes that the account will attempt to send a new contact request\n - EventTypeAccountContactRequestOutgoingSent: EventTypeAccountContactRequestSent indicates the payload includes that the account has sent a contact request\n - EventTypeAccountContactRequestIncomingReceived: EventTypeAccountContactRequestReceived indicates the payload includes that the account has received a contact request\n - EventTypeAccountContactRequestIncomingDiscarded: EventTypeAccountContactRequestIncomingDiscarded indicates the payload includes that the account has ignored a contact request\n - EventTypeAccountContactRequestIncomingAccepted: EventTypeAccountContactRequestAccepted indicates the payload includes that the account has accepted a contact request\n - EventTypeAccountContactBlocked: EventTypeAccountContactBlocked indicates the payload includes that the account has blocked a contact\n - EventTypeAccountContactUnblocked: EventTypeAccountContactUnblocked indicates the payload includes that the account has unblocked a contact\n - EventTypeContactAliasKeyAdded: EventTypeContactAliasKeyAdded indicates the payload includes that the contact group has received an alias key\n - EventTypeMultiMemberGroupAliasResolverAdded: EventTypeMultiMemberGroupAliasResolverAdded indicates the payload includes that a member of the group sent their alias proof\n - EventTypeMultiMemberGroupInitialMemberAnnounced: EventTypeMultiMemberGroupInitialMemberAnnounced indicates the payload includes that a member has authenticated themselves as the group owner\n - EventTypeMultiMemberGroupAdminRoleGranted: EventTypeMultiMemberGroupAdminRoleGranted indicates the payload includes that an admin of the group granted another member as an admin\n - EventTypeAccountServiceTokenAdded: EventTypeAccountServiceTokenAdded indicates that a new service provider has been registered for this account\n - EventTypeAccountServiceTokenRemoved: EventTypeAccountServiceTokenRemoved indicates that a service provider is not available anymore\n - EventTypeGroupReplicating: EventTypeGroupReplicating indicates that the group has been registered for replication on a server\n - EventTypePushMemberTokenUpdate: EventTypePushMemberTokenUpdate\n - EventTypePushDeviceTokenRegistered: EventTypePushDeviceTokenRegistered\n - EventTypePushDeviceServerRegistered: EventTypePushDeviceServerRegistered\n - EventTypeAccountVerifiedCredentialRegistered: EventTypeAccountVerifiedCredentialRegistered\n - EventTypeGroupMetadataPayloadSent: EventTypeGroupMetadataPayloadSent indicates the payload includes an app specific event, unlike messages stored on the message store it is encrypted using a static key"
+      "title": "- EventTypeUndefined: EventTypeUndefined indicates that the value has not been set. Should not happen.\n - EventTypeGroupMemberDeviceAdded: EventTypeGroupMemberDeviceAdded indicates the payload includes that a member has added their device to the group\n - EventTypeGroupDeviceChainKeyAdded: EventTypeGroupDeviceChainKeyAdded indicates the payload includes that a member has sent their device chain key to another member\n - EventTypeAccountGroupJoined: EventTypeAccountGroupJoined indicates the payload includes that the account has joined a group\n - EventTypeAccountGroupLeft: EventTypeAccountGroupLeft indicates the payload includes that the account has left a group\n - EventTypeAccountContactRequestDisabled: EventTypeAccountContactRequestDisabled indicates the payload includes that the account has disabled incoming contact requests\n - EventTypeAccountContactRequestEnabled: EventTypeAccountContactRequestEnabled indicates the payload includes that the account has enabled incoming contact requests\n - EventTypeAccountContactRequestReferenceReset: EventTypeAccountContactRequestReferenceReset indicates the payload includes that the account has a new contact request rendezvous seed\n - EventTypeAccountContactRequestOutgoingEnqueued: EventTypeAccountContactRequestEnqueued indicates the payload includes that the account will attempt to send a new contact request\n - EventTypeAccountContactRequestOutgoingSent: EventTypeAccountContactRequestSent indicates the payload includes that the account has sent a contact request\n - EventTypeAccountContactRequestIncomingReceived: EventTypeAccountContactRequestReceived indicates the payload includes that the account has received a contact request\n - EventTypeAccountContactRequestIncomingDiscarded: EventTypeAccountContactRequestIncomingDiscarded indicates the payload includes that the account has ignored a contact request\n - EventTypeAccountContactRequestIncomingAccepted: EventTypeAccountContactRequestAccepted indicates the payload includes that the account has accepted a contact request\n - EventTypeAccountContactBlocked: EventTypeAccountContactBlocked indicates the payload includes that the account has blocked a contact\n - EventTypeAccountContactUnblocked: EventTypeAccountContactUnblocked indicates the payload includes that the account has unblocked a contact\n - EventTypeContactAliasKeyAdded: EventTypeContactAliasKeyAdded indicates the payload includes that the contact group has received an alias key\n - EventTypeMultiMemberGroupAliasResolverAdded: EventTypeMultiMemberGroupAliasResolverAdded indicates the payload includes that a member of the group sent their alias proof\n - EventTypeMultiMemberGroupInitialMemberAnnounced: EventTypeMultiMemberGroupInitialMemberAnnounced indicates the payload includes that a member has authenticated themselves as the group owner\n - EventTypeMultiMemberGroupAdminRoleGranted: EventTypeMultiMemberGroupAdminRoleGranted indicates the payload includes that an admin of the group granted another member as an admin\n - EventTypeAccountServiceTokenAdded: EventTypeAccountServiceTokenAdded indicates that a new service provider has been registered for this account\n - EventTypeAccountServiceTokenRemoved: EventTypeAccountServiceTokenRemoved indicates that a service provider is not available anymore\n - EventTypeGroupReplicating: EventTypeGroupReplicating indicates that the group has been registered for replication on a server\n - EventTypePushMemberTokenUpdate: EventTypePushMemberTokenUpdate\n - EventTypePushDeviceTokenRegistered: EventTypePushDeviceTokenRegistered\n - EventTypePushDeviceServerRegistered: EventTypePushDeviceServerRegistered\n - EventTypeAccountVerifiedCredentialRegistered: EventTypeAccountVerifiedCredentialRegistered\n - EventTypeGroupMetadataPayloadSent: EventTypeGroupMetadataPayloadSent indicates the payload includes an app specific event, unlike messages stored on the message store it is encrypted using a static key"
     },
     "v1Group": {
       "type": "object",
@@ -586,7 +586,7 @@
         },
         "group_type": {
           "$ref": "#/definitions/v1GroupType",
-          "title": "group_type specifies the type of the group, used to determine how device secrets are generated"
+          "title": "group_type specifies the type of the group, used to determine how device chain key is generated"
         },
         "sign_pub": {
           "type": "string",
@@ -718,22 +718,6 @@
       "default": "GroupTypeUndefined",
       "description": " - GroupTypeUndefined: GroupTypeUndefined indicates that the value has not been set. For example, happens if group is replicated.\n - GroupTypeAccount: GroupTypeAccount is the group managing an account, available to all its devices.\n - GroupTypeContact: GroupTypeContact is the group created between two accounts, available to all their devices.\n - GroupTypeMultiMember: GroupTypeMultiMember is a group containing an undefined number of members."
     },
-    "v1MemberWithDevices": {
-      "type": "object",
-      "properties": {
-        "member_pk": {
-          "type": "string",
-          "format": "byte"
-        },
-        "devices_pks": {
-          "type": "array",
-          "items": {
-            "type": "string",
-            "format": "byte"
-          }
-        }
-      }
-    },
     "v1MessageHeaders": {
       "type": "object",
       "properties": {
@@ -826,6 +810,34 @@
         }
       }
     },
+    "v1OutOfStoreReceiveReply": {
+      "type": "object",
+      "properties": {
+        "message": {
+          "$ref": "#/definitions/v1OutOfStoreMessage"
+        },
+        "cleartext": {
+          "type": "string",
+          "format": "byte"
+        },
+        "group_public_key": {
+          "type": "string",
+          "format": "byte"
+        },
+        "already_received": {
+          "type": "boolean"
+        }
+      }
+    },
+    "v1OutOfStoreSealReply": {
+      "type": "object",
+      "properties": {
+        "encrypted": {
+          "type": "string",
+          "format": "byte"
+        }
+      }
+    },
     "v1PeerListPeer": {
       "type": "object",
       "properties": {
@@ -883,36 +895,6 @@
     "v1ProtocolMetadata": {
       "type": "object"
     },
-    "v1PushReceiveReply": {
-      "type": "object",
-      "properties": {
-        "message": {
-          "$ref": "#/definitions/v1OutOfStoreMessage"
-        },
-        "cleartext": {
-          "type": "string",
-          "format": "byte"
-        },
-        "group_public_key": {
-          "type": "string",
-          "format": "byte"
-        },
-        "already_received": {
-          "type": "boolean"
-        }
-      }
-    },
-    "v1PushSendReply": {
-      "type": "object",
-      "properties": {
-        "group_members": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/v1MemberWithDevices"
-          }
-        }
-      }
-    },
     "v1PushServer": {
       "type": "object",
       "properties": {
@@ -961,15 +943,6 @@
       ],
       "default": "PushTokenUndefined",
       "title": "- PushTokenMQTT: PushTokenMQTT: Platform independent\n - PushTokenApplePushNotificationService: PushTokenApplePushNotificationService: iOS, iPadOS, tvOS, macOS\n - PushTokenFirebaseCloudMessaging: PushTokenFirebaseCloudMessaging: Android with GMS, Chrome OS\n - PushTokenWindowsPushNotificationService: PushTokenWindowsPushNotificationService: Windows, XBox\n - PushTokenHuaweiPushKit: PushTokenHuaweiPushKit: Huawei Android devices with AppGallery\n - PushTokenAmazonDeviceMessaging: PushTokenAmazonDeviceMessaging: Fire OS devices"
-    },
-    "v1PushSetDeviceTokenReply": {
-      "type": "object"
-    },
-    "v1PushSetServerReply": {
-      "type": "object"
-    },
-    "v1PushShareTokenReply": {
-      "type": "object"
     },
     "v1RefreshContactRequestPeer": {
       "type": "object",

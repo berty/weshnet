@@ -42,11 +42,11 @@ func Test_AddMessage_ListMessages_manually_supplying_secrets(t *testing.T) {
 	defer cleanup()
 
 	dPK0 := peers[0].GC.DevicePubKey()
-	ds0, err := peers[0].MKS.GetDeviceSecret(ctx, peers[0].GC.Group(), peers[0].DevKS)
+	ds0For1, err := peers[0].SecretStore.GetShareableChainKey(ctx, peers[0].GC.Group(), peers[1].GC.MemberPubKey())
 	require.NoError(t, err)
-	require.NotNil(t, ds0)
+	require.NotNil(t, ds0For1)
 
-	err = peers[1].MKS.RegisterChainKey(ctx, peers[0].GC.Group(), dPK0, ds0, false)
+	err = peers[1].SecretStore.RegisterChainKey(ctx, peers[0].GC.Group(), dPK0, ds0For1)
 	require.NoError(t, err)
 
 	_, err = peers[0].GC.MessageStore().AddMessage(ctx, testMsg1)
@@ -135,9 +135,9 @@ func Test_Add_Messages_To_Cache(t *testing.T) {
 	dPK0 := peers[0].GC.DevicePubKey()
 	dPK0Raw, err := dPK0.Raw()
 	require.NoError(t, err)
-	ds0, err := peers[0].MKS.GetDeviceSecret(ctx, peers[0].GC.Group(), peers[0].DevKS)
+	ds0For1, err := peers[0].SecretStore.GetShareableChainKey(ctx, peers[0].GC.Group(), peers[1].GC.MemberPubKey())
 	require.NoError(t, err)
-	require.NotNil(t, ds0)
+	require.NotNil(t, ds0For1)
 
 	cevent, err := peers[0].GC.MessageStore().EventBus().Subscribe(
 		new(protocoltypes.GroupMessageEvent), eventbus.BufSize(entriesCount))
@@ -186,7 +186,7 @@ func Test_Add_Messages_To_Cache(t *testing.T) {
 	require.True(t, ok)
 	require.Equal(t, entriesCount, size)
 
-	err = peers[1].MKS.RegisterChainKey(ctx, peers[0].GC.Group(), dPK0, ds0, false)
+	err = peers[1].SecretStore.RegisterChainKey(ctx, peers[0].GC.Group(), dPK0, ds0For1)
 	require.NoError(t, err)
 
 	cevent, err = peers[1].GC.MessageStore().EventBus().Subscribe(

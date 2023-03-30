@@ -12,11 +12,11 @@ import (
 	"go.uber.org/zap"
 
 	"berty.tech/go-orbit-db/stores"
-	"berty.tech/weshnet/pkg/cryptoutil"
 	"berty.tech/weshnet/pkg/errcode"
 	"berty.tech/weshnet/pkg/ipfsutil"
 	"berty.tech/weshnet/pkg/logutil"
 	"berty.tech/weshnet/pkg/protocoltypes"
+	"berty.tech/weshnet/pkg/secretstore"
 )
 
 type GroupContext struct {
@@ -25,18 +25,14 @@ type GroupContext struct {
 	group           *protocoltypes.Group
 	metadataStore   *MetadataStore
 	messageStore    *MessageStore
-	messageKeystore *cryptoutil.MessageKeystore
-	memberDevice    *cryptoutil.OwnMemberDevice
+	secretStore     secretstore.SecretStore
+	ownMemberDevice secretstore.OwnMemberDevice
 	logger          *zap.Logger
 	closed          uint32
 }
 
-func (gc *GroupContext) MessageKeystore() *cryptoutil.MessageKeystore {
-	return gc.messageKeystore
-}
-
-func (gc *GroupContext) getMemberPrivKey() crypto.PrivKey {
-	return gc.memberDevice.PrivateMember()
+func (gc *GroupContext) SecretStore() secretstore.SecretStore {
+	return gc.secretStore
 }
 
 func (gc *GroupContext) MessageStore() *MessageStore {
@@ -52,11 +48,11 @@ func (gc *GroupContext) Group() *protocoltypes.Group {
 }
 
 func (gc *GroupContext) MemberPubKey() crypto.PubKey {
-	return gc.memberDevice.PrivateMember().GetPublic()
+	return gc.ownMemberDevice.Member()
 }
 
 func (gc *GroupContext) DevicePubKey() crypto.PubKey {
-	return gc.memberDevice.PrivateDevice().GetPublic()
+	return gc.ownMemberDevice.Device()
 }
 
 func (gc *GroupContext) Close() error {
@@ -76,7 +72,7 @@ func (gc *GroupContext) IsClosed() bool {
 	return atomic.LoadUint32(&gc.closed) != 0
 }
 
-func NewContextGroup(group *protocoltypes.Group, metadataStore *MetadataStore, messageStore *MessageStore, messageKeystore *cryptoutil.MessageKeystore, memberDevice *cryptoutil.OwnMemberDevice, logger *zap.Logger) *GroupContext {
+func NewContextGroup(group *protocoltypes.Group, metadataStore *MetadataStore, messageStore *MessageStore, secretStore secretstore.SecretStore, memberDevice secretstore.OwnMemberDevice, logger *zap.Logger) *GroupContext {
 	ctx, cancel := context.WithCancel(context.Background())
 
 	if logger == nil {
@@ -89,8 +85,8 @@ func NewContextGroup(group *protocoltypes.Group, metadataStore *MetadataStore, m
 		group:           group,
 		metadataStore:   metadataStore,
 		messageStore:    messageStore,
-		messageKeystore: messageKeystore,
-		memberDevice:    memberDevice,
+		secretStore:     secretStore,
+		ownMemberDevice: memberDevice,
 		logger:          logger.With(logutil.PrivateString("group-id", fmt.Sprintf("%.6s", base64.StdEncoding.EncodeToString(group.PublicKey)))),
 		closed:          0,
 	}
@@ -112,7 +108,7 @@ func (gc *GroupContext) activateGroupContext(contact crypto.PubKey, selfAnnounce
 		chNewData := gc.FillMessageKeysHolderUsingNewData()
 		go func() {
 			for pk := range chNewData {
-				if !pk.Equals(gc.memberDevice.PrivateDevice().GetPublic()) {
+				if !pk.Equals(gc.ownMemberDevice.Device()) {
 					gc.logger.Warn("gc member device public key doesn't match")
 				}
 			}
@@ -122,7 +118,7 @@ func (gc *GroupContext) activateGroupContext(contact crypto.PubKey, selfAnnounce
 		go func() {
 			calledDone := false
 			for pk := range chMember {
-				if !pk.Equals(gc.memberDevice.PrivateMember().GetPublic()) {
+				if !pk.Equals(gc.ownMemberDevice.Member()) {
 					gc.logger.Warn("gc member device public key doesn't match")
 					continue
 				}
@@ -143,7 +139,7 @@ func (gc *GroupContext) activateGroupContext(contact crypto.PubKey, selfAnnounce
 		chPreviousData := gc.FillMessageKeysHolderUsingPreviousData()
 		go func() {
 			for pk := range chPreviousData {
-				if !pk.Equals(gc.memberDevice.PrivateDevice().GetPublic()) {
+				if !pk.Equals(gc.ownMemberDevice.Device()) {
 					gc.logger.Warn("gc member device public key doesn't match")
 				}
 			}
@@ -155,7 +151,7 @@ func (gc *GroupContext) activateGroupContext(contact crypto.PubKey, selfAnnounce
 		chSecrets := gc.SendSecretsToExistingMembers(contact)
 		go func() {
 			for pk := range chSecrets {
-				if !pk.Equals(gc.memberDevice.PrivateMember().GetPublic()) {
+				if !pk.Equals(gc.ownMemberDevice.Member()) {
 					gc.logger.Warn("gc member device public key doesn't match")
 				}
 			}
@@ -215,11 +211,11 @@ func (gc *GroupContext) FillMessageKeysHolderUsingNewData() <-chan crypto.PubKey
 			}
 
 			e := evt.(protocoltypes.GroupMetadataEvent)
-			if e.Metadata.EventType != protocoltypes.EventTypeGroupDeviceSecretAdded {
+			if e.Metadata.EventType != protocoltypes.EventTypeGroupDeviceChainKeyAdded {
 				continue
 			}
 
-			pk, ds, err := openDeviceSecret(e.Metadata, gc.getMemberPrivKey(), gc.Group())
+			senderPublicKey, encryptedDeviceChainKey, err := getAndFilterGroupAddDeviceChainKeyPayload(e.Metadata, gc.ownMemberDevice.Member())
 			if errcode.Is(err, errcode.ErrInvalidInput) {
 				continue
 			}
@@ -229,21 +225,21 @@ func (gc *GroupContext) FillMessageKeysHolderUsingNewData() <-chan crypto.PubKey
 			}
 
 			if err != nil {
-				gc.logger.Error("an error occurred while opening device secrets", zap.Error(err))
+				gc.logger.Error("an error occurred while opening device chain key", zap.Error(err))
 				continue
 			}
 
-			if err = gc.MessageKeystore().RegisterChainKey(gc.ctx, gc.Group(), pk, ds, gc.DevicePubKey().Equals(pk)); err != nil {
+			if err = gc.SecretStore().RegisterChainKey(gc.ctx, gc.Group(), senderPublicKey, encryptedDeviceChainKey); err != nil {
 				gc.logger.Error("unable to register chain key", zap.Error(err))
 				continue
 			}
 
 			// A new chainKey is registered, check if cached messages can be opened with it
-			if rawPK, err := pk.Raw(); err == nil {
+			if rawPK, err := senderPublicKey.Raw(); err == nil {
 				gc.MessageStore().ProcessMessageQueueForDevicePK(gc.ctx, rawPK)
 			}
 
-			ch <- pk
+			ch <- senderPublicKey
 		}
 	}()
 
@@ -305,17 +301,17 @@ func (gc *GroupContext) FillMessageKeysHolderUsingPreviousData() <-chan crypto.P
 	publishedSecrets := gc.metadataStoreListSecrets()
 
 	go func() {
-		for pk, sec := range publishedSecrets {
-			if err := gc.MessageKeystore().RegisterChainKey(gc.ctx, gc.Group(), pk, sec, gc.DevicePubKey().Equals(pk)); err != nil {
+		for senderPublicKey, encryptedSecret := range publishedSecrets {
+			if err := gc.SecretStore().RegisterChainKey(gc.ctx, gc.Group(), senderPublicKey, encryptedSecret); err != nil {
 				gc.logger.Error("unable to register chain key", zap.Error(err))
 				continue
 			}
 			// A new chainKey is registered, check if cached messages can be opened with it
-			if rawPK, err := pk.Raw(); err == nil {
+			if rawPK, err := senderPublicKey.Raw(); err == nil {
 				gc.MessageStore().ProcessMessageQueueForDevicePK(gc.ctx, rawPK)
 			}
 
-			ch <- pk
+			ch <- senderPublicKey
 		}
 
 		close(ch)
@@ -324,13 +320,10 @@ func (gc *GroupContext) FillMessageKeysHolderUsingPreviousData() <-chan crypto.P
 	return ch
 }
 
-func (gc *GroupContext) metadataStoreListSecrets() map[crypto.PubKey]*protocoltypes.DeviceSecret {
-	publishedSecrets := map[crypto.PubKey]*protocoltypes.DeviceSecret{}
+func (gc *GroupContext) metadataStoreListSecrets() map[crypto.PubKey][]byte {
+	publishedSecrets := map[crypto.PubKey][]byte{}
 
 	m := gc.MetadataStore()
-	ownSK := gc.getMemberPrivKey()
-	g := gc.Group()
-
 	metadatas, err := m.ListEvents(gc.ctx, nil, nil, false)
 	if err != nil {
 		return nil
@@ -340,17 +333,17 @@ func (gc *GroupContext) metadataStoreListSecrets() map[crypto.PubKey]*protocolty
 			continue
 		}
 
-		pk, ds, err := openDeviceSecret(metadata.Metadata, ownSK, g)
+		pk, encryptedDeviceChainKey, err := getAndFilterGroupAddDeviceChainKeyPayload(metadata.Metadata, gc.MemberPubKey())
 		if errcode.Is(err, errcode.ErrInvalidInput) || errcode.Is(err, errcode.ErrGroupSecretOtherDestMember) {
 			continue
 		}
 
 		if err != nil {
-			gc.logger.Error("unable to open device secret", zap.Error(err))
+			gc.logger.Error("unable to open device chain key", zap.Error(err))
 			continue
 		}
 
-		publishedSecrets[pk] = ds
+		publishedSecrets[pk] = encryptedDeviceChainKey
 	}
 
 	return publishedSecrets

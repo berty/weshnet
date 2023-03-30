@@ -1,11 +1,16 @@
 package protocoltypes
 
 import (
+	crand "crypto/rand"
 	"encoding/hex"
+	"io"
 
 	"github.com/libp2p/go-libp2p/core/crypto"
 	"golang.org/x/crypto/ed25519"
+	"golang.org/x/crypto/hkdf"
+	"golang.org/x/crypto/sha3"
 
+	"berty.tech/weshnet/pkg/cryptoutil"
 	"berty.tech/weshnet/pkg/errcode"
 )
 
@@ -72,4 +77,88 @@ func (m *Group) Copy() *Group {
 		GroupType: m.GroupType,
 		SignPub:   m.SignPub,
 	}
+}
+
+const CurrentGroupVersion = 1
+
+// NewGroupMultiMember creates a new Group object and an invitation to be used by
+// the first member of the group
+func NewGroupMultiMember() (*Group, crypto.PrivKey, error) {
+	priv, pub, err := crypto.GenerateEd25519Key(crand.Reader)
+	if err != nil {
+		return nil, nil, errcode.ErrCryptoKeyGeneration.Wrap(err)
+	}
+
+	pubBytes, err := pub.Raw()
+	if err != nil {
+		return nil, nil, errcode.ErrSerialization.Wrap(err)
+	}
+
+	signing, _, err := crypto.GenerateEd25519Key(crand.Reader)
+	if err != nil {
+		return nil, nil, errcode.ErrCryptoKeyGeneration.Wrap(err)
+	}
+
+	signingBytes, err := cryptoutil.SeedFromEd25519PrivateKey(signing)
+	if err != nil {
+		return nil, nil, errcode.ErrSerialization.Wrap(err)
+	}
+
+	skSig, err := priv.Sign(signingBytes)
+	if err != nil {
+		return nil, nil, errcode.ErrCryptoSignature.Wrap(err)
+	}
+
+	group := &Group{
+		PublicKey: pubBytes,
+		Secret:    signingBytes,
+		SecretSig: skSig,
+		GroupType: GroupTypeMultiMember,
+	}
+
+	updateKey, err := group.GetLinkKeyArray()
+	if err != nil {
+		return nil, nil, errcode.ErrCryptoKeyGeneration.Wrap(err)
+	}
+
+	linkKeySig, err := priv.Sign(updateKey[:])
+	if err != nil {
+		return nil, nil, errcode.ErrCryptoSignature.Wrap(err)
+	}
+
+	group.LinkKeySig = linkKeySig
+
+	return group, priv, nil
+}
+
+func ComputeLinkKey(publicKey, secret []byte) (*[cryptoutil.KeySize]byte, error) {
+	arr := [cryptoutil.KeySize]byte{}
+
+	kdf := hkdf.New(sha3.New256, secret, nil, publicKey)
+	if _, err := io.ReadFull(kdf, arr[:]); err != nil {
+		return nil, errcode.ErrStreamRead.Wrap(err)
+	}
+
+	return &arr, nil
+}
+
+func (m *Group) GetLinkKeyArray() (*[cryptoutil.KeySize]byte, error) {
+	if len(m.GetLinkKey()) == cryptoutil.KeySize {
+		arr := [cryptoutil.KeySize]byte{}
+
+		for i, c := range m.GetLinkKey() {
+			arr[i] = c
+		}
+
+		return &arr, nil
+	}
+
+	return ComputeLinkKey(m.GetPublicKey(), m.GetSecret())
+}
+
+func (m *Group) GetSharedSecret() *[cryptoutil.KeySize]byte {
+	sharedSecret := [cryptoutil.KeySize]byte{}
+	copy(sharedSecret[:], m.GetSecret())
+
+	return &sharedSecret
 }

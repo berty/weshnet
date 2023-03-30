@@ -18,6 +18,7 @@ import (
 	"berty.tech/go-orbit-db/iface"
 	"berty.tech/weshnet/pkg/ipfsutil"
 	"berty.tech/weshnet/pkg/protocoltypes"
+	"berty.tech/weshnet/pkg/secretstore"
 	"berty.tech/weshnet/pkg/testutil"
 )
 
@@ -42,8 +43,13 @@ func testAddBerty(ctx context.Context, t *testing.T, node ipfsutil.CoreAPIMock, 
 	baseDS = sync_ds.MutexWrap(baseDS)
 	defer testutil.Close(t, baseDS)
 
+	secretStore, err := secretstore.NewSecretStore(baseDS, nil)
+	require.NoError(t, err)
+	defer secretStore.Close()
+
 	odb, err := NewWeshOrbitDB(ctx, api, &NewOrbitDBOptions{
-		Datastore: baseDS,
+		Datastore:   baseDS,
+		SecretStore: secretStore,
 	})
 	require.NoError(t, err)
 

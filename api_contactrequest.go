@@ -133,6 +133,11 @@ func (s *service) ContactRequestAccept(ctx context.Context, req *protocoltypes.C
 		return nil, errcode.ErrDeserialization.Wrap(err)
 	}
 
+	group, err := s.secretStore.GetGroupForContact(pk)
+	if err != nil {
+		return nil, errcode.ErrInternal.Wrap(err)
+	}
+
 	accountGroup := s.getAccountGroup()
 	if accountGroup == nil {
 		return nil, errcode.ErrGroupMissing
@@ -142,7 +147,7 @@ func (s *service) ContactRequestAccept(ctx context.Context, req *protocoltypes.C
 		return nil, errcode.ErrOrbitDBAppend.Wrap(err)
 	}
 
-	if err = s.groupDatastore.PutForContactPK(ctx, pk, s.deviceKeystore); err != nil {
+	if err = s.secretStore.PutGroup(ctx, group); err != nil {
 		return nil, err
 	}
 

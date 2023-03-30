@@ -28,13 +28,13 @@ import (
 	"berty.tech/go-orbit-db/pubsub/directchannel"
 	"berty.tech/weshnet/internal/bertyversion"
 	"berty.tech/weshnet/internal/datastoreutil"
-	"berty.tech/weshnet/pkg/bertypush"
 	"berty.tech/weshnet/pkg/bertyvcissuer"
 	"berty.tech/weshnet/pkg/cryptoutil"
 	"berty.tech/weshnet/pkg/errcode"
 	"berty.tech/weshnet/pkg/ipfsutil"
 	ipfs_mobile "berty.tech/weshnet/pkg/ipfsutil/mobile"
 	"berty.tech/weshnet/pkg/protocoltypes"
+	"berty.tech/weshnet/pkg/secretstore"
 	tinder "berty.tech/weshnet/pkg/tinder"
 	"berty.tech/weshnet/pkg/tyber"
 )
@@ -57,18 +57,13 @@ type service struct {
 	logger                 *zap.Logger
 	ipfsCoreAPI            ipfsutil.ExtendedCoreAPI
 	odb                    *WeshOrbitDB
-	accountGroup           *GroupContext
-	deviceKeystore         cryptoutil.DeviceKeystore
+	accountGroupCtx        *GroupContext
 	openedGroups           map[string]*GroupContext
 	lock                   sync.RWMutex
 	authSession            atomic.Value
 	close                  func() error
 	startedAt              time.Time
 	host                   host.Host
-	groupDatastore         *cryptoutil.GroupDatastore
-	pushHandler            bertypush.PushHandler
-	accountCache           ds.Batching
-	messageKeystore        *cryptoutil.MessageKeystore
 	pushClients            map[string]*grpc.ClientConn
 	muPushClients          sync.RWMutex
 	grpcInsecure           bool
@@ -79,28 +74,28 @@ type service struct {
 	accountEventBus        event.Bus
 	contactRequestsManager *contactRequestsManager
 	vcClient               *bertyvcissuer.Client
+	secretStore            secretstore.SecretStore
 
 	protocoltypes.UnimplementedProtocolServiceServer
 }
 
 // Opts contains optional configuration flags for building a new Client
 type Opts struct {
-	Logger           *zap.Logger
-	IpfsCoreAPI      ipfsutil.ExtendedCoreAPI
-	DeviceKeystore   cryptoutil.DeviceKeystore
-	DatastoreDir     string
-	RootDatastore    ds.Batching
-	GroupDatastore   *cryptoutil.GroupDatastore
-	AccountCache     ds.Batching
-	MessageKeystore  *cryptoutil.MessageKeystore
-	OrbitDB          *WeshOrbitDB
-	TinderService    *tinder.Service
-	Host             host.Host
-	PubSub           *pubsub.PubSub
-	GRPCInsecureMode bool
-	LocalOnly        bool
-	close            func() error
-	PushKey          *[cryptoutil.KeySize]byte
+	Logger               *zap.Logger
+	IpfsCoreAPI          ipfsutil.ExtendedCoreAPI
+	DatastoreDir         string
+	RootDatastore        ds.Batching
+	AccountCache         ds.Batching
+	OrbitDB              *WeshOrbitDB
+	TinderService        *tinder.Service
+	Host                 host.Host
+	PubSub               *pubsub.PubSub
+	GRPCInsecureMode     bool
+	LocalOnly            bool
+	close                func() error
+	PushKey              *[cryptoutil.KeySize]byte
+	SecretStore          secretstore.SecretStore
+	OutOfStorePrivateKey *[cryptoutil.KeySize]byte
 
 	// These are used if OrbitDB is nil.
 	GroupMetadataStoreType string
@@ -113,22 +108,6 @@ func (opts *Opts) applyPushDefaults() error {
 	}
 
 	opts.applyDefaultsGetDatastore()
-
-	if opts.GroupDatastore == nil {
-		var err error
-		opts.GroupDatastore, err = cryptoutil.NewGroupDatastore(opts.RootDatastore)
-		if err != nil {
-			return err
-		}
-	}
-
-	if opts.AccountCache == nil {
-		opts.AccountCache = datastoreutil.NewNamespacedDatastore(opts.RootDatastore, ds.NewKey(datastoreutil.NamespaceAccountCacheDatastore))
-	}
-
-	if opts.MessageKeystore == nil {
-		opts.MessageKeystore = cryptoutil.NewMessageKeystore(datastoreutil.NewNamespacedDatastore(opts.RootDatastore, ds.NewKey(datastoreutil.NamespaceMessageKeystore)), opts.Logger)
-	}
 
 	return nil
 }
@@ -154,9 +133,16 @@ func (opts *Opts) applyDefaults(ctx context.Context) error {
 		return err
 	}
 
-	if opts.DeviceKeystore == nil {
-		ks := ipfsutil.NewDatastoreKeystore(datastoreutil.NewNamespacedDatastore(opts.RootDatastore, ds.NewKey(NamespaceDeviceKeystore)))
-		opts.DeviceKeystore = cryptoutil.NewDeviceKeystore(ks, nil)
+	if opts.SecretStore == nil {
+		secretStore, err := secretstore.NewSecretStore(opts.RootDatastore, &secretstore.NewSecretStoreOptions{
+			Logger:               opts.Logger,
+			OutOfStorePrivateKey: opts.OutOfStorePrivateKey,
+		})
+		if err != nil {
+			return errcode.ErrInternal.Wrap(err)
+		}
+
+		opts.SecretStore = secretStore
 	}
 
 	if opts.IpfsCoreAPI == nil {
@@ -207,9 +193,8 @@ func (opts *Opts) applyDefaults(ctx context.Context) error {
 				Directory: &orbitDirectory,
 				Logger:    opts.Logger,
 			},
-			Datastore:      datastoreutil.NewNamespacedDatastore(opts.RootDatastore, ds.NewKey(NamespaceOrbitDBDatastore)),
-			DeviceKeystore: opts.DeviceKeystore,
-
+			Datastore:              datastoreutil.NewNamespacedDatastore(opts.RootDatastore, ds.NewKey(NamespaceOrbitDBDatastore)),
+			SecretStore:            opts.SecretStore,
 			GroupMetadataStoreType: opts.GroupMetadataStoreType,
 			GroupMessageStoreType:  opts.GroupMessageStoreType,
 		}
@@ -258,13 +243,13 @@ func NewService(opts Opts) (_ Service, err error) {
 		LocalOnly: &opts.LocalOnly,
 	}
 
-	acc, err := opts.OrbitDB.openAccountGroup(ctx, dbOpts, opts.IpfsCoreAPI)
+	accountGroupCtx, err := opts.OrbitDB.openAccountGroup(ctx, dbOpts, opts.IpfsCoreAPI)
 	if err != nil {
 		cancel()
 		return nil, errcode.TODO.Wrap(err)
 	}
 
-	opts.Logger.Debug("Opened account group", tyber.FormatStepLogFields(ctx, []tyber.Detail{{Name: "AccountGroup", Description: acc.group.String()}})...)
+	opts.Logger.Debug("Opened account group", tyber.FormatStepLogFields(ctx, []tyber.Detail{{Name: "AccountGroup", Description: accountGroupCtx.group.String()}})...)
 
 	var contactRequestsManager *contactRequestsManager
 	var swiper *Swiper
@@ -272,7 +257,7 @@ func NewService(opts Opts) (_ Service, err error) {
 		swiper = NewSwiper(opts.Logger, opts.TinderService, opts.OrbitDB.rotationInterval)
 		opts.Logger.Debug("Tinder swiper is enabled", tyber.FormatStepLogFields(ctx, []tyber.Detail{})...)
 
-		if contactRequestsManager, err = newContactRequestsManager(swiper, acc.metadataStore, opts.IpfsCoreAPI, opts.Logger); err != nil {
+		if contactRequestsManager, err = newContactRequestsManager(swiper, accountGroupCtx.metadataStore, opts.IpfsCoreAPI, opts.Logger); err != nil {
 			cancel()
 			return nil, errcode.TODO.Wrap(err)
 		}
@@ -280,43 +265,26 @@ func NewService(opts Opts) (_ Service, err error) {
 		opts.Logger.Warn("No tinder driver provided, incoming and outgoing contact requests won't be enabled", tyber.FormatStepLogFields(ctx, []tyber.Detail{})...)
 	}
 
-	if err := opts.GroupDatastore.Put(ctx, acc.Group()); err != nil {
+	if err := opts.SecretStore.PutGroup(ctx, accountGroupCtx.Group()); err != nil {
 		cancel()
 		return nil, errcode.ErrInternal.Wrap(fmt.Errorf("unable to add account group to group datastore, err: %w", err))
 	}
 
-	pushHandler := (bertypush.PushHandler)(nil)
-	if opts.PushKey != nil {
-		pushHandler, err = bertypush.NewPushHandler(&bertypush.PushHandlerOpts{
-			RootDatastore: opts.RootDatastore,
-			PushKey:       opts.PushKey,
-			Logger:        opts.Logger,
-		})
-		if err != nil {
-			cancel()
-			return nil, errcode.ErrInternal.Wrap(fmt.Errorf("unable to init push handler: %w", err))
-		}
-	}
-
 	s := &service{
-		ctx:            ctx,
-		ctxCancel:      cancel,
-		host:           opts.Host,
-		ipfsCoreAPI:    opts.IpfsCoreAPI,
-		logger:         opts.Logger,
-		odb:            opts.OrbitDB,
-		deviceKeystore: opts.DeviceKeystore,
-		close:          opts.close,
-		accountGroup:   acc,
-		swiper:         swiper,
-		startedAt:      time.Now(),
-		groupDatastore: opts.GroupDatastore,
+		ctx:             ctx,
+		ctxCancel:       cancel,
+		host:            opts.Host,
+		ipfsCoreAPI:     opts.IpfsCoreAPI,
+		logger:          opts.Logger,
+		odb:             opts.OrbitDB,
+		close:           opts.close,
+		accountGroupCtx: accountGroupCtx,
+		swiper:          swiper,
+		startedAt:       time.Now(),
 		openedGroups: map[string]*GroupContext{
-			string(acc.Group().PublicKey): acc,
+			string(accountGroupCtx.Group().PublicKey): accountGroupCtx,
 		},
-		accountCache:           opts.AccountCache,
-		messageKeystore:        opts.MessageKeystore,
-		pushHandler:            pushHandler,
+		secretStore:            opts.SecretStore,
 		pushClients:            make(map[string]*grpc.ClientConn),
 		grpcInsecure:           opts.GRPCInsecureMode,
 		refreshprocess:         make(map[string]context.CancelFunc),
@@ -349,7 +317,7 @@ func (s *service) Close() error {
 	}
 
 	for _, gc := range s.openedGroups {
-		pk, subErr := crypto.UnmarshalEd25519PublicKey(gc.group.PublicKey)
+		pk, subErr := gc.group.GetPubKey()
 		if subErr != nil {
 			err = multierr.Append(err, subErr)
 			continue

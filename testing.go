@@ -3,7 +3,6 @@ package weshnet
 import (
 	"bytes"
 	"context"
-	crand "crypto/rand"
 	"fmt"
 	"io"
 	"os"
@@ -18,7 +17,6 @@ import (
 	grpc_ctxtags "github.com/grpc-ecosystem/go-grpc-middleware/tags"
 	datastore "github.com/ipfs/go-datastore"
 	ds_sync "github.com/ipfs/go-datastore/sync"
-	keystore "github.com/ipfs/go-ipfs-keystore"
 	"github.com/libp2p/go-libp2p/core/crypto"
 	"github.com/libp2p/go-libp2p/core/peer"
 	libp2p_mocknet "github.com/libp2p/go-libp2p/p2p/net/mock"
@@ -31,10 +29,10 @@ import (
 	orbitdb "berty.tech/go-orbit-db"
 	"berty.tech/go-orbit-db/pubsub/pubsubraw"
 	"berty.tech/weshnet/internal/datastoreutil"
-	"berty.tech/weshnet/pkg/cryptoutil"
 	"berty.tech/weshnet/pkg/errcode"
 	"berty.tech/weshnet/pkg/ipfsutil"
 	"berty.tech/weshnet/pkg/protocoltypes"
+	"berty.tech/weshnet/pkg/secretstore"
 	"berty.tech/weshnet/pkg/testutil"
 	"berty.tech/weshnet/pkg/tinder"
 )
@@ -52,10 +50,17 @@ func NewTestOrbitDB(ctx context.Context, t *testing.T, logger *zap.Logger, node 
 
 	baseDS = datastoreutil.NewNamespacedDatastore(baseDS, datastore.NewKey(selfKey.ID().String()))
 
+	secretStore, err := secretstore.NewSecretStore(baseDS, nil)
+	require.NoError(t, err)
+	t.Cleanup(func() {
+		_ = secretStore.Close()
+	})
+
 	pubSub := pubsubraw.NewPubSub(node.PubSub(), selfKey.ID(), logger, nil)
 
 	odb, err := NewWeshOrbitDB(ctx, api, &NewOrbitDBOptions{
-		Datastore: baseDS,
+		Datastore:   baseDS,
+		SecretStore: secretStore,
 		NewOrbitDBOptions: orbitdb.NewOrbitDBOptions{
 			Logger: logger,
 			PubSub: pubSub,
@@ -67,11 +72,10 @@ func NewTestOrbitDB(ctx context.Context, t *testing.T, logger *zap.Logger, node 
 }
 
 type mockedPeer struct {
-	CoreAPI ipfsutil.CoreAPIMock
-	DB      *WeshOrbitDB
-	GC      *GroupContext
-	MKS     *cryptoutil.MessageKeystore
-	DevKS   cryptoutil.DeviceKeystore
+	CoreAPI     ipfsutil.CoreAPIMock
+	DB          *WeshOrbitDB
+	GC          *GroupContext
+	SecretStore secretstore.SecretStore
 }
 
 func (m *mockedPeer) PeerInfo() peer.AddrInfo {
@@ -84,18 +88,17 @@ type TestingProtocol struct {
 	Service Service
 	Client  ServiceClient
 
-	RootDatastore  datastore.Batching
-	DeviceKeystore cryptoutil.DeviceKeystore
-	IpfsCoreAPI    ipfsutil.ExtendedCoreAPI
-	OrbitDB        *WeshOrbitDB
-	GroupDatastore *cryptoutil.GroupDatastore
+	RootDatastore datastore.Batching
+	IpfsCoreAPI   ipfsutil.ExtendedCoreAPI
+	OrbitDB       *WeshOrbitDB
+	SecretStore   secretstore.SecretStore
 }
 
 type TestingOpts struct {
 	Logger          *zap.Logger
 	Mocknet         libp2p_mocknet.Mocknet
 	DiscoveryServer *tinder.MockDriverServer
-	DeviceKeystore  cryptoutil.DeviceKeystore
+	SecretStore     secretstore.SecretStore
 	CoreAPIMock     ipfsutil.CoreAPIMock
 	OrbitDB         *WeshOrbitDB
 	ConnectFunc     ConnectTestingProtocolFunc
@@ -124,11 +127,13 @@ func NewTestingProtocol(ctx context.Context, t testing.TB, opts *TestingOpts, ds
 		node = ipfsutil.TestingCoreAPIUsingMockNet(ctx, t, ipfsopts)
 	}
 
-	deviceKeystore := opts.DeviceKeystore
-	if deviceKeystore == nil {
-		deviceKeystore = cryptoutil.NewDeviceKeystore(
-			ipfsutil.NewDatastoreKeystore(datastoreutil.NewNamespacedDatastore(ds, datastore.NewKey(NamespaceDeviceKeystore))),
-			nil)
+	secretStore := opts.SecretStore
+	if secretStore == nil {
+		var err error
+		secretStore, err = secretstore.NewInMemSecretStore(&secretstore.NewSecretStoreOptions{
+			OutOfStorePrivateKey: opts.PushSK,
+		})
+		require.NoError(t, err)
 	}
 
 	odb := opts.OrbitDB
@@ -142,26 +147,22 @@ func NewTestingProtocol(ctx context.Context, t testing.TB, opts *TestingOpts, ds
 				PubSub: pubSub,
 				Logger: opts.Logger,
 			},
-			Datastore:      ds,
-			DeviceKeystore: deviceKeystore,
+			Datastore:   ds,
+			SecretStore: secretStore,
 		})
 		require.NoError(t, err)
 	}
 
-	groupDatastore, err := cryptoutil.NewGroupDatastore(ds)
-	require.NoError(t, err)
-
 	serviceOpts := Opts{
-		Host:           node.MockNode().PeerHost,
-		PubSub:         node.PubSub(),
-		Logger:         opts.Logger,
-		RootDatastore:  ds,
-		DeviceKeystore: deviceKeystore,
-		IpfsCoreAPI:    node.API(),
-		OrbitDB:        odb,
-		TinderService:  node.Tinder(),
-		PushKey:        opts.PushSK,
-		GroupDatastore: groupDatastore,
+		Host:                 node.MockNode().PeerHost,
+		PubSub:               node.PubSub(),
+		Logger:               opts.Logger,
+		RootDatastore:        ds,
+		IpfsCoreAPI:          node.API(),
+		OrbitDB:              odb,
+		TinderService:        node.Tinder(),
+		OutOfStorePrivateKey: opts.PushSK,
+		SecretStore:          secretStore,
 	}
 
 	service, cleanupService := TestingService(ctx, t, serviceOpts)
@@ -194,11 +195,10 @@ func NewTestingProtocol(ctx context.Context, t testing.TB, opts *TestingOpts, ds
 		Client:  client,
 		Service: service,
 
-		RootDatastore:  ds,
-		DeviceKeystore: deviceKeystore,
-		IpfsCoreAPI:    node.API(),
-		OrbitDB:        odb,
-		GroupDatastore: serviceOpts.GroupDatastore,
+		RootDatastore: ds,
+		IpfsCoreAPI:   node.API(),
+		OrbitDB:       odb,
+		SecretStore:   secretStore,
 	}
 	cleanup := func() {
 		server.Stop()
@@ -352,11 +352,11 @@ func CreatePeersWithGroupTest(ctx context.Context, t testing.TB, pathBase string
 
 	logger, cleanupLogger := testutil.Logger(t)
 
-	var devKS cryptoutil.DeviceKeystore
+	var secretStore secretstore.SecretStore
 
 	mockedPeers := make([]*mockedPeer, memberCount*deviceCount)
 
-	g, groupSK, err := NewGroupMultiMember()
+	group, groupPrivateKey, err := NewGroupMultiMember()
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -377,42 +377,37 @@ func CreatePeersWithGroupTest(ctx context.Context, t testing.TB, pathBase string
 			ca := ipfsutil.TestingCoreAPIUsingMockNet(ctx, t, &ipfsopts)
 
 			if j == 0 {
-				devKS = cryptoutil.NewDeviceKeystore(keystore.NewMemKeystore(), nil)
+				secretStore, err = secretstore.NewInMemSecretStore(nil)
+				require.NoError(t, err)
 			} else {
-				accSK, err := devKS.AccountPrivKey()
-				require.NoError(t, err, "deviceKeystore private key")
+				privateKeyBytes, proofPrivateKeyBytes, err := secretStore.ExportAccountKeysForBackup()
+				require.NoError(t, err, "ExportAccountKeysForBackup error")
 
-				accProofSK, err := devKS.AccountProofPrivKey()
-				require.NoError(t, err, "deviceKeystore private proof key")
-
-				devKS, err = cryptoutil.NewWithExistingKeys(keystore.NewMemKeystore(), accSK, accProofSK)
-				require.NoError(t, err, "deviceKeystore from existing keys")
+				secretStore, err = secretstore.NewInMemSecretStore(nil)
+				require.NoError(t, err)
+				require.NoError(t, secretStore.ImportAccountKeys(privateKeyBytes, proofPrivateKeyBytes))
 			}
-
-			mk, cleanupMessageKeystore := cryptoutil.NewInMemMessageKeystore(logger)
 
 			db, err := NewWeshOrbitDB(ctx, ca.API(), &NewOrbitDBOptions{
 				NewOrbitDBOptions: orbitdb.NewOrbitDBOptions{
 					Logger: logger,
 				},
-				DeviceKeystore:  devKS,
-				MessageKeystore: mk,
+				SecretStore: secretStore,
 			})
 			if err != nil {
 				t.Fatal(err)
 			}
 
-			gc, err := db.OpenGroup(ctx, g, nil)
+			gc, err := db.OpenGroup(ctx, group, nil)
 			if err != nil {
 				t.Fatalf("err: creating new group context, %v", err)
 			}
 
 			mp := &mockedPeer{
-				CoreAPI: ca,
-				DB:      db,
-				GC:      gc,
-				MKS:     mk,
-				DevKS:   devKS,
+				CoreAPI:     ca,
+				DB:          db,
+				GC:          gc,
+				SecretStore: secretStore,
 			}
 
 			// setup cleanup
@@ -431,7 +426,7 @@ func CreatePeersWithGroupTest(ctx context.Context, t testing.TB, pathBase string
 					assert.NoError(t, err)
 				}
 
-				cleanupMessageKeystore()
+				_ = secretStore.Close()
 			}
 
 			mockedPeers[deviceIndex] = mp
@@ -441,7 +436,7 @@ func CreatePeersWithGroupTest(ctx context.Context, t testing.TB, pathBase string
 
 	connectPeers(ctx, t, ipfsopts.Mocknet)
 
-	return mockedPeers, groupSK, func() {
+	return mockedPeers, groupPrivateKey, func() {
 		for _, cleanup := range cls {
 			cleanup()
 		}
@@ -487,34 +482,6 @@ func dropPeers(t *testing.T, mockedPeers []*mockedPeer) {
 type ServiceMethods interface {
 	GetContextGroupForID(id []byte) (*GroupContext, error)
 	GetCurrentDevicePushConfig() (*protocoltypes.PushServiceReceiver, *protocoltypes.PushServer)
-}
-
-func CreateVirtualOtherPeerSecretsShareSecret(t testing.TB, ctx context.Context, membersStores []*MetadataStore) (*cryptoutil.OwnMemberDevice, *protocoltypes.DeviceSecret) {
-	// Manually adding another member to the group
-	otherMemberSK, _, err := crypto.GenerateEd25519Key(crand.Reader)
-	require.NoError(t, err)
-
-	otherDeviceSK, _, err := crypto.GenerateEd25519Key(crand.Reader)
-	require.NoError(t, err)
-
-	otherMD := cryptoutil.NewOwnMemberDevice(otherMemberSK, otherDeviceSK)
-	ds, err := cryptoutil.NewDeviceSecret()
-	require.NoError(t, err)
-
-	for _, store := range membersStores {
-		_, err = MetadataStoreAddDeviceToGroup(ctx, store, store.Group(), otherMD)
-		require.NoError(t, err)
-
-		memPK, err := store.MemberPK()
-		require.NoError(t, err)
-
-		_, err = MetadataStoreSendSecret(ctx, store, store.Group(), otherMD, memPK, ds)
-		require.NoError(t, err)
-	}
-
-	time.Sleep(time.Millisecond * 200)
-
-	return otherMD, ds
 }
 
 func GetRootDatastoreForPath(dir string, key []byte, salt []byte, logger *zap.Logger) (datastore.Batching, error) {
@@ -705,12 +672,12 @@ func CreateMultiMemberGroupInstance(ctx context.Context, t *testing.T, tps ...*T
 }
 
 func isEventAddSecretTargetedToMember(ownRawPK []byte, evt *protocoltypes.GroupMetadataEvent) ([]byte, error) {
-	// Only count EventTypeGroupDeviceSecretAdded events
-	if evt.Metadata.EventType != protocoltypes.EventTypeGroupDeviceSecretAdded {
+	// Only count EventTypeGroupDeviceChainKeyAdded events
+	if evt.Metadata.EventType != protocoltypes.EventTypeGroupDeviceChainKeyAdded {
 		return nil, nil
 	}
 
-	sec := &protocoltypes.GroupAddDeviceSecret{}
+	sec := &protocoltypes.GroupAddDeviceChainKey{}
 	err := sec.Unmarshal(evt.Event)
 	if err != nil {
 		return nil, err

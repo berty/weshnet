@@ -7,12 +7,12 @@ import (
 	"os"
 	"testing"
 
-	keystore "github.com/ipfs/go-ipfs-keystore"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
 	"berty.tech/weshnet"
-	"berty.tech/weshnet/pkg/cryptoutil"
 	"berty.tech/weshnet/pkg/protocoltypes"
+	"berty.tech/weshnet/pkg/secretstore"
 	"berty.tech/weshnet/pkg/testutil"
 )
 
@@ -23,9 +23,12 @@ func TestTestingClient_impl(t *testing.T) {
 	logger, cleanup := testutil.Logger(t)
 	defer cleanup()
 
+	secretStore, err := secretstore.NewInMemSecretStore(nil)
+	require.NoError(t, err)
+
 	client, cleanup := weshnet.TestingService(ctx, t, weshnet.Opts{
-		Logger:         logger,
-		DeviceKeystore: cryptoutil.NewDeviceKeystore(keystore.NewMemKeystore(), nil),
+		Logger:      logger,
+		SecretStore: secretStore,
 	})
 	defer cleanup()
 

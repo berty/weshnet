@@ -16,7 +16,7 @@ func (s *service) MultiMemberGroupCreate(ctx context.Context, req *protocoltypes
 	ctx, _, endSection := tyber.Section(ctx, s.logger, "Creating MultiMember group")
 	defer func() { endSection(err, "") }()
 
-	g, sk, err := NewGroupMultiMember()
+	group, groupPrivateKey, err := NewGroupMultiMember()
 	if err != nil {
 		return nil, errcode.ErrCryptoKeyGeneration.Wrap(err)
 	}
@@ -26,32 +26,32 @@ func (s *service) MultiMemberGroupCreate(ctx context.Context, req *protocoltypes
 		return nil, errcode.ErrGroupMissing
 	}
 
-	_, err = accountGroup.MetadataStore().GroupJoin(ctx, g)
+	_, err = accountGroup.MetadataStore().GroupJoin(ctx, group)
 	if err != nil {
 		return nil, errcode.ErrOrbitDBAppend.Wrap(err)
 	}
 
-	if err := s.groupDatastore.Put(ctx, g); err != nil {
+	if err := s.secretStore.PutGroup(ctx, group); err != nil {
 		return nil, errcode.ErrInternal.Wrap(err)
 	}
 
-	err = s.activateGroup(ctx, sk.GetPublic(), false)
+	err = s.activateGroup(ctx, groupPrivateKey.GetPublic(), false)
 	if err != nil {
 		return nil, errcode.ErrInternal.Wrap(fmt.Errorf("unable to activate group: %w", err))
 	}
 
-	cg, err := s.GetContextGroupForID(g.PublicKey)
+	cg, err := s.GetContextGroupForID(group.PublicKey)
 	if err != nil {
 		return nil, errcode.ErrOrbitDBAppend.Wrap(err)
 	}
 
-	_, err = cg.MetadataStore().ClaimGroupOwnership(ctx, sk)
+	_, err = cg.MetadataStore().ClaimGroupOwnership(ctx, groupPrivateKey)
 	if err != nil {
 		return nil, errcode.ErrOrbitDBAppend.Wrap(err)
 	}
 
 	return &protocoltypes.MultiMemberGroupCreate_Reply{
-		GroupPK: g.PublicKey,
+		GroupPK: group.PublicKey,
 	}, nil
 }
 

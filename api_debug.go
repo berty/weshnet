@@ -15,7 +15,6 @@ import (
 
 	"berty.tech/go-orbit-db/stores/operation"
 	"berty.tech/weshnet/internal/sysutil"
-	"berty.tech/weshnet/pkg/cryptoutil"
 	"berty.tech/weshnet/pkg/errcode"
 	"berty.tech/weshnet/pkg/protocoltypes"
 )
@@ -39,19 +38,14 @@ func (s *service) DebugListGroups(req *protocoltypes.DebugListGroups_Request, sr
 			return errcode.ErrDeserialization.Wrap(err)
 		}
 
-		sk, err := s.deviceKeystore.ContactGroupPrivKey(pk)
+		group, err := s.secretStore.GetGroupForContact(pk)
 		if err != nil {
 			return errcode.ErrCryptoKeyGeneration.Wrap(err)
 		}
 
-		g, err := cryptoutil.GetGroupForContact(sk)
-		if err != nil {
-			return errcode.ErrOrbitDBOpen.Wrap(err)
-		}
-
 		if err := srv.SendMsg(&protocoltypes.DebugListGroups_Reply{
-			GroupPK:   g.PublicKey,
-			GroupType: g.GroupType,
+			GroupPK:   group.PublicKey,
+			GroupType: group.GroupType,
 			ContactPK: c.PK,
 		}); err != nil {
 			return err

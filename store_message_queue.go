@@ -5,7 +5,6 @@ import (
 	"sync"
 
 	"github.com/ipfs/go-cid"
-	"github.com/libp2p/go-libp2p/core/crypto"
 
 	"berty.tech/go-orbit-db/stores/operation"
 	"berty.tech/weshnet/pkg/protocoltypes"
@@ -16,7 +15,6 @@ type messageItem struct {
 	op      operation.Operation
 	env     *protocoltypes.MessageEnvelope
 	headers *protocoltypes.MessageHeaders
-	ownPK   crypto.PubKey
 	hash    cid.Cid
 }
 

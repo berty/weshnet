@@ -3,30 +3,15 @@ package weshnet
 import (
 	"bytes"
 	"context"
-	stdcrypto "crypto"
 	"fmt"
-	"io"
 	"strings"
 	"time"
 
-	libp2p_ci "github.com/libp2p/go-libp2p/core/crypto"
-
 	"berty.tech/weshnet/pkg/bertyvcissuer"
+	"berty.tech/weshnet/pkg/cryptoutil"
 	"berty.tech/weshnet/pkg/errcode"
 	"berty.tech/weshnet/pkg/protocoltypes"
 )
-
-type signerWrapper struct {
-	libp2p_ci.PrivKey
-}
-
-func (s *signerWrapper) Public() stdcrypto.PublicKey {
-	return s.PrivKey.GetPublic()
-}
-
-func (s *signerWrapper) Sign(_ io.Reader, digest []byte, _ stdcrypto.SignerOpts) (signature []byte, err error) {
-	return s.PrivKey.Sign(digest)
-}
 
 func (s *service) CredentialVerificationServiceInitFlow(ctx context.Context, request *protocoltypes.CredentialVerificationServiceInitFlow_Request) (*protocoltypes.CredentialVerificationServiceInitFlow_Reply, error) {
 	s.lock.Lock()
@@ -38,12 +23,8 @@ func (s *service) CredentialVerificationServiceInitFlow(ctx context.Context, req
 	defer cancel()
 
 	// TODO: allow selection of alt-scoped keys
-	sk, err := s.deviceKeystore.AccountPrivKey()
-	if err != nil {
-		return nil, errcode.ErrInvalidInput
-	}
-
-	pkRaw, err := sk.GetPublic().Raw()
+	// TODO: avoid exporting account keys
+	pkRaw, err := s.accountGroupCtx.ownMemberDevice.Member().Raw()
 	if err != nil {
 		return nil, errcode.ErrInvalidInput
 	}
@@ -52,7 +33,7 @@ func (s *service) CredentialVerificationServiceInitFlow(ctx context.Context, req
 		return nil, errcode.ErrInvalidInput
 	}
 
-	url, err := client.Init(ctx, request.Link, &signerWrapper{sk})
+	url, err := client.Init(ctx, request.Link, cryptoutil.NewFuncSigner(s.accountGroupCtx.ownMemberDevice.Member(), s.accountGroupCtx.ownMemberDevice.MemberSign))
 	if err != nil {
 		return nil, errcode.ErrInternal.Wrap(err)
 	}
@@ -77,7 +58,7 @@ func (s *service) CredentialVerificationServiceCompleteFlow(ctx context.Context,
 		return nil, errcode.ErrInternal.Wrap(err)
 	}
 
-	_, err = s.accountGroup.metadataStore.SendAccountVerifiedCredentialAdded(ctx, &protocoltypes.AccountVerifiedCredentialRegistered{
+	_, err = s.accountGroupCtx.metadataStore.SendAccountVerifiedCredentialAdded(ctx, &protocoltypes.AccountVerifiedCredentialRegistered{
 		VerifiedCredential: credentials,
 		RegistrationDate:   parsedCredential.Issued.UnixNano(),
 		ExpirationDate:     parsedCredential.Expired.UnixNano(),
@@ -95,7 +76,7 @@ func (s *service) CredentialVerificationServiceCompleteFlow(ctx context.Context,
 
 func (s *service) VerifiedCredentialsList(request *protocoltypes.VerifiedCredentialsList_Request, server protocoltypes.ProtocolService_VerifiedCredentialsListServer) error {
 	now := time.Now().UnixNano()
-	credentials := s.accountGroup.metadataStore.ListVerifiedCredentials()
+	credentials := s.accountGroupCtx.metadataStore.ListVerifiedCredentials()
 
 	for _, credential := range credentials {
 		if request.FilterIdentifier != "" && credential.Identifier != request.FilterIdentifier {
