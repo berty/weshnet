@@ -2,6 +2,7 @@ package netmanager
 
 import (
 	"fmt"
+	"strings"
 )
 
 type ConnectivityState int
@@ -22,6 +23,19 @@ func (cs ConnectivityState) String() string {
 		return "on"
 	default:
 		return "error"
+	}
+}
+
+func ParseConnectivityState(s string) (ConnectivityState, error) {
+	switch strings.ToLower(s) {
+	case "unknown":
+		return ConnectivityStateUnknown, nil
+	case "off":
+		return ConnectivityStateOff, nil
+	case "on":
+		return ConnectivityStateOn, nil
+	default:
+		return ConnectivityStateUnknown, fmt.Errorf("invalid connectivity state (unknown/off/on): %q", s)
 	}
 }
 
@@ -52,6 +66,23 @@ func (cnt ConnectivityNetType) String() string {
 	}
 }
 
+func ParseConnectivityNetType(s string) (ConnectivityNetType, error) {
+	switch strings.ToLower(s) {
+	case "unknown":
+		return ConnectivityNetUnknown, nil
+	case "none":
+		return ConnectivityNetNone, nil
+	case "wifi":
+		return ConnectivityNetWifi, nil
+	case "ethernet":
+		return ConnectivityNetEthernet, nil
+	case "cellular":
+		return ConnectivityNetCellular, nil
+	default:
+		return ConnectivityNetUnknown, fmt.Errorf("invalid connectivity net type (unknown/none/wifi/ethernet/cellular): %q", s)
+	}
+}
+
 type ConnectivityCellularType int
 
 const (
@@ -79,6 +110,25 @@ func (cct ConnectivityCellularType) String() string {
 		return "5G"
 	default:
 		return "error"
+	}
+}
+
+func ParseConnectivityCellularType(s string) (ConnectivityCellularType, error) {
+	switch strings.ToLower(s) {
+	case "unknown":
+		return ConnectivityCellularUnknown, nil
+	case "none":
+		return ConnectivityCellularNone, nil
+	case "2g":
+		return ConnectivityCellular2G, nil
+	case "3g":
+		return ConnectivityCellular3G, nil
+	case "4g":
+		return ConnectivityCellular4G, nil
+	case "5g":
+		return ConnectivityCellular5G, nil
+	default:
+		return ConnectivityCellularUnknown, fmt.Errorf("invalid connectivity cellular type (unknown/none/2g/3g/4g/5g): %q", s)
 	}
 }
 
