@@ -250,14 +250,14 @@ func (s *WeshOrbitDB) openAccountGroup(ctx context.Context, options *orbitdb.Cre
 }
 
 func (s *WeshOrbitDB) setHeadsForGroup(ctx context.Context, g *protocoltypes.Group, metaHeads, messageHeads []cid.Cid) error {
-	id := g.GroupIDAsString()
+	groupID := g.GroupIDAsString()
 
 	var (
 		err                    error
 		metaImpl, messagesImpl orbitdb.Store
 	)
 
-	existingGC, err := s.getGroupContext(id)
+	existingGC, err := s.getGroupContext(groupID)
 	if err != nil && !errcode.Is(err, errcode.ErrMissingMapKey) {
 		return errcode.ErrInternal.Wrap(err)
 	}
@@ -266,7 +266,6 @@ func (s *WeshOrbitDB) setHeadsForGroup(ctx context.Context, g *protocoltypes.Gro
 		messagesImpl = existingGC.messageStore
 	}
 	if metaImpl == nil || messagesImpl == nil {
-		groupID := g.GroupIDAsString()
 		s.groups.Store(groupID, g)
 
 		if err := s.registerGroupSigningPubKey(g); err != nil {
@@ -380,9 +379,9 @@ func (s *WeshOrbitDB) OpenGroup(ctx context.Context, g *protocoltypes.Group, opt
 		return nil, errcode.ErrInvalidInput.Wrap(fmt.Errorf("db open in naive mode"))
 	}
 
-	id := g.GroupIDAsString()
+	groupID := g.GroupIDAsString()
 
-	existingGC, err := s.getGroupContext(id)
+	existingGC, err := s.getGroupContext(groupID)
 	if err != nil && !errcode.Is(err, errcode.ErrMissingMapKey) {
 		return nil, errcode.ErrInternal.Wrap(err)
 	}
@@ -390,7 +389,6 @@ func (s *WeshOrbitDB) OpenGroup(ctx context.Context, g *protocoltypes.Group, opt
 		return existingGC, nil
 	}
 
-	groupID := g.GroupIDAsString()
 	s.groups.Store(groupID, g)
 
 	if err := s.registerGroupPrivateKey(g); err != nil {
