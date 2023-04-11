@@ -13,7 +13,6 @@ import (
 	"github.com/libp2p/go-libp2p/core/event"
 	"github.com/libp2p/go-libp2p/p2p/host/eventbus"
 	"go.uber.org/zap"
-	"golang.org/x/sync/semaphore"
 
 	ipfslog "berty.tech/go-ipfs-log"
 	"berty.tech/go-ipfs-log/identityprovider"
@@ -155,8 +154,6 @@ func (m *MessageStore) processMessage(ctx context.Context, message *messageItem)
 }
 
 func (m *MessageStore) processMessageLoop(ctx context.Context) {
-	semProcess := semaphore.NewWeighted(32)
-
 	for {
 		var message *messageItem
 		select {
@@ -194,43 +191,33 @@ func (m *MessageStore) processMessageLoop(ctx context.Context) {
 			continue
 		}
 
-		// start process routine
-		go func() {
-			// wait for a process slot
-			if err := semProcess.Acquire(ctx, 1); err != nil {
-				m.logger.Error("unable to acquire lock", zap.Error(err))
-				return
+		// process the message
+		evt, err := m.processMessage(ctx, message)
+		if err != nil {
+			if errcode.Is(err, errcode.ErrCryptoDecryptPayload) {
+				// @FIXME(gfanton): this should not happen
+				m.logger.Warn("unable to open envelope, adding envelope to cache for later process", zap.Error(err))
+
+				// if failed to decrypt add to queue, for later process
+				device.queue.Add(message)
+				_ = m.emitters.groupCacheMessage.Emit(*message)
+			} else {
+				m.logger.Error("unable to process message", zap.Error(err))
 			}
 
-			// defer release a process slot
-			defer semProcess.Release(1)
+			continue
+		}
 
-			// process the message
-			evt, err := m.processMessage(ctx, message)
-			if err != nil {
-				if errcode.Is(err, errcode.ErrCryptoDecryptPayload) {
-					// @FIXME(gfanton): this should not happen
-					m.logger.Warn("unable to open envelope, adding envelope to cache for later process", zap.Error(err))
+		// emit new message event
+		if err := m.emitters.groupMessage.Emit(*evt); err != nil {
+			m.logger.Warn("unable to emit group message event", zap.Error(err))
+		}
 
-					// if failed to decrypt add to queue, for later process
-					device.queue.Add(message)
-					_ = m.emitters.groupCacheMessage.Emit(*message)
-				} else {
-					m.logger.Error("unable to process message", zap.Error(err))
-				}
-
-				return
-			}
-
-			// emit new message event
-			if err := m.emitters.groupMessage.Emit(*evt); err != nil {
-				m.logger.Warn("unable to emit group message event", zap.Error(err))
-			}
-
-			if next := device.queue.Next(); next != nil {
+		if next := device.queue.Next(); next != nil {
+			go func() {
 				m.cmessage <- next
-			}
-		}()
+			}()
+		}
 
 		m.muDeviceCaches.Unlock()
 	}
