@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"html/template"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
@@ -16,7 +15,7 @@ import (
 )
 
 func mustReadAllBytes(t *testing.T, reader io.ReadCloser) []byte {
-	data, err := ioutil.ReadAll(reader)
+	data, err := io.ReadAll(reader)
 	_ = reader.Close()
 	require.NoError(t, err)
 

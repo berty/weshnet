@@ -6,7 +6,6 @@ import (
 	"encoding/base64"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"strings"
 
 	"github.com/gogo/protobuf/proto"
@@ -1151,7 +1150,7 @@ func (m *MetadataStore) initEmitter() (err error) {
 }
 
 func genNewSeed() (seed []byte, err error) {
-	seed, err = ioutil.ReadAll(io.LimitReader(crand.Reader, protocoltypes.RendezvousSeedLength))
+	seed, err = io.ReadAll(io.LimitReader(crand.Reader, protocoltypes.RendezvousSeedLength))
 	return
 }
 

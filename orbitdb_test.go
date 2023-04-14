@@ -3,7 +3,7 @@ package weshnet
 import (
 	"context"
 	"encoding/hex"
-	"io/ioutil"
+	"os"
 	"strings"
 	"testing"
 	"time"
@@ -39,7 +39,7 @@ func TestDifferentStores(t *testing.T) {
 		DiscoveryServer: tinder.NewMockDriverServer(),
 	}
 
-	pathBase, err := ioutil.TempDir("", "odb_manyaddstest")
+	pathBase, err := os.MkdirTemp("", "odb_manyaddstest")
 	if err != nil {
 		t.Fatal(err)
 	}

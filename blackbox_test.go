@@ -3,7 +3,6 @@ package weshnet_test
 import (
 	"context"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"testing"
 
@@ -69,7 +68,7 @@ func ExampleNewPersistentServiceClient_basic() {
 	defer cancel()
 
 	// create a temporary path to host data of our persistant service
-	path, err := ioutil.TempDir("", "weshnet-test-persistant")
+	path, err := os.MkdirTemp("", "weshnet-test-persistant")
 	if err != nil {
 		panic(err)
 	}

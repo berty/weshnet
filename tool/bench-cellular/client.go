@@ -4,7 +4,7 @@ import (
 	"bufio"
 	"context"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"log"
 	"math/rand"
 	"os"
@@ -173,7 +173,7 @@ func download(ctx context.Context, h host.Host, peerid peer.ID, cOpts *clientOpt
 	}
 
 	start = time.Now()
-	if _, err = ioutil.ReadAll(sd); err != nil {
+	if _, err = io.ReadAll(sd); err != nil {
 		return err
 	}
 	log.Printf("Data (%d bytes) download took: %v", cOpts.size, time.Since(start))

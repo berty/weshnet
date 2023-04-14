@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"sync"
 
-	network "github.com/libp2p/go-libp2p/core/network"
 	host "github.com/libp2p/go-libp2p/core/host"
+	network "github.com/libp2p/go-libp2p/core/network"
 	peer "github.com/libp2p/go-libp2p/core/peer"
 	pstore "github.com/libp2p/go-libp2p/core/peerstore"
 	tpt "github.com/libp2p/go-libp2p/core/transport"

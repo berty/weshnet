@@ -6,7 +6,6 @@ import (
 	"encoding/binary"
 	"fmt"
 	"io"
-	"io/ioutil"
 
 	"github.com/libp2p/go-libp2p/core/crypto"
 	crypto_pb "github.com/libp2p/go-libp2p/core/crypto/pb"
@@ -58,12 +57,12 @@ func getKeysForGroupOfContact(contactPairPrivateKey crypto.PrivKey) (crypto.Priv
 	kdf := hkdf.Expand(hash, prk, nil)
 
 	// Generate next KDF and message keys
-	groupSeed, err := ioutil.ReadAll(io.LimitReader(kdf, 32))
+	groupSeed, err := io.ReadAll(io.LimitReader(kdf, 32))
 	if err != nil {
 		return nil, nil, errcode.ErrCryptoKeyGeneration.Wrap(err)
 	}
 
-	groupSecretSeed, err := ioutil.ReadAll(io.LimitReader(kdf, 32))
+	groupSecretSeed, err := io.ReadAll(io.LimitReader(kdf, 32))
 	if err != nil {
 		return nil, nil, errcode.ErrCryptoKeyGeneration.Wrap(err)
 	}

@@ -3,7 +3,6 @@ package weshnet
 import (
 	"context"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path"
 	"sync"
@@ -119,7 +118,7 @@ func TestAddBerty(t *testing.T) {
 
 	api := ipfsutil.TestingCoreAPI(ctx, t)
 
-	pathBase, err := ioutil.TempDir("", "manyaddstest")
+	pathBase, err := os.MkdirTemp("", "manyaddstest")
 	if err != nil {
 		t.Fatal(err)
 	}

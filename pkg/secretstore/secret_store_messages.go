@@ -6,7 +6,6 @@ import (
 	"encoding/binary"
 	"fmt"
 	"io"
-	"io/ioutil"
 
 	"github.com/gogo/protobuf/proto"
 	"github.com/ipfs/go-cid"
@@ -1043,12 +1042,12 @@ func deriveNextKeys(chainKeyValue []byte, salt []byte, groupID []byte) ([]byte, 
 	kdf := hkdf.Expand(hash, prk, groupID)
 
 	// Generate next KDF and message keys
-	nextCK, err := ioutil.ReadAll(io.LimitReader(kdf, 32))
+	nextCK, err := io.ReadAll(io.LimitReader(kdf, 32))
 	if err != nil {
 		return nil, nextMsg, errcode.ErrCryptoKeyGeneration.Wrap(err)
 	}
 
-	nextMsgSlice, err := ioutil.ReadAll(io.LimitReader(kdf, 32))
+	nextMsgSlice, err := io.ReadAll(io.LimitReader(kdf, 32))
 	if err != nil {
 		return nil, nextMsg, errcode.ErrCryptoKeyGeneration.Wrap(err)
 	}

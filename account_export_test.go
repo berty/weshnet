@@ -4,7 +4,6 @@ import (
 	"archive/tar"
 	"context"
 	"io"
-	"io/ioutil"
 	"os"
 	"testing"
 
@@ -44,7 +43,7 @@ func Test_service_exportAccountKeys(t *testing.T) {
 	s, ok := nodeA.Service.(*service)
 	require.True(t, ok)
 
-	tmpFile, err := ioutil.TempFile(os.TempDir(), "test-export-")
+	tmpFile, err := os.CreateTemp(os.TempDir(), "test-export-")
 	require.NoError(t, err)
 
 	defer os.Remove(tmpFile.Name())
@@ -99,7 +98,7 @@ func TestRestoreAccount(t *testing.T) {
 
 	msrv := tinder.NewMockDriverServer()
 
-	tmpFile, err := ioutil.TempFile(os.TempDir(), "test-export-")
+	tmpFile, err := os.CreateTemp(os.TempDir(), "test-export-")
 	require.NoError(t, err)
 
 	expectedMessages := map[cid.Cid][]byte{}
