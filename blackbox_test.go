@@ -39,6 +39,9 @@ func TestTestingClient_impl(t *testing.T) {
 }
 
 func ExampleNewInMemoryServiceClient_basic() {
+	// disable ressources manager for test
+	os.Setenv("LIBP2P_RCMGR", "false")
+
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
@@ -60,10 +63,14 @@ func ExampleNewInMemoryServiceClient_basic() {
 	}
 
 	// Output:
+	// go-libp2p resource manager protection disabled
 	// /p2p-circuit
 }
 
 func ExampleNewPersistentServiceClient_basic() {
+	// disable ressources manager for test
+	os.Setenv("LIBP2P_RCMGR", "false")
+
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
@@ -113,9 +120,14 @@ func ExampleNewPersistentServiceClient_basic() {
 	}
 
 	// Output:
+	// go-libp2p resource manager protection disabled
+	// go-libp2p resource manager protection disabled
 }
 
 func ExampleNewServiceClient_basic() {
+	// disable ressources manager for test
+	os.Setenv("LIBP2P_RCMGR", "false")
+
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
@@ -137,10 +149,14 @@ func ExampleNewServiceClient_basic() {
 	}
 
 	// Output:
+	// go-libp2p resource manager protection disabled
 	// /p2p-circuit
 }
 
 func ExampleNewService_basic() {
+	// disable ressources manager for test
+	os.Setenv("LIBP2P_RCMGR", "false")
+
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
@@ -162,6 +178,7 @@ func ExampleNewService_basic() {
 	}
 
 	// Output:
+	// go-libp2p resource manager protection disabled
 	// /p2p-circuit
 }
 

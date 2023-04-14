@@ -3,6 +3,7 @@ package weshnet
 import (
 	"context"
 	"fmt"
+	"os"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -17,6 +18,9 @@ func TestClient_impl(t *testing.T) {
 }
 
 func TestEmptyArgs(t *testing.T) {
+	// disable ressources manager for test
+	os.Setenv("LIBP2P_RCMGR", "false")
+
 	// initialize new client
 	client, err := NewService(Opts{})
 	require.NoError(t, err)

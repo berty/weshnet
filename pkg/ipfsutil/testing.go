@@ -92,6 +92,7 @@ func TestingRepo(t testing.TB, ctx context.Context, datastore ds.Datastore) ipfs
 	c.Addresses.Swarm = []string{"/ip6/::/tcp/0"}
 	c.Identity.PeerID = pid.Pretty()
 	c.Identity.PrivKey = base64.StdEncoding.EncodeToString(privkeyb)
+	c.Swarm.ResourceMgr.Enabled = ipfs_cfg.False
 
 	if datastore == nil {
 		datastore = ds.NewMapDatastore()
