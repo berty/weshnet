@@ -205,6 +205,7 @@ func (m *MessageStore) processMessageLoop(ctx context.Context) {
 				m.logger.Error("unable to process message", zap.Error(err))
 			}
 
+			m.muDeviceCaches.Unlock()
 			continue
 		}
 
