@@ -15,6 +15,7 @@ import (
 
 	"berty.tech/weshnet/pkg/lifecycle"
 	"berty.tech/weshnet/pkg/logutil"
+	"berty.tech/weshnet/pkg/netmanager"
 )
 
 var (
@@ -36,7 +37,7 @@ type ConnLifecycle struct {
 	lm      *lifecycle.Manager
 }
 
-func NewConnLifecycle(ctx context.Context, logger *zap.Logger, h host.Host, ps *PeeringService, lm *lifecycle.Manager) (*ConnLifecycle, error) {
+func NewConnLifecycle(ctx context.Context, logger *zap.Logger, h host.Host, ps *PeeringService, lm *lifecycle.Manager, net *netmanager.NetManager) (*ConnLifecycle, error) {
 	cl := &ConnLifecycle{
 		peering: ps,
 		rootCtx: ctx,
@@ -55,6 +56,25 @@ func NewConnLifecycle(ctx context.Context, logger *zap.Logger, h host.Host, ps *
 	go cl.monitorAppState(ctx)
 
 	cl.logger.Debug("lifecycle conn started")
+
+	go func() {
+		currentState := net.GetCurrentState()
+
+		for {
+			ok, _ := net.WaitForStateChange(ctx, &currentState, netmanager.ConnectivityStateChanged)
+
+			if !ok {
+				return
+			}
+
+			currentState = net.GetCurrentState()
+
+			if net.GetCurrentState().State == netmanager.ConnectivityStateOn {
+				go cl.dropUnavailableConn()
+			}
+		}
+	}()
+
 	return cl, nil
 }
 
