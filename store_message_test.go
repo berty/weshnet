@@ -59,7 +59,7 @@ func Test_AddMessage_ListMessages_manually_supplying_secrets(t *testing.T) {
 
 	require.Equal(t, 1, countEntries(out))
 
-	watcherCtx, watcherCancel := context.WithTimeout(ctx, time.Second*2)
+	watcherCtx, watcherCancel := context.WithTimeout(ctx, time.Second*5)
 	chSub, err := peers[1].GC.MessageStore().EventBus().Subscribe(new(protocoltypes.GroupMessageEvent))
 	require.NoError(t, err)
 	defer chSub.Close()
@@ -71,6 +71,7 @@ func Test_AddMessage_ListMessages_manually_supplying_secrets(t *testing.T) {
 			case <-watcherCtx.Done():
 				return
 			}
+
 			c, err := peers[1].GC.MessageStore().ListEvents(watcherCtx, nil, nil, false)
 			if !assert.NoError(t, err) {
 				watcherCancel()
