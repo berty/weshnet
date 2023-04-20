@@ -111,14 +111,14 @@ func CreateBaseConfig() (*ipfs_cfg.Config, error) {
 	// Swarm
 	c.Swarm.RelayClient.Enabled = ipfs_cfg.True
 	c.Swarm.ConnMgr = ipfs_cfg.ConnMgr{
-		LowWater:    defaultConnMgrLowWater,
-		HighWater:   defaultConnMgrHighWater,
-		GracePeriod: defaultConnMgrGracePeriod.String(),
-		Type:        "basic",
+		LowWater:    ipfs_cfg.NewOptionalInteger(defaultConnMgrLowWater),
+		HighWater:   ipfs_cfg.NewOptionalInteger(defaultConnMgrHighWater),
+		GracePeriod: ipfs_cfg.NewOptionalDuration(defaultConnMgrGracePeriod),
+		Type:        ipfs_cfg.NewOptionalString("basic"),
 	}
 
 	c.Routing = ipfs_cfg.Routing{
-		Type: "dhtclient",
+		Type: ipfs_cfg.NewOptionalString("dhtclient"),
 	}
 
 	return &c, nil
@@ -164,8 +164,8 @@ func upgradeToPersistentConfig(cfg *ipfs_cfg.Config) (*ipfs_cfg.Config, error) {
 	}
 
 	cfgCopy.Reprovider = ipfs_cfg.Reprovider{
-		Interval: "12h",
-		Strategy: "all",
+		Interval: ipfs_cfg.NewOptionalDuration(time.Hour * 12),
+		Strategy: ipfs_cfg.NewOptionalString("all"),
 	}
 
 	cfgCopy.Datastore = ipfs_cfg.Datastore{

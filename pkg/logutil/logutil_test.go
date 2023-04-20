@@ -3,7 +3,6 @@ package logutil_test
 import (
 	"bufio"
 	"io"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -36,8 +35,8 @@ func TestTypeStd(t *testing.T) {
 	logger.Sync()
 	lines := strings.Split(strings.TrimSpace(closer()), "\n")
 	require.Equal(t, 2, len(lines))
-	require.Equal(t, "INFO \tbty               \tlogutil/logutil_test.go:34\thello world!", lines[0])
-	require.Equal(t, "WARN \tbty               \tlogutil/logutil_test.go:35\thello world!", lines[1])
+	require.Equal(t, "INFO \tbty               \tlogutil/logutil_test.go:33\thello world!", lines[0])
+	require.Equal(t, "WARN \tbty               \tlogutil/logutil_test.go:34\thello world!", lines[1])
 }
 
 func TestTypeRing(t *testing.T) {
@@ -71,9 +70,9 @@ func TestTypeRing(t *testing.T) {
 	}()
 	scanner := bufio.NewScanner(r)
 	scanner.Scan()
-	require.Equal(t, "INFO \tbty               \tlogutil/logutil_test.go:60\thello world!", scanner.Text())
+	require.Equal(t, "INFO \tbty               \tlogutil/logutil_test.go:59\thello world!", scanner.Text())
 	scanner.Scan()
-	require.Equal(t, "WARN \tbty               \tlogutil/logutil_test.go:61\thello world!", scanner.Text())
+	require.Equal(t, "WARN \tbty               \tlogutil/logutil_test.go:60\thello world!", scanner.Text())
 }
 
 func TestTypeFile(t *testing.T) {
@@ -82,7 +81,7 @@ func TestTypeFile(t *testing.T) {
 			t.Skip("unittest not consistent on windows, skipping.")
 		}
 
-		tempdir, err := ioutil.TempDir("", "logutil-file")
+		tempdir, err := os.MkdirTemp("", "logutil-file")
 		require.NoError(t, err)
 
 		filename := filepath.Join(tempdir, "test.log")
@@ -102,12 +101,12 @@ func TestTypeFile(t *testing.T) {
 
 		require.Empty(t, closer())
 
-		content, err := ioutil.ReadFile(filename)
+		content, err := os.ReadFile(filename)
 		require.NoError(t, err)
 		lines := strings.Split(string(content), "\n")
 		require.Equal(t, 3, len(lines))
-		require.Equal(t, "INFO \tbty               \tlogutil/logutil_test.go:99\thello world!", lines[0])
-		require.Equal(t, "WARN \tbty               \tlogutil/logutil_test.go:100\thello world!", lines[1])
+		require.Equal(t, "INFO \tbty               \tlogutil/logutil_test.go:98\thello world!", lines[0])
+		require.Equal(t, "WARN \tbty               \tlogutil/logutil_test.go:99\thello world!", lines[1])
 		require.Equal(t, "", lines[2])
 	})
 
@@ -116,7 +115,7 @@ func TestTypeFile(t *testing.T) {
 			t.Skip("unittest not consistent on windows, skipping.")
 		}
 
-		tempdir, err := ioutil.TempDir("", "logutil-file")
+		tempdir, err := os.MkdirTemp("", "logutil-file")
 		require.NoError(t, err)
 
 		closer, err := u.CaptureStdoutAndStderr()
@@ -134,16 +133,16 @@ func TestTypeFile(t *testing.T) {
 
 		require.Empty(t, closer())
 
-		files, err := ioutil.ReadDir(tempdir)
+		files, err := os.ReadDir(tempdir)
 		require.NoError(t, err)
 		require.Len(t, files, 1)
 
-		content, err := ioutil.ReadFile(filepath.Join(tempdir, files[0].Name()))
+		content, err := os.ReadFile(filepath.Join(tempdir, files[0].Name()))
 		require.NoError(t, err)
 		lines := strings.Split(string(content), "\n")
 		require.Equal(t, 3, len(lines))
-		require.Equal(t, "INFO \tbty               \tlogutil/logutil_test.go:131\thello world!", lines[0])
-		require.Equal(t, "WARN \tbty               \tlogutil/logutil_test.go:132\thello world!", lines[1])
+		require.Equal(t, "INFO \tbty               \tlogutil/logutil_test.go:130\thello world!", lines[0])
+		require.Equal(t, "WARN \tbty               \tlogutil/logutil_test.go:131\thello world!", lines[1])
 		require.Equal(t, "", lines[2])
 	})
 }
@@ -153,7 +152,7 @@ func TestMultiple(t *testing.T) {
 		t.Skip("unittest not consistent on windows, skipping.")
 	}
 
-	tempdir, err := ioutil.TempDir("", "logutil-file")
+	tempdir, err := os.MkdirTemp("", "logutil-file")
 	require.NoError(t, err)
 	defer os.RemoveAll(tempdir)
 
@@ -180,18 +179,18 @@ func TestMultiple(t *testing.T) {
 	{
 		lines := strings.Split(strings.TrimSpace(closer()), "\n")
 		require.Equal(t, 2, len(lines))
-		require.Equal(t, "INFO \tbty               \tlogutil/logutil_test.go:175\thello world!", lines[0])
-		require.Equal(t, "WARN \tbty               \tlogutil/logutil_test.go:176\thello world!", lines[1])
+		require.Equal(t, "INFO \tbty               \tlogutil/logutil_test.go:174\thello world!", lines[0])
+		require.Equal(t, "WARN \tbty               \tlogutil/logutil_test.go:175\thello world!", lines[1])
 	}
 
 	// file
 	{
-		content, err := ioutil.ReadFile(filepath.Join(tempdir, "test.log"))
+		content, err := os.ReadFile(filepath.Join(tempdir, "test.log"))
 		require.NoError(t, err)
 		lines := strings.Split(string(content), "\n")
 		require.Equal(t, 3, len(lines))
-		require.Equal(t, "INFO \tbty               \tlogutil/logutil_test.go:175\thello world!", lines[0])
-		require.Equal(t, "WARN \tbty               \tlogutil/logutil_test.go:176\thello world!", lines[1])
+		require.Equal(t, "INFO \tbty               \tlogutil/logutil_test.go:174\thello world!", lines[0])
+		require.Equal(t, "WARN \tbty               \tlogutil/logutil_test.go:175\thello world!", lines[1])
 		require.Equal(t, "", lines[2])
 	}
 
@@ -205,9 +204,9 @@ func TestMultiple(t *testing.T) {
 		}()
 		scanner := bufio.NewScanner(r)
 		scanner.Scan()
-		require.Equal(t, "INFO \tbty               \tlogutil/logutil_test.go:175\thello world!", scanner.Text())
+		require.Equal(t, "INFO \tbty               \tlogutil/logutil_test.go:174\thello world!", scanner.Text())
 		scanner.Scan()
-		require.Equal(t, "WARN \tbty               \tlogutil/logutil_test.go:176\thello world!", scanner.Text())
+		require.Equal(t, "WARN \tbty               \tlogutil/logutil_test.go:175\thello world!", scanner.Text())
 	}
 
 	// FIXME: test that each logger can have its own format and filters

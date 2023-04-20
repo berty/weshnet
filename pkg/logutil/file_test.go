@@ -2,7 +2,6 @@ package logutil
 
 import (
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"testing"
@@ -14,7 +13,7 @@ import (
 
 func TestLogfile(t *testing.T) {
 	// setup volatile directory for the test
-	tempdir, err := ioutil.TempDir("", "logutil-file")
+	tempdir, err := os.MkdirTemp("", "logutil-file")
 	require.NoError(t, err)
 	defer os.RemoveAll(tempdir)
 

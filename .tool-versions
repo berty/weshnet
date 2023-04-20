@@ -1,8 +1,8 @@
 #-----
-# golang 1.18.4 is simply the most recent version available to date (07/22).
+# golang golang 1.19.7 is simply the most recent version available to date (03/30).
 # There is no contraindication for updating it.
 #-----
-golang 1.18.4
+golang 1.19.7
 
 #-----
 # golangci-lint 1.51.2 is simply the most recent version available to date (07/22).

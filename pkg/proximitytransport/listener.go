@@ -5,6 +5,7 @@ import (
 	"errors"
 	"net"
 
+	network "github.com/libp2p/go-libp2p/core/network"
 	peer "github.com/libp2p/go-libp2p/core/peer"
 	tpt "github.com/libp2p/go-libp2p/core/transport"
 	ma "github.com/multiformats/go-multiaddr"
@@ -59,7 +60,7 @@ func (l *Listener) Accept() (tpt.CapableConn, error) {
 		select {
 		case req := <-l.inboundConnReq:
 			l.transport.logger.Debug("Listener.Accept(): incoming connection")
-			conn, err := newConn(l.ctx, l.transport, req.remoteMa, req.remotePID, true)
+			conn, err := newConn(l.ctx, l.transport, req.remoteMa, req.remotePID, network.DirInbound)
 			// If the newConn failed for some reason, Accept won't return an error
 			// because otherwise it will close the listener
 			if err == nil {

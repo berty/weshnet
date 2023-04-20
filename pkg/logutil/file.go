@@ -3,7 +3,7 @@ package logutil
 import (
 	"fmt"
 	"io"
-	"io/ioutil"
+	"io/fs"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -81,14 +81,23 @@ const filePatternDateLayout = "2006-01-02T15-04-05.000"
 var filePatternRegex = regexp.MustCompile(`(?m)^(.*)-(\d{4}-\d{2}-\d{2}T\d{2}-\d{2}-\d{2}.\d{3}).log$`)
 
 func LogfileList(logDir string) ([]*Logfile, error) {
-	files, err := ioutil.ReadDir(logDir)
+	files, err := os.ReadDir(logDir)
 	if err != nil {
 		return nil, errcode.TODO.Wrap(err)
 	}
 
+	infos := make([]fs.FileInfo, 0, len(files))
+	for _, entry := range files {
+		info, err := entry.Info()
+		if err != nil {
+			return nil, errcode.TODO.Wrap(err)
+		}
+		infos = append(infos, info)
+	}
+
 	logfiles := []*Logfile{}
-	for _, file := range files {
-		sub := filePatternRegex.FindStringSubmatch(file.Name())
+	for _, info := range infos {
+		sub := filePatternRegex.FindStringSubmatch(info.Name())
 		if sub == nil {
 			continue
 		}
@@ -100,8 +109,8 @@ func LogfileList(logDir string) ([]*Logfile, error) {
 
 		logfiles = append(logfiles, &Logfile{
 			Dir:  logDir,
-			Name: file.Name(),
-			Size: file.Size(),
+			Name: info.Name(),
+			Size: info.Size(),
 			Kind: sub[1],
 			Time: t,
 			Errs: errs,

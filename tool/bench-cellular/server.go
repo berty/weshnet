@@ -4,7 +4,7 @@ import (
 	"bufio"
 	"context"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"log"
 	"math/rand"
 	"strconv"
@@ -265,7 +265,7 @@ func runServer(ctx context.Context, gOpts *globalOpts, sOpts *serverOpts) error 
 		}
 
 		reader := bufio.NewReader(s)
-		data, err := ioutil.ReadAll(reader)
+		data, err := io.ReadAll(reader)
 		if err != nil {
 			log.Printf("Read error during upload from %s: %v\n", remotePeerID, err)
 			return

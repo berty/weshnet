@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net"
+	"os"
 
 	ipfs_oldcmds "github.com/ipfs/kubo/commands"
 	ipfs_core "github.com/ipfs/kubo/core"
@@ -104,6 +105,7 @@ func NewNode(ctx context.Context, cfg *IpfsConfig) (*IpfsMobile, error) {
 		Routing:                     NewRoutingConfigOption(cfg.RoutingOption, cfg.RoutingConfig),
 		ExtraOpts:                   cfg.ExtraOpts,
 	}
+	os.Setenv("IPFS_PATH", cfg.RepoMobile.Path)
 
 	// create ipfs node
 	inode, err := ipfs_core.NewNode(ctx, buildcfg)
