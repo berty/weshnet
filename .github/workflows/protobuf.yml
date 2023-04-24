@@ -38,6 +38,8 @@ on:
       - "**/go.sum"
 jobs:
   gen-go-and-docs:
+    # Check repository owner so that we don't run on a fork.
+    if: github.repository_owner == 'berty'
     if: github.event_name == 'DISABLED' # need to fix it by removing docker for generation
     name: Generate go protobuf and docs
     runs-on: ubuntu-latest

@@ -21,6 +21,8 @@ on:
 
 jobs:
   golangci-lint:
+    # Check repository owner so that we don't run on a fork.
+    if: github.repository_owner == 'berty'
     name: Golangci-lint
     runs-on: ubuntu-latest
     steps:
@@ -53,6 +55,8 @@ jobs:
   #
   # we hope we can remove this job because all the tests are stable 100% of the time
   flappy-tests:
+    # Check repository owner so that we don't run on a fork.
+    if: github.repository_owner == 'berty'
     name: Flappy tests (Linux)
     runs-on: ubuntu-latest
     steps:
@@ -103,6 +107,8 @@ jobs:
         run: make go.flappy-tests
 
   go-tests-on-linux:
+    # Check repository owner so that we don't run on a fork.
+    if: github.repository_owner == 'berty'
     name: Stable tests (Linux)
     runs-on: ubuntu-latest
     steps:
@@ -167,6 +173,8 @@ jobs:
           fail_ci_if_error: false
 
   go-tests-on-windows:
+    # Check repository owner so that we don't run on a fork.
+    if: github.repository_owner == 'berty'
     name: Stable tests (Windows)
     runs-on: windows-latest
     steps:
@@ -211,6 +219,8 @@ jobs:
         run: go.exe test ./...  -buildmode=exe -timeout=600s -count=1
 
   go-tests-on-macos:
+    # Check repository owner so that we don't run on a fork.
+    if: github.repository_owner == 'berty'
     name: Stable tests (macOS)
     runs-on: macos-latest
     steps:
