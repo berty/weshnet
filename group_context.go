@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/libp2p/go-libp2p/core/crypto"
+	"github.com/libp2p/go-libp2p/p2p/host/eventbus"
 	"go.uber.org/zap"
 
 	"berty.tech/go-orbit-db/stores"
@@ -192,7 +193,7 @@ func (gc *GroupContext) activateGroupContext(contact crypto.PubKey, selfAnnounce
 func (gc *GroupContext) FillMessageKeysHolderUsingNewData() <-chan crypto.PubKey {
 	m := gc.MetadataStore()
 	ch := make(chan crypto.PubKey)
-	sub, err := m.EventBus().Subscribe(new(protocoltypes.GroupMetadataEvent))
+	sub, err := m.EventBus().Subscribe(new(protocoltypes.GroupMetadataEvent), eventbus.Name("weshnet/group-context/fill-message-keys"))
 	if err != nil {
 		m.logger.Warn("unable to subscribe to events", zap.Error(err))
 		close(ch)
@@ -248,7 +249,7 @@ func (gc *GroupContext) FillMessageKeysHolderUsingNewData() <-chan crypto.PubKey
 
 func (gc *GroupContext) WatchNewMembersAndSendSecrets() <-chan crypto.PubKey {
 	ch := make(chan crypto.PubKey)
-	sub, err := gc.MetadataStore().EventBus().Subscribe(new(protocoltypes.GroupMetadataEvent))
+	sub, err := gc.MetadataStore().EventBus().Subscribe(new(protocoltypes.GroupMetadataEvent), eventbus.Name("weshnet/group-context/new-members-and-secrets"))
 	if err != nil {
 		gc.logger.Warn("unable to subscribe to group metadata", zap.Error(err))
 		close(ch)
@@ -398,13 +399,15 @@ func (gc *GroupContext) SendSecretsToExistingMembers(contact crypto.PubKey) <-ch
 func (gc *GroupContext) TagGroupContextPeers(ipfsCoreAPI ipfsutil.ExtendedCoreAPI, weight int) {
 	id := gc.Group().GroupIDAsString()
 
-	chSub1, err := gc.metadataStore.EventBus().Subscribe(new(stores.EventNewPeer))
+	chSub1, err := gc.metadataStore.EventBus().Subscribe(new(stores.EventNewPeer),
+		eventbus.Name("weshnet/group-context/tag-meta"))
 	if err != nil {
 		gc.logger.Warn("unable to subscribe to metadata event new peer")
 		return
 	}
 
-	chSub2, err := gc.messageStore.EventBus().Subscribe(new(stores.EventNewPeer))
+	chSub2, err := gc.messageStore.EventBus().Subscribe(new(stores.EventNewPeer),
+		eventbus.Name("weshnet/group-context/tag-msg"))
 	if err != nil {
 		gc.logger.Warn("unable to subscribe to message event new peer")
 		return

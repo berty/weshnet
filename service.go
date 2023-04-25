@@ -19,6 +19,7 @@ import (
 	"github.com/libp2p/go-libp2p/core/network"
 	"github.com/libp2p/go-libp2p/p2p/host/eventbus"
 	"github.com/pkg/errors"
+	"github.com/prometheus/client_golang/prometheus"
 	"go.uber.org/multierr"
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
@@ -96,6 +97,7 @@ type Opts struct {
 	PushKey              *[cryptoutil.KeySize]byte
 	SecretStore          secretstore.SecretStore
 	OutOfStorePrivateKey *[cryptoutil.KeySize]byte
+	PrometheusRegister   prometheus.Registerer
 
 	// These are used if OrbitDB is nil.
 	GroupMetadataStoreType string
@@ -105,6 +107,10 @@ type Opts struct {
 func (opts *Opts) applyPushDefaults() error {
 	if opts.Logger == nil {
 		opts.Logger = zap.NewNop()
+	}
+
+	if opts.PrometheusRegister == nil {
+		opts.PrometheusRegister = prometheus.DefaultRegisterer
 	}
 
 	opts.applyDefaultsGetDatastore()
@@ -193,6 +199,7 @@ func (opts *Opts) applyDefaults(ctx context.Context) error {
 				Directory: &orbitDirectory,
 				Logger:    opts.Logger,
 			},
+			PrometheusRegister:     opts.PrometheusRegister,
 			Datastore:              datastoreutil.NewNamespacedDatastore(opts.RootDatastore, ds.NewKey(NamespaceOrbitDBDatastore)),
 			SecretStore:            opts.SecretStore,
 			GroupMetadataStoreType: opts.GroupMetadataStoreType,
@@ -237,7 +244,9 @@ func NewService(opts Opts) (_ Service, err error) {
 	ctx, _, endSection := tyber.Section(tyber.ContextWithoutTraceID(ctx), opts.Logger, fmt.Sprintf("Initializing ProtocolService version %s", bertyversion.Version))
 	defer func() { endSection(err, "") }()
 
-	accountEventBus := eventbus.NewBus()
+	accountEventBus := eventbus.NewBus(
+		eventbus.WithMetricsTracer(eventbus.NewMetricsTracer(eventbus.WithRegisterer(opts.PrometheusRegister))))
+
 	dbOpts := &iface.CreateDBOptions{
 		EventBus:  accountEventBus,
 		LocalOnly: &opts.LocalOnly,
@@ -354,14 +363,16 @@ func (s *service) startGroupDeviceMonitor() {
 	}
 
 	// monitor exchange heads events
-	subHead, err := s.odb.EventBus().Subscribe(new(baseorbitdb.EventExchangeHeads))
+	subHead, err := s.odb.EventBus().Subscribe(new(baseorbitdb.EventExchangeHeads),
+		eventbus.Name("weshnet/service/monitor-exchange-heads"))
 	if err != nil {
 		s.logger.Error("startGroupDeviceMonitor", zap.Error(errors.Wrap(err, "unable to subscribe odb event")))
 		return
 	}
 
 	// monitor peer connectednesschanged
-	subPeer, err := s.host.EventBus().Subscribe(new(event.EvtPeerConnectednessChanged))
+	subPeer, err := s.host.EventBus().Subscribe(new(event.EvtPeerConnectednessChanged),
+		eventbus.Name("weshnet/service/monitor-peer-connectedness"))
 	if err != nil {
 		s.logger.Error("startGroupDeviceMonitor", zap.Error(errors.Wrap(err, "unable to subscribe odb event")))
 		subHead.Close()

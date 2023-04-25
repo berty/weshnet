@@ -364,7 +364,7 @@ func constructorFactoryGroupMessage(s *WeshOrbitDB, logger *zap.Logger) iface.St
 		}
 
 		if options.EventBus == nil {
-			options.EventBus = eventbus.NewBus()
+			options.EventBus = s.EventBus()
 		}
 
 		replication := false
@@ -431,7 +431,7 @@ func constructorFactoryGroupMessage(s *WeshOrbitDB, logger *zap.Logger) iface.St
 		chSub, err := store.EventBus().Subscribe([]interface{}{
 			new(stores.EventWrite),
 			new(stores.EventReplicated),
-		}, eventbus.BufSize(128))
+		}, eventbus.Name("weshnet/store-message"), eventbus.BufSize(128))
 		if err != nil {
 			return nil, fmt.Errorf("unable to subscribe to store events")
 		}

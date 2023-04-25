@@ -10,6 +10,7 @@ import (
 	"github.com/libp2p/go-libp2p/core/connmgr"
 	host "github.com/libp2p/go-libp2p/core/host"
 	"github.com/libp2p/go-libp2p/core/peer"
+	"github.com/libp2p/go-libp2p/p2p/host/eventbus"
 	"github.com/libp2p/go-libp2p/p2p/protocol/ping"
 	"go.uber.org/zap"
 
@@ -152,7 +153,7 @@ func (cl *ConnLifecycle) dropUnavailableConn() {
 func (cl *ConnLifecycle) monitorPeerOfInterest(ctx context.Context) error {
 	sub, err := cl.h.EventBus().Subscribe([]interface{}{
 		new(EvtPeerTag),
-	})
+	}, eventbus.Name("weshnet/lifecycle/monitor-peer-of-interest"))
 	if err != nil {
 		return fmt.Errorf("unable to subscribe to `EvtPeerConnectednessChanged`: %w", err)
 	}

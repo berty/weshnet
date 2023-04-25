@@ -54,7 +54,7 @@ func (s *service) GroupMetadataList(req *protocoltypes.GroupMetadataList_Request
 		sub, err := cg.MetadataStore().EventBus().Subscribe([]interface{}{
 			// new(stores.EventReplicated),
 			new(protocoltypes.GroupMetadataEvent),
-		}, eventbus.BufSize(32))
+		}, eventbus.Name("weshnet/api/group-metadata-list"), eventbus.BufSize(32))
 		if err != nil {
 			return fmt.Errorf("unable to subscribe to new events")
 		}
@@ -143,7 +143,7 @@ func (s *service) GroupMessageList(req *protocoltypes.GroupMessageList_Request, 
 	if req.UntilID == nil && !req.UntilNow {
 		messageStoreSub, err := cg.MessageStore().EventBus().Subscribe([]interface{}{
 			new(protocoltypes.GroupMessageEvent),
-		}, eventbus.BufSize(32))
+		}, eventbus.Name("weshnet/api/group-message-list"), eventbus.BufSize(32))
 		if err != nil {
 			return fmt.Errorf("unable to subscribe to new events")
 		}

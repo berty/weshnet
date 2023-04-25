@@ -15,6 +15,7 @@ import (
 	peer "github.com/libp2p/go-libp2p/core/peer"
 	"github.com/libp2p/go-libp2p/p2p/host/eventbus"
 	"github.com/pkg/errors"
+	"github.com/prometheus/client_golang/prometheus"
 	"go.uber.org/zap"
 
 	ipfslog "berty.tech/go-ipfs-log"
@@ -51,9 +52,10 @@ type loggable interface {
 
 type NewOrbitDBOptions struct {
 	baseorbitdb.NewOrbitDBOptions
-	Datastore        datastore.Batching
-	SecretStore      secretstore.SecretStore
-	RotationInterval *rendezvous.RotationInterval
+	Datastore          datastore.Batching
+	SecretStore        secretstore.SecretStore
+	RotationInterval   *rendezvous.RotationInterval
+	PrometheusRegister prometheus.Registerer
 
 	GroupMetadataStoreType string
 	GroupMessageStoreType  string
@@ -63,6 +65,10 @@ type NewOrbitDBOptions struct {
 func (n *NewOrbitDBOptions) applyDefaults() {
 	if n.Datastore == nil {
 		n.Datastore = ds_sync.MutexWrap(datastore.NewMapDatastore())
+	}
+
+	if n.PrometheusRegister == nil {
+		n.PrometheusRegister = prometheus.DefaultRegisterer
 	}
 
 	if n.Cache == nil {
@@ -99,12 +105,13 @@ type (
 
 type WeshOrbitDB struct {
 	baseorbitdb.BaseOrbitDB
-	keyStore         *BertySignedKeyStore
-	secretStore      secretstore.SecretStore
-	pubSub           iface.PubSubInterface
-	rotationInterval *rendezvous.RotationInterval
-	messageMarshaler *OrbitDBMessageMarshaler
-	replicationMode  bool
+	keyStore           *BertySignedKeyStore
+	secretStore        secretstore.SecretStore
+	pubSub             iface.PubSubInterface
+	rotationInterval   *rendezvous.RotationInterval
+	messageMarshaler   *OrbitDBMessageMarshaler
+	replicationMode    bool
+	prometheusRegister prometheus.Registerer
 
 	groupMetadataStoreType string
 	groupMessageStoreType  string
@@ -201,6 +208,7 @@ func NewWeshOrbitDB(ctx context.Context, ipfs coreapi.CoreAPI, options *NewOrbit
 		groupMetadataStoreType: options.GroupMetadataStoreType,
 		groupMessageStoreType:  options.GroupMessageStoreType,
 		replicationMode:        options.ReplicationMode,
+		prometheusRegister:     options.PrometheusRegister,
 	}
 
 	if err := bertyDB.RegisterAccessControllerType(NewSimpleAccessController); err != nil {
@@ -330,7 +338,8 @@ func (s *WeshOrbitDB) setHeadsForGroup(ctx context.Context, g *protocoltypes.Gro
 }
 
 func (s *WeshOrbitDB) loadHeads(ctx context.Context, store iface.Store, heads []cid.Cid) (err error) {
-	sub, err := store.EventBus().Subscribe(new(stores.EventReplicated))
+	sub, err := store.EventBus().Subscribe(new(stores.EventReplicated),
+		eventbus.Name("weshnet/load-heads"))
 	if err != nil {
 		return fmt.Errorf("unable to subscribe to EventReplicated")
 	}
@@ -426,7 +435,8 @@ func (s *WeshOrbitDB) OpenGroup(ctx context.Context, g *protocoltypes.Group, opt
 	// force to unshare the same EventBus between groupMetadataStore and groupMessageStore
 	// to avoid having a bunch of events which are not for the correct group
 	if options != nil && options.EventBus != nil {
-		options.EventBus = eventbus.NewBus()
+		options.EventBus = eventbus.NewBus(
+			eventbus.WithMetricsTracer(eventbus.NewMetricsTracer(eventbus.WithRegisterer(s.prometheusRegister))))
 	}
 
 	messagesImpl, err := s.groupMessageStore(ctx, g, options)
@@ -518,6 +528,15 @@ func (s *WeshOrbitDB) SetGroupSigPubKey(groupID string, pubKey crypto.PubKey) er
 
 func (s *WeshOrbitDB) storeForGroup(ctx context.Context, o iface.BaseOrbitDB, g *protocoltypes.Group, options *orbitdb.CreateDBOptions, storeType string, groupOpenMode GroupOpenMode) (iface.Store, error) {
 	l := s.Logger()
+
+	if options == nil {
+		options = &orbitdb.CreateDBOptions{}
+	}
+
+	// setup eventbus metrics
+	if options.EventBus == nil {
+		options.EventBus = eventbus.NewBus(eventbus.WithMetricsTracer(eventbus.NewMetricsTracer(eventbus.WithRegisterer(s.prometheusRegister))))
+	}
 
 	options, err := DefaultOrbitDBOptions(g, options, s.keyStore, storeType, groupOpenMode)
 	if err != nil {

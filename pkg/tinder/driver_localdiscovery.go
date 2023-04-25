@@ -16,6 +16,7 @@ import (
 	"github.com/libp2p/go-libp2p/core/network"
 	"github.com/libp2p/go-libp2p/core/peer"
 	protocol "github.com/libp2p/go-libp2p/core/protocol"
+	"github.com/libp2p/go-libp2p/p2p/host/eventbus"
 	ma "github.com/multiformats/go-multiaddr"
 	manet "github.com/multiformats/go-multiaddr/net"
 	"go.uber.org/zap"
@@ -419,7 +420,8 @@ func (ld *LocalDiscovery) handleConnection(ctx context.Context, p peer.ID) {
 }
 
 func (ld *LocalDiscovery) monitorConnection(ctx context.Context) error {
-	sub, err := ld.h.EventBus().Subscribe(new(event.EvtPeerConnectednessChanged))
+	sub, err := ld.h.EventBus().Subscribe(new(event.EvtPeerConnectednessChanged),
+		eventbus.Name("weshnet/tinder/monitor-connection"))
 	if err != nil {
 		return fmt.Errorf("unable to subscribe to `EvtPeerConnectednessChanged`: %w", err)
 	}
