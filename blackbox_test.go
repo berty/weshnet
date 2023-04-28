@@ -74,8 +74,8 @@ func ExampleNewPersistentServiceClient_basic() {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	// create a temporary path to host data of our persistant service
-	path, err := os.MkdirTemp("", "weshnet-test-persistant")
+	// create a temporary path to host data of our persistent service
+	path, err := os.MkdirTemp("", "weshnet-test-persistent")
 	if err != nil {
 		panic(err)
 	}

@@ -102,7 +102,7 @@ func NewPersistentServiceClient(path string) (ServiceClient, error) {
 		return nil, err
 	}
 
-	return &persistantServiceClient{
+	return &persistentServiceClient{
 		ServiceClient: cl,
 		ds:            ds,
 	}, nil
@@ -117,12 +117,12 @@ type serviceClient struct {
 	server  *grpc.Server
 }
 
-type persistantServiceClient struct {
+type persistentServiceClient struct {
 	ServiceClient
 	ds datastore.Batching
 }
 
-func (p *persistantServiceClient) Close() error {
+func (p *persistentServiceClient) Close() error {
 	err := p.ServiceClient.Close()
 
 	if dserr := p.ds.Close(); err == nil && dserr != nil {
