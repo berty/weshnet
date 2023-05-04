@@ -15,6 +15,7 @@ import (
 	"github.com/libp2p/go-libp2p/core/crypto"
 	"github.com/libp2p/go-libp2p/core/network"
 	peer "github.com/libp2p/go-libp2p/core/peer"
+	"github.com/libp2p/go-libp2p/p2p/host/eventbus"
 	"go.uber.org/zap"
 
 	"berty.tech/weshnet/internal/handshake"
@@ -113,7 +114,8 @@ func (c *contactRequestsManager) metadataWatcher(ctx context.Context) {
 	}
 
 	// subscribe to new event
-	sub, err := c.metadataStore.EventBus().Subscribe(new(protocoltypes.GroupMetadataEvent))
+	sub, err := c.metadataStore.EventBus().Subscribe(new(protocoltypes.GroupMetadataEvent),
+		eventbus.Name("weshnet/rqmngr/metadata-watcher"))
 	if err != nil {
 		c.logger.Warn("unable to subscribe to group metadata event", zap.Error(err))
 		return

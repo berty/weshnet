@@ -5,7 +5,7 @@ go 1.19
 require (
 	berty.tech/go-ipfs-log v1.10.0
 	berty.tech/go-ipfs-repo-encrypted v1.3.0
-	berty.tech/go-orbit-db v1.21.0
+	berty.tech/go-orbit-db v1.22.0
 	filippo.io/edwards25519 v1.0.0
 	github.com/aead/ecdh v0.2.0
 	github.com/berty/emitter-go v0.0.0-20221031144724-5dae963c3622
