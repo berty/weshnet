@@ -1,12 +1,17 @@
 version: v1
 plugins:
-  - plugin: gogo
-    out: ./../..
-  - plugin: go-grpc
-    out: ./
-    opt: module=berty.tech/weshnet
-  - plugin: grpc-gateway
-    out: ./
-    opt:
-      - module=berty.tech/weshnet
-      - generate_unbound_methods=true
+    - plugin: gogo
+      out: ./../..
+    - plugin: go-grpc
+      out: ./
+      opt: module=berty.tech/weshnet
+    - plugin: grpc-gateway
+      out: ./
+      opt:
+          - module=berty.tech/weshnet
+          - generate_unbound_methods=true
+    - plugin: buf.build/community/stephenh-ts-proto
+      out: ./ts
+      opt:
+          - outputClientImpl=grpc-web
+          - esModuleInterop=true
