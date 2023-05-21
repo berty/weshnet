@@ -1,12 +1,10 @@
 package weshnet
 
 import (
-	"container/heap"
-	"sync"
-
 	"github.com/ipfs/go-cid"
 
 	"berty.tech/go-orbit-db/stores/operation"
+	"berty.tech/weshnet/internal/queue"
 	"berty.tech/weshnet/pkg/protocoltypes"
 )
 
@@ -22,64 +20,14 @@ func (m *messageItem) Counter() uint64 {
 	return m.headers.Counter
 }
 
-// A priorityMessageQueue implements heap.Interface and holds Items.
-type priorityMessageQueue struct {
-	messages   []*messageItem
-	muMessages sync.RWMutex
+type simpleMessageQueue = queue.SimpleQueue[*messageItem]
+
+func newMessageQueue(name string, tracer queue.MetricsTracer[*messageItem]) *simpleMessageQueue {
+	return queue.NewSimpleQueue[*messageItem](name, tracer)
 }
 
-func newPriorityMessageQueue() *priorityMessageQueue {
-	queue := &priorityMessageQueue{
-		messages: []*messageItem{},
-	}
-	heap.Init(queue)
-	return queue
-}
+type priorityMessageQueue = queue.PriorityQueue[*messageItem]
 
-func (pq *priorityMessageQueue) Add(m *messageItem) {
-	pq.muMessages.Lock()
-	heap.Push(pq, m)
-	pq.muMessages.Unlock()
-}
-
-func (pq *priorityMessageQueue) Next() (item *messageItem) {
-	pq.muMessages.Lock()
-	if len(pq.messages) > 0 {
-		item = heap.Pop(pq).(*messageItem)
-	}
-	pq.muMessages.Unlock()
-	return
-}
-
-func (pq *priorityMessageQueue) Size() (l int) {
-	pq.muMessages.RLock()
-	l = pq.Len()
-	pq.muMessages.RUnlock()
-	return
-}
-
-func (pq *priorityMessageQueue) Len() (l int) {
-	l = len(pq.messages)
-	return
-}
-
-func (pq *priorityMessageQueue) Less(i, j int) bool {
-	// We want Pop to give us the lowest, not highest, priority so we use lower than here.
-	return pq.messages[i].Counter() < pq.messages[j].Counter()
-}
-
-func (pq *priorityMessageQueue) Swap(i, j int) {
-	pq.messages[i], pq.messages[j] = pq.messages[j], pq.messages[i]
-}
-
-func (pq *priorityMessageQueue) Push(x interface{}) {
-	pq.messages = append(pq.messages, x.(*messageItem))
-}
-
-func (pq *priorityMessageQueue) Pop() (item interface{}) {
-	if n := len(pq.messages); n > 0 {
-		item = pq.messages[n-1]
-		pq.messages, pq.messages[n-1] = pq.messages[:n-1], nil
-	}
-	return item
+func newPriorityMessageQueue(name string, tracer queue.MetricsTracer[*messageItem]) *priorityMessageQueue {
+	return queue.NewPriorityQueue[*messageItem](name, tracer)
 }

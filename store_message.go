@@ -48,8 +48,8 @@ type MessageStore struct {
 
 	deviceCaches   map[string]*groupCache
 	muDeviceCaches sync.RWMutex
-	cmessage       chan *messageItem
-	// muProcess       sync.RWMutex
+
+	messagesQueue *simpleMessageQueue
 
 	ctx    context.Context
 	cancel context.CancelFunc
@@ -126,7 +126,7 @@ func (m *MessageStore) ProcessMessageQueueForDevicePK(ctx context.Context, devic
 		} else if device.hasKnownChainKey = m.secretStore.IsChainKeyKnownForDevice(ctx, m.groupPublicKey, devicePublicKey); !device.hasKnownChainKey {
 			m.logger.Error("unable to process message, no secret found for device pk", logutil.PrivateBinary("devicepk", devicePK))
 		} else if next := device.queue.Next(); next != nil {
-			m.cmessage <- next
+			m.messagesQueue.Add(next)
 		}
 	}
 	m.muDeviceCaches.Unlock()
@@ -153,17 +153,18 @@ func (m *MessageStore) processMessage(ctx context.Context, message *messageItem)
 	}, nil
 }
 
-func (m *MessageStore) processMessageLoop(ctx context.Context) {
+func (m *MessageStore) processMessageLoop(ctx context.Context, tracer *messageMetricsTracer) {
 	for {
-		var message *messageItem
-		select {
-		case message = <-m.cmessage:
-		case <-ctx.Done():
+		// wait for next message
+		message, ok := m.messagesQueue.WaitForNewItem(ctx)
+		if !ok {
+			// context expired, return
 			return
 		}
 
 		devicePublicKeyString := string(message.headers.DevicePK)
 
+		// check if we have the material to decrypt the message
 		m.muDeviceCaches.Lock()
 		device, ok := m.deviceCaches[devicePublicKeyString]
 		if !ok {
@@ -176,7 +177,7 @@ func (m *MessageStore) processMessageLoop(ctx context.Context) {
 			hasSecret := m.secretStore.IsChainKeyKnownForDevice(ctx, m.groupPublicKey, devicePublicKey)
 			device = &groupCache{
 				self:             bytes.Equal(m.currentDevicePublicKeyRaw, message.headers.DevicePK),
-				queue:            newPriorityMessageQueue(),
+				queue:            newPriorityMessageQueue("undecrypted", tracer),
 				locker:           &sync.RWMutex{},
 				hasKnownChainKey: hasSecret,
 			}
@@ -187,6 +188,7 @@ func (m *MessageStore) processMessageLoop(ctx context.Context) {
 		if !device.hasKnownChainKey {
 			device.queue.Add(message)
 			_ = m.emitters.groupCacheMessage.Emit(*message)
+
 			m.muDeviceCaches.Unlock()
 			continue
 		}
@@ -197,14 +199,15 @@ func (m *MessageStore) processMessageLoop(ctx context.Context) {
 			if errcode.Is(err, errcode.ErrCryptoDecryptPayload) {
 				// @FIXME(gfanton): this should not happen
 				m.logger.Warn("unable to open envelope, adding envelope to cache for later process", zap.Error(err))
-
-				// if failed to decrypt add to queue, for later process
-				device.queue.Add(message)
-				_ = m.emitters.groupCacheMessage.Emit(*message)
 			} else {
 				m.logger.Error("unable to process message", zap.Error(err))
 			}
 
+			// add to device queue, will try to load it on next received message
+			device.queue.Add(message)
+			_ = m.emitters.groupCacheMessage.Emit(*message)
+
+			// if failed to process message, for later process
 			m.muDeviceCaches.Unlock()
 			continue
 		}
@@ -212,12 +215,6 @@ func (m *MessageStore) processMessageLoop(ctx context.Context) {
 		// emit new message event
 		if err := m.emitters.groupMessage.Emit(*evt); err != nil {
 			m.logger.Warn("unable to emit group message event", zap.Error(err))
-		}
-
-		if next := device.queue.Next(); next != nil {
-			go func() {
-				m.cmessage <- next
-			}()
 		}
 
 		m.muDeviceCaches.Unlock()
@@ -246,10 +243,8 @@ func (m *MessageStore) addToMessageQueue(ctx context.Context, e ipfslog.Entry) e
 		op:      op,
 	}
 
-	select {
-	case <-ctx.Done():
-	case m.cmessage <- msg:
-	}
+	m.messagesQueue.Add(msg)
+
 	return nil
 }
 
@@ -352,6 +347,7 @@ func messageStoreAddMessage(ctx context.Context, g *protocoltypes.Group, m *Mess
 }
 
 func constructorFactoryGroupMessage(s *WeshOrbitDB, logger *zap.Logger) iface.StoreConstructor {
+	metricsTracer := NewMessageMetricsTracer(s.prometheusRegister)
 	return func(ipfs coreapi.CoreAPI, identity *identityprovider.Identity, addr address.Address, options *iface.NewStoreOptions) (iface.Store, error) {
 		g, err := s.getGroupFromOptions(options)
 		if err != nil {
@@ -370,9 +366,10 @@ func constructorFactoryGroupMessage(s *WeshOrbitDB, logger *zap.Logger) iface.St
 		replication := false
 
 		store := &MessageStore{
+			// cmessage:       make(chan *messageItem),
 			eventBus:       options.EventBus,
 			secretStore:    s.secretStore,
-			cmessage:       make(chan *messageItem),
+			messagesQueue:  newMessageQueue("cache", metricsTracer),
 			group:          g,
 			groupPublicKey: groupPublicKey,
 			logger:         logger,
@@ -402,7 +399,7 @@ func constructorFactoryGroupMessage(s *WeshOrbitDB, logger *zap.Logger) iface.St
 		store.ctx, store.cancel = context.WithCancel(context.Background())
 
 		go func() {
-			store.processMessageLoop(store.ctx)
+			store.processMessageLoop(store.ctx, metricsTracer)
 			logger.Debug("store message process loop ended", zap.Error(store.ctx.Err()))
 		}()
 
