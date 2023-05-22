@@ -2,8 +2,6 @@ package queue
 
 import (
 	"container/heap"
-	"container/list"
-	"context"
 	"sync"
 )
 
@@ -13,12 +11,18 @@ type ICounter interface {
 
 // A priorityMessageQueue implements heap.Interface and holds Items.
 type PriorityQueue[T ICounter] struct {
+	name    string
+	metrics MetricsTracer[T]
+
 	messages   []T
 	muMessages sync.RWMutex
 }
 
-func NewPriorityQueue[T ICounter]() *PriorityQueue[T] {
+func NewPriorityQueue[T ICounter](name string, tracer MetricsTracer[T]) *PriorityQueue[T] {
 	queue := &PriorityQueue[T]{
+		name:    name,
+		metrics: tracer,
+
 		messages: []T{},
 	}
 
@@ -29,6 +33,7 @@ func NewPriorityQueue[T ICounter]() *PriorityQueue[T] {
 func (pq *PriorityQueue[T]) Add(m T) {
 	pq.muMessages.Lock()
 	heap.Push(pq, m)
+	pq.metrics.ItemQueued(pq.name, m)
 	pq.muMessages.Unlock()
 }
 
@@ -64,85 +69,15 @@ func (pq *PriorityQueue[T]) Swap(i, j int) {
 
 func (pq *PriorityQueue[T]) Push(x interface{}) {
 	pq.messages = append(pq.messages, x.(T))
+	pq.metrics.ItemQueued(pq.name, x.(T))
 }
 
 func (pq *PriorityQueue[T]) Pop() (item interface{}) {
 	var null T
 	if n := len(pq.messages); n > 0 {
 		item = pq.messages[n-1]
+		pq.metrics.ItemPop(pq.name, item.(T))
 		pq.messages, pq.messages[n-1] = pq.messages[:n-1], null
 	}
 	return item
-}
-
-func NewSimpleQueue[T any]() *SimpleQueue[T] {
-	return &SimpleQueue[T]{
-		items:  list.New(),
-		notify: newItemNotify(),
-	}
-}
-
-// A priorityMessageQueue implements heap.Interface and holds Items.
-type SimpleQueue[T any] struct {
-	items      *list.List
-	muMessages sync.RWMutex
-
-	notify *itemNotify
-}
-
-func (q *SimpleQueue[T]) Add(m T) {
-	q.muMessages.Lock()
-	_ = q.items.PushBack(m)
-	q.notify.Broadcast()
-	q.muMessages.Unlock()
-}
-
-func (q *SimpleQueue[T]) Pop() (m T, ok bool) {
-	q.muMessages.Lock()
-	if front := q.items.Front(); front != nil {
-		m = q.items.Remove(front).(T)
-		ok = true
-	}
-	q.muMessages.Unlock()
-
-	return
-}
-
-func (q *SimpleQueue[T]) WaitForNewItem(ctx context.Context) (item T, ok bool) {
-	for {
-		if item, ok = q.Pop(); ok {
-			return
-		}
-
-		if ok = q.notify.Wait(ctx); !ok {
-			return
-		}
-	}
-}
-
-type itemNotify struct {
-	signal   chan struct{}
-	muSignal sync.Mutex
-}
-
-func newItemNotify() *itemNotify {
-	return &itemNotify{
-		signal: make(chan struct{}, 1),
-	}
-}
-
-func (m *itemNotify) Wait(ctx context.Context) (ok bool) {
-	select {
-	case <-m.signal:
-		return true
-	case <-ctx.Done():
-		return false
-	}
-}
-
-func (m *itemNotify) Broadcast() {
-	select {
-	case m.signal <- struct{}{}:
-	default:
-	}
 }
