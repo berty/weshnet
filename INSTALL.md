@@ -26,7 +26,14 @@ first install brew following the instructions at https://brew.sh . Then, in
 a terminal enter:
 
     brew install asdf
+
+If your terminal is zsh, enter:
+
     echo -e "\n. $(brew --prefix asdf)/libexec/asdf.sh" >> ${ZDOTDIR:-~}/.zshrc
+
+If your terminal is bash, enter:
+
+    echo -e "\n. \"$(brew --prefix asdf)/libexec/asdf.sh\"" >> ~/.bash_profile
 
 Start a new terminal to get the changes to .zshrc .
 
