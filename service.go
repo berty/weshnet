@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/hex"
 	"fmt"
+	mrand "math/rand"
 	"path/filepath"
 	"sync"
 	"sync/atomic"
@@ -23,6 +24,7 @@ import (
 	"go.uber.org/multierr"
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
+	"moul.io/srand"
 
 	"berty.tech/go-orbit-db/baseorbitdb"
 	"berty.tech/go-orbit-db/iface"
@@ -151,6 +153,7 @@ func (opts *Opts) applyDefaults(ctx context.Context) error {
 		opts.SecretStore = secretStore
 	}
 
+	var mnode *ipfs_mobile.IpfsMobile
 	if opts.IpfsCoreAPI == nil {
 		dsync := opts.RootDatastore
 		if dsync == nil {
@@ -163,7 +166,7 @@ func (opts *Opts) applyDefaults(ctx context.Context) error {
 		}
 
 		mrepo := ipfs_mobile.NewRepoMobile("", repo)
-		mnode, err := ipfsutil.NewIPFSMobile(ctx, mrepo, &ipfsutil.MobileOptions{
+		mnode, err = ipfsutil.NewIPFSMobile(ctx, mrepo, &ipfsutil.MobileOptions{
 			ExtraOpts: map[string]bool{
 				"pubsub": true,
 			},
@@ -185,6 +188,33 @@ func (opts *Opts) applyDefaults(ctx context.Context) error {
 			}
 
 			return mnode.Close()
+		}
+	}
+
+	if opts.Host == nil {
+		opts.Host = opts.IpfsCoreAPI
+	}
+
+	// setup default tinder service
+	if opts.TinderService == nil {
+		rng := mrand.New(mrand.NewSource(srand.MustSecure())) // nolint:gosec // we need to use math/rand here, but it is seeded from crypto/rand
+		drivers := []tinder.IDriver{}
+
+		// setup loac disc
+		localdisc, err := tinder.NewLocalDiscovery(opts.Logger, opts.Host, rng)
+		if err != nil {
+			return fmt.Errorf("unable to setup tinder localdiscovery: %w", err)
+		}
+		drivers = append(drivers, localdisc)
+
+		if mnode != nil {
+			dhtdisc := tinder.NewRoutingDiscoveryDriver("dht", mnode.DHT)
+			drivers = append(drivers, dhtdisc)
+		}
+
+		opts.TinderService, err = tinder.NewService(opts.Host, opts.Logger, drivers...)
+		if err != nil {
+			return fmt.Errorf("unable to setup tinder service: %w", err)
 		}
 	}
 
