@@ -212,12 +212,11 @@ func (m *MessageStore) processMessageLoop(ctx context.Context, tracer *messageMe
 			continue
 		}
 
+		m.muDeviceCaches.Unlock()
 		// emit new message event
 		if err := m.emitters.groupMessage.Emit(*evt); err != nil {
 			m.logger.Warn("unable to emit group message event", zap.Error(err))
 		}
-
-		m.muDeviceCaches.Unlock()
 	}
 }
 
