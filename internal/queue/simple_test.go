@@ -1,7 +1,6 @@
 package queue
 
 import (
-	"container/list"
 	"context"
 	"fmt"
 	"sync"
@@ -14,10 +13,7 @@ import (
 type testSimpleQueue = *SimpleQueue[int]
 
 func newTestSimpleQueue() testSimpleQueue {
-	return &SimpleQueue[int]{
-		items:  list.New(),
-		notify: newItemNotify(),
-	}
+	return NewSimpleQueue[int]("test", &noopTracer[int]{})
 }
 
 func TestQueue(t *testing.T) {
@@ -99,6 +95,9 @@ func TestAsyncQueue(t *testing.T) {
 }
 
 func TestWaitnForItemQueue(t *testing.T) {
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
 	cases := []struct{ N int }{
 		{1}, {10}, {100}, {1000}, {10000},
 	}
@@ -106,21 +105,20 @@ func TestWaitnForItemQueue(t *testing.T) {
 	for _, tc := range cases {
 		name := fmt.Sprintf("%d_elements", tc.N)
 		t.Run(name, func(t *testing.T) {
-			ctx, cancel := context.WithCancel(context.Background())
+			ctx, cancel := context.WithCancel(ctx)
 			defer cancel()
 
 			queue := newTestSimpleQueue()
 
 			cc := make(chan int, tc.N)
 			go func() {
+				defer close(cc)
 				for {
-					e, ok := queue.WaitForNewItem(ctx)
+					e, ok := queue.WaitForItem(ctx)
 					if !ok {
 						return
 					}
 
-					// simulate latency
-					time.Sleep(time.Microsecond * 10)
 					cc <- e
 				}
 			}()
@@ -130,8 +128,12 @@ func TestWaitnForItemQueue(t *testing.T) {
 			}
 
 			for i := 0; i < tc.N; i++ {
-				e := <-cc
-				require.Equal(t, i+1, e)
+				select {
+				case e := <-cc:
+					require.Equal(t, i+1, e)
+				case <-time.After(time.Second):
+					require.FailNow(t, "timeout while waiting for event")
+				}
 			}
 		})
 	}

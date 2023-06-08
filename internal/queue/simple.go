@@ -6,82 +6,81 @@ import (
 	"sync"
 )
 
-func NewSimpleQueue[T any](name string, tracer MetricsTracer[T]) *SimpleQueue[T] {
+type SimpleQueue[T any] struct {
+	name    string
+	list    *list.List
+	metrics MetricsTracer[T]
+	signal  chan struct{}
+	mu      sync.Mutex
+}
 
+func NewSimpleQueue[T any](name string, tracer MetricsTracer[T]) *SimpleQueue[T] {
 	return &SimpleQueue[T]{
 		name:    name,
 		metrics: tracer,
-
-		items:  list.New(),
-		notify: newItemNotify(),
+		list:    list.New(),
+		signal:  make(chan struct{}),
 	}
 }
 
-// A priorityMessageQueue implements heap.Interface and holds Items.
-type SimpleQueue[T any] struct {
-	name       string
-	items      *list.List
-	muMessages sync.RWMutex
-	metrics    MetricsTracer[T]
-
-	notify *itemNotify
-}
-
+// Add pushes an item to the queue
 func (q *SimpleQueue[T]) Add(m T) {
-	q.muMessages.Lock()
-	_ = q.items.PushBack(m)
-	q.notify.Broadcast()
+	q.mu.Lock()
+	defer q.mu.Unlock()
+
+	_ = q.list.PushBack(m)
 	q.metrics.ItemQueued(q.name, m)
-	q.muMessages.Unlock()
+
+	// signal that we got a new item
+	select {
+	case q.signal <- struct{}{}:
+	default:
+	}
 }
 
+// Pop removes and returns the first item from the queue.
+// If the queue is empty, the second returned value will be false.
 func (q *SimpleQueue[T]) Pop() (m T, ok bool) {
-	q.muMessages.Lock()
-	if front := q.items.Front(); front != nil {
-		m = q.items.Remove(front).(T)
+	q.mu.Lock()
+	defer q.mu.Unlock()
+
+	if q.list.Len() > 0 {
+		element := q.list.Front()
+		q.list.Remove(element)
+		m = element.Value.(T)
 		ok = true
-		q.metrics.ItemPop(q.name, m)
 	}
-	q.muMessages.Unlock()
 
 	return
 }
 
-func (q *SimpleQueue[T]) WaitForNewItem(ctx context.Context) (item T, ok bool) {
-	for {
-		if item, ok = q.Pop(); ok {
-			return
+// WaitForItem blocks until a new item is available or the context is canceled.
+// It returns the new item along with a boolean value indicating whether context has expired.
+func (q *SimpleQueue[T]) WaitForItem(ctx context.Context) (item T, ok bool) {
+	q.mu.Lock()
+	defer q.mu.Unlock()
+
+	// Keep attempting to retrieve a new item until the context is canceled
+	for ctx.Err() == nil {
+		if q.list.Len() == 0 {
+			// queue is empty, wait for either a signal of a new item or a
+			// context cancellation
+			q.mu.Unlock()
+			select {
+			case <-q.signal:
+			case <-ctx.Done():
+			}
+			q.mu.Lock()
+
+			continue
 		}
 
-		if ok = q.notify.Wait(ctx); !ok {
-			return
-		}
-	}
-}
+		// pop front item from the queue
+		element := q.list.Front()
+		q.list.Remove(element)
 
-type itemNotify struct {
-	signal   chan struct{}
-	muSignal sync.Mutex
-}
-
-func newItemNotify() *itemNotify {
-	return &itemNotify{
-		signal: make(chan struct{}, 1),
+		return element.Value.(T), true
 	}
-}
 
-func (m *itemNotify) Wait(ctx context.Context) (ok bool) {
-	select {
-	case <-m.signal:
-		return true
-	case <-ctx.Done():
-		return false
-	}
-}
-
-func (m *itemNotify) Broadcast() {
-	select {
-	case m.signal <- struct{}{}:
-	default:
-	}
+	return
 }
