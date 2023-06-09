@@ -48,8 +48,8 @@ type MessageStore struct {
 
 	deviceCaches   map[string]*groupCache
 	muDeviceCaches sync.RWMutex
-	cmessage       chan *messageItem
-	// muProcess       sync.RWMutex
+
+	messagesQueue *simpleMessageQueue
 
 	ctx    context.Context
 	cancel context.CancelFunc
@@ -126,7 +126,9 @@ func (m *MessageStore) ProcessMessageQueueForDevicePK(ctx context.Context, devic
 		} else if device.hasKnownChainKey = m.secretStore.IsChainKeyKnownForDevice(ctx, m.groupPublicKey, devicePublicKey); !device.hasKnownChainKey {
 			m.logger.Error("unable to process message, no secret found for device pk", logutil.PrivateBinary("devicepk", devicePK))
 		} else if next := device.queue.Next(); next != nil {
-			m.cmessage <- next
+			// let's try processing one message from the queue.
+			// if it succeeds, the whole queue should be added for processing.
+			m.messagesQueue.Add(next)
 		}
 	}
 	m.muDeviceCaches.Unlock()
@@ -136,7 +138,7 @@ func (m *MessageStore) processMessage(ctx context.Context, message *messageItem)
 	// process message
 	msg, err := m.secretStore.OpenEnvelopePayload(ctx, message.env, message.headers, m.groupPublicKey, m.currentDevicePublicKey, message.hash)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("unable to open the envelope: %w", err)
 	}
 
 	err = m.secretStore.UpdateOutOfStoreGroupReferences(ctx, message.headers.DevicePK, message.headers.Counter, m.group)
@@ -153,78 +155,85 @@ func (m *MessageStore) processMessage(ctx context.Context, message *messageItem)
 	}, nil
 }
 
-func (m *MessageStore) processMessageLoop(ctx context.Context) {
+func (m *MessageStore) processMessageLoop(ctx context.Context, tracer *messageMetricsTracer) {
 	for {
-		var message *messageItem
-		select {
-		case message = <-m.cmessage:
-		case <-ctx.Done():
+		// wait for next message
+		message, ok := m.messagesQueue.WaitForItem(ctx)
+		if !ok {
+			// context expired, return
 			return
 		}
 
-		devicePublicKeyString := string(message.headers.DevicePK)
-
-		m.muDeviceCaches.Lock()
-		device, ok := m.deviceCaches[devicePublicKeyString]
-		if !ok {
-			devicePublicKey, err := crypto.UnmarshalEd25519PublicKey(message.headers.DevicePK)
-			if err != nil {
-				m.logger.Error("unable to process message, unmarshal of device pk failed", logutil.PrivateBinary("devicepk", message.headers.DevicePK))
-				continue
-			}
-
-			hasSecret := m.secretStore.IsChainKeyKnownForDevice(ctx, m.groupPublicKey, devicePublicKey)
-			device = &groupCache{
-				self:             bytes.Equal(m.currentDevicePublicKeyRaw, message.headers.DevicePK),
-				queue:            newPriorityMessageQueue(),
-				locker:           &sync.RWMutex{},
-				hasKnownChainKey: hasSecret,
-			}
-			m.deviceCaches[devicePublicKeyString] = device
-		}
-
-		// check for device chain key, if unavailable add message to cache queue
-		if !device.hasKnownChainKey {
+		// get or create a device cache for the device from which we received the message.
+		device, hasKnownChainKey := m.getOrCreateDeviceCache(ctx, message, tracer)
+		if device == nil {
+			// unknown device, lets keep moving
+			continue
+		} else if !hasKnownChainKey {
+			// we dont know the chain key yet, add message to the device cache
 			device.queue.Add(message)
 			_ = m.emitters.groupCacheMessage.Emit(*message)
-			m.muDeviceCaches.Unlock()
 			continue
 		}
 
-		// process the message
+		// actually process the message
 		evt, err := m.processMessage(ctx, message)
 		if err != nil {
-			if errcode.Is(err, errcode.ErrCryptoDecryptPayload) {
-				// @FIXME(gfanton): this should not happen
-				m.logger.Warn("unable to open envelope, adding envelope to cache for later process", zap.Error(err))
+			m.logger.Error("unable to process message", zap.Error(err))
 
-				// if failed to decrypt add to queue, for later process
-				device.queue.Add(message)
-				_ = m.emitters.groupCacheMessage.Emit(*message)
-			} else {
-				m.logger.Error("unable to process message", zap.Error(err))
-			}
-
-			m.muDeviceCaches.Unlock()
+			// if we got any error here, put (back) the message into the device queue
+			// for ex: `too many open files` error
+			device.queue.Add(message)
+			_ = m.emitters.groupCacheMessage.Emit(*message)
 			continue
 		}
+
+		// if we get here we probably can process other messages (if any) in the device queue
+		m.processDeviceMessagesInQueue(device)
 
 		// emit new message event
 		if err := m.emitters.groupMessage.Emit(*evt); err != nil {
 			m.logger.Warn("unable to emit group message event", zap.Error(err))
 		}
-
-		if next := device.queue.Next(); next != nil {
-			go func() {
-				m.cmessage <- next
-			}()
-		}
-
-		m.muDeviceCaches.Unlock()
 	}
 }
 
-func (m *MessageStore) addToMessageQueue(ctx context.Context, e ipfslog.Entry) error {
+func (m *MessageStore) getOrCreateDeviceCache(ctx context.Context, message *messageItem, tracer *messageMetricsTracer) (device *groupCache, hasKnownChainKey bool) {
+	devicePublicKeyString := string(message.headers.DevicePK)
+
+	m.muDeviceCaches.Lock()
+	defer m.muDeviceCaches.Unlock()
+
+	device, ok := m.deviceCaches[devicePublicKeyString]
+	if !ok {
+		devicePublicKey, err := crypto.UnmarshalEd25519PublicKey(message.headers.DevicePK)
+		if err != nil {
+			m.logger.Error("unable to process message, unmarshal of device pk failed", logutil.PrivateBinary("devicepk", message.headers.DevicePK))
+			return nil, false
+		}
+
+		hasSecret := m.secretStore.IsChainKeyKnownForDevice(ctx, m.groupPublicKey, devicePublicKey)
+		device = &groupCache{
+			self:             bytes.Equal(m.currentDevicePublicKeyRaw, message.headers.DevicePK),
+			queue:            newPriorityMessageQueue("undecrypted", tracer),
+			locker:           &sync.RWMutex{},
+			hasKnownChainKey: hasSecret,
+		}
+		m.deviceCaches[devicePublicKeyString] = device
+	}
+
+	return device, device.hasKnownChainKey
+}
+
+// process the whole device queue (if any) into to the message queue
+func (m *MessageStore) processDeviceMessagesInQueue(device *groupCache) {
+	_ = device.queue.NextAll(func(next *messageItem) error {
+		m.messagesQueue.Add(next)
+		return nil
+	})
+}
+
+func (m *MessageStore) addToMessageQueue(_ context.Context, e ipfslog.Entry) error {
 	if e == nil {
 		return errcode.ErrInvalidInput
 	}
@@ -246,10 +255,8 @@ func (m *MessageStore) addToMessageQueue(ctx context.Context, e ipfslog.Entry) e
 		op:      op,
 	}
 
-	select {
-	case <-ctx.Done():
-	case m.cmessage <- msg:
-	}
+	m.messagesQueue.Add(msg)
+
 	return nil
 }
 
@@ -352,6 +359,7 @@ func messageStoreAddMessage(ctx context.Context, g *protocoltypes.Group, m *Mess
 }
 
 func constructorFactoryGroupMessage(s *WeshOrbitDB, logger *zap.Logger) iface.StoreConstructor {
+	metricsTracer := newMessageMetricsTracer(s.prometheusRegister)
 	return func(ipfs coreapi.CoreAPI, identity *identityprovider.Identity, addr address.Address, options *iface.NewStoreOptions) (iface.Store, error) {
 		g, err := s.getGroupFromOptions(options)
 		if err != nil {
@@ -372,7 +380,7 @@ func constructorFactoryGroupMessage(s *WeshOrbitDB, logger *zap.Logger) iface.St
 		store := &MessageStore{
 			eventBus:       options.EventBus,
 			secretStore:    s.secretStore,
-			cmessage:       make(chan *messageItem),
+			messagesQueue:  newMessageQueue("cache", metricsTracer),
 			group:          g,
 			groupPublicKey: groupPublicKey,
 			logger:         logger,
@@ -402,7 +410,7 @@ func constructorFactoryGroupMessage(s *WeshOrbitDB, logger *zap.Logger) iface.St
 		store.ctx, store.cancel = context.WithCancel(context.Background())
 
 		go func() {
-			store.processMessageLoop(store.ctx)
+			store.processMessageLoop(store.ctx, metricsTracer)
 			logger.Debug("store message process loop ended", zap.Error(store.ctx.Err()))
 		}()
 
