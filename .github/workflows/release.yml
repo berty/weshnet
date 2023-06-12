@@ -16,8 +16,6 @@ on:
 
 jobs:
   semantic-release:
-    # Check repository owner so that we don't run on a fork.
-    if: github.repository_owner == 'berty'
     name: Semantic release
     runs-on: ubuntu-latest
     outputs:
@@ -52,8 +50,6 @@ jobs:
           echo "::set-output name=release-version::${{steps.semantic.outputs.release-version}}"
 
   post-semantic-release:
-    # Check repository owner so that we don't run on a fork.
-    if: github.repository_owner == 'berty'
     needs: semantic-release
     #if: needs.semantic-release.outputs.new-release-published == 'true'
     runs-on: ubuntu-latest
