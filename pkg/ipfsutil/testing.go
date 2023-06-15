@@ -6,22 +6,24 @@ import (
 	"encoding/base64"
 	"testing"
 
+	p2p_mocknet "github.com/berty/go-libp2p-mock"
 	rendezvous "github.com/berty/go-libp2p-rendezvous"
 	p2p_rpdb "github.com/berty/go-libp2p-rendezvous/db/sqlcipher"
 	ds "github.com/ipfs/go-datastore"
 	dsync "github.com/ipfs/go-datastore/sync"
 	ipfs_cfg "github.com/ipfs/kubo/config"
 	ipfs_core "github.com/ipfs/kubo/core"
-	ipfs_mock "github.com/ipfs/kubo/core/mock"
 	ipfs_p2p "github.com/ipfs/kubo/core/node/libp2p"
 	ipfs_repo "github.com/ipfs/kubo/repo"
+	"github.com/libp2p/go-libp2p"
 	pubsub "github.com/libp2p/go-libp2p-pubsub"
 	p2p_ci "github.com/libp2p/go-libp2p/core/crypto"
 	host "github.com/libp2p/go-libp2p/core/host"
 	p2pnetwork "github.com/libp2p/go-libp2p/core/network"
+	"github.com/libp2p/go-libp2p/core/peer"
 	p2p_peer "github.com/libp2p/go-libp2p/core/peer"
+	"github.com/libp2p/go-libp2p/core/peerstore"
 	"github.com/libp2p/go-libp2p/core/protocol"
-	p2p_mocknet "github.com/libp2p/go-libp2p/p2p/net/mock"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap"
 
@@ -135,7 +137,7 @@ func TestingCoreAPIUsingMockNet(ctx context.Context, t testing.TB, opts *Testing
 	t.Cleanup(func() { mrepo.Close() })
 
 	mnode, err := NewIPFSMobile(ctx, mrepo, &MobileOptions{
-		HostOption:    ipfs_mock.MockHostOption(opts.Mocknet),
+		HostOption:    MockHostOption(opts.Mocknet),
 		RoutingOption: ipfs_p2p.NilRouterOption,
 		ExtraOpts: map[string]bool{
 			"pubsub": false,
@@ -256,4 +258,10 @@ func (m *coreAPIMock) Tinder() *tinder.Service {
 
 func (m *coreAPIMock) Close() {
 	m.node.Close()
+}
+
+func MockHostOption(mn p2p_mocknet.Mocknet) ipfs_p2p.HostOption {
+	return func(id peer.ID, ps peerstore.Peerstore, _ ...libp2p.Option) (host.Host, error) {
+		return mn.AddPeerWithPeerstore(id, ps)
+	}
 }

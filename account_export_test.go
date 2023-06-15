@@ -10,7 +10,7 @@ import (
 	"github.com/ipfs/go-cid"
 	ds "github.com/ipfs/go-datastore"
 	dsync "github.com/ipfs/go-datastore/sync"
-	mocknet "github.com/libp2p/go-libp2p/p2p/net/mock"
+	mocknet "github.com/berty/go-libp2p-mock"
 	"github.com/stretchr/testify/require"
 
 	orbitdb "berty.tech/go-orbit-db"

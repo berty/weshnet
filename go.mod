@@ -9,7 +9,8 @@ require (
 	filippo.io/edwards25519 v1.0.0
 	github.com/aead/ecdh v0.2.0
 	github.com/berty/emitter-go v0.0.0-20221031144724-5dae963c3622
-	github.com/berty/go-libp2p-rendezvous v0.4.1
+	github.com/berty/go-libp2p-mock v1.0.1
+	github.com/berty/go-libp2p-rendezvous v0.5.0
 	github.com/buicongtan1997/protoc-gen-swagger-config v0.0.0-20200705084907-1342b78c1a7e
 	github.com/daixiang0/gci v0.8.2
 	github.com/dgraph-io/badger/v2 v2.2007.3
@@ -28,7 +29,7 @@ require (
 	github.com/ipfs/interface-go-ipfs-core v0.11.1
 	github.com/ipfs/kubo v0.19.0
 	github.com/juju/fslock v0.0.0-20160525022230-4d5c94c67b4b
-	github.com/libp2p/go-libp2p v0.27.3
+	github.com/libp2p/go-libp2p v0.27.6
 	github.com/libp2p/go-libp2p-kad-dht v0.21.1
 	github.com/libp2p/go-libp2p-pubsub v0.9.3
 	github.com/libp2p/go-libp2p-record v0.2.0
