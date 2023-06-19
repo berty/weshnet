@@ -1,0 +1,20 @@
+syntax = "proto3";
+
+package weshnet.outofstoremessage.v1;
+
+import "gogoproto/gogo.proto";
+import "protocoltypes.proto";
+
+option go_package = "berty.tech/weshnet/pkg/outofstoremessagetypes";
+
+option (gogoproto.goproto_enum_prefix_all) = false;
+option (gogoproto.marshaler_all) = true;
+option (gogoproto.unmarshaler_all) = true;
+option (gogoproto.sizer_all) = true;
+
+// OutOfStoreMessageService is the service used to open out-of-store messages (e.g. push notifications)
+// It is used to open messages with a lightweight protocol service for mobile backgroup processes.
+service OutOfStoreMessageService {
+  // OutOfStoreReceive parses a payload received outside a synchronized store
+  rpc OutOfStoreReceive(weshnet.protocol.v1.OutOfStoreReceive.Request) returns (weshnet.protocol.v1.OutOfStoreReceive.Reply);
+}
