@@ -7,7 +7,6 @@ import (
 	mrand "math/rand"
 	"path/filepath"
 	"sync"
-	"sync/atomic"
 	"time"
 	"unsafe"
 
@@ -65,7 +64,6 @@ type service struct {
 	accountGroupCtx        *GroupContext
 	openedGroups           map[string]*GroupContext
 	lock                   sync.RWMutex
-	authSession            atomic.Value
 	close                  func() error
 	startedAt              time.Time
 	host                   host.Host

@@ -88,14 +88,6 @@ func (m *GroupMetadataPayloadSent) SetDevicePK(pk []byte) {
 	m.DevicePK = pk
 }
 
-func (m *AccountServiceTokenAdded) SetDevicePK(pk []byte) {
-	m.DevicePK = pk
-}
-
-func (m *AccountServiceTokenRemoved) SetDevicePK(pk []byte) {
-	m.DevicePK = pk
-}
-
 func (m *GroupReplicating) SetDevicePK(pk []byte) {
 	m.DevicePK = pk
 }

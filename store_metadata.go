@@ -773,44 +773,6 @@ func (m *MetadataStore) SendAppMetadata(ctx context.Context, message []byte) (op
 	}, protocoltypes.EventTypeGroupMetadataPayloadSent)
 }
 
-func (m *MetadataStore) SendAccountServiceTokenAdded(ctx context.Context, token *protocoltypes.ServiceToken) (operation.Operation, error) {
-	if !m.typeChecker(isAccountGroup) {
-		return nil, errcode.ErrGroupInvalidType
-	}
-
-	m.Index().(*metadataStoreIndex).lock.RLock()
-	_, ok := m.Index().(*metadataStoreIndex).serviceTokens[token.TokenID()]
-	m.Index().(*metadataStoreIndex).lock.RUnlock()
-
-	if ok {
-		return nil, errcode.ErrInvalidInput.Wrap(fmt.Errorf("token has already been registered"))
-	}
-
-	return m.attributeSignAndAddEvent(ctx, &protocoltypes.AccountServiceTokenAdded{
-		ServiceToken: token,
-	}, protocoltypes.EventTypeAccountServiceTokenAdded)
-}
-
-func (m *MetadataStore) SendAccountServiceTokenRemoved(ctx context.Context, tokenID string) (operation.Operation, error) {
-	if !m.typeChecker(isAccountGroup) {
-		return nil, errcode.ErrGroupInvalidType
-	}
-
-	m.Index().(*metadataStoreIndex).lock.RLock()
-	val, ok := m.Index().(*metadataStoreIndex).serviceTokens[tokenID]
-	m.Index().(*metadataStoreIndex).lock.RUnlock()
-
-	if !ok {
-		return nil, errcode.ErrInvalidInput.Wrap(fmt.Errorf("token not registered"))
-	} else if val == nil {
-		return nil, errcode.ErrInvalidInput.Wrap(fmt.Errorf("token already removed"))
-	}
-
-	return m.attributeSignAndAddEvent(ctx, &protocoltypes.AccountServiceTokenRemoved{
-		TokenID: tokenID,
-	}, protocoltypes.EventTypeAccountServiceTokenRemoved)
-}
-
 func (m *MetadataStore) SendAccountVerifiedCredentialAdded(ctx context.Context, token *protocoltypes.AccountVerifiedCredentialRegistered) (operation.Operation, error) {
 	if !m.typeChecker(isAccountGroup) {
 		return nil, errcode.ErrGroupInvalidType
@@ -819,10 +781,10 @@ func (m *MetadataStore) SendAccountVerifiedCredentialAdded(ctx context.Context, 
 	return m.attributeSignAndAddEvent(ctx, token, protocoltypes.EventTypeAccountVerifiedCredentialRegistered)
 }
 
-func (m *MetadataStore) SendGroupReplicating(ctx context.Context, t *protocoltypes.ServiceToken, endpoint string) (operation.Operation, error) {
+func (m *MetadataStore) SendGroupReplicating(ctx context.Context, authenticationURL, replicationServer string) (operation.Operation, error) {
 	return m.attributeSignAndAddEvent(ctx, &protocoltypes.GroupReplicating{
-		AuthenticationURL: t.AuthenticationURL,
-		ReplicationServer: endpoint,
+		AuthenticationURL: authenticationURL,
+		ReplicationServer: replicationServer,
 	}, protocoltypes.EventTypeGroupReplicating)
 }
 
@@ -922,22 +884,6 @@ func (m *MetadataStore) checkContactStatus(pk crypto.PubKey, states ...protocolt
 	}
 
 	return false
-}
-
-func (m *MetadataStore) listServiceTokens() []*protocoltypes.ServiceToken {
-	return m.Index().(*metadataStoreIndex).listServiceTokens()
-}
-
-func (m *MetadataStore) getServiceToken(tokenID string) (*protocoltypes.ServiceToken, error) {
-	m.Index().(*metadataStoreIndex).lock.RLock()
-	defer m.Index().(*metadataStoreIndex).lock.RUnlock()
-
-	token, ok := m.Index().(*metadataStoreIndex).serviceTokens[tokenID]
-	if !ok {
-		return nil, errcode.ErrServicesAuthUnknownToken
-	}
-
-	return token, nil
 }
 
 type EventMetadataReceived struct {

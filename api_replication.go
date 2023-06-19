@@ -11,7 +11,6 @@ import (
 	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/credentials/insecure"
 
-	"berty.tech/weshnet/pkg/authtypes"
 	"berty.tech/weshnet/pkg/errcode"
 	"berty.tech/weshnet/pkg/grpcutil"
 	"berty.tech/weshnet/pkg/logutil"
@@ -48,6 +47,18 @@ func (s *service) ReplicationServiceRegisterGroup(ctx context.Context, request *
 	ctx, _, endSection := tyber.Section(ctx, s.logger, "Registering replication service for group")
 	defer func() { endSection(err, "") }()
 
+	if request.GroupPK == nil {
+		return nil, errcode.ErrInvalidInput.Wrap(fmt.Errorf("invalid GroupPK"))
+	}
+
+	if request.Token == "" {
+		return nil, errcode.ErrInvalidInput.Wrap(fmt.Errorf("invalid token"))
+	}
+
+	if request.ReplicationServer == "" {
+		return nil, errcode.ErrInvalidInput.Wrap(fmt.Errorf("invalid replication server"))
+	}
+
 	gc, err := s.GetContextGroupForID(request.GroupPK)
 	if err != nil {
 		return nil, errcode.ErrInvalidInput.Wrap(err)
@@ -63,31 +74,8 @@ func (s *service) ReplicationServiceRegisterGroup(ctx context.Context, request *
 		return nil, errcode.ErrGroupMissing
 	}
 
-	token, err := accountGroup.metadataStore.getServiceToken(request.TokenID)
-	if err != nil {
-		return nil, errcode.ErrInvalidInput.Wrap(err)
-	}
-
-	if token == nil {
-		return nil, errcode.ErrInvalidInput.Wrap(fmt.Errorf("invalid token"))
-	}
-
-	endpoint := ""
-	for _, t := range token.SupportedServices {
-		if t.ServiceType != authtypes.ServiceReplicationID {
-			continue
-		}
-
-		endpoint = t.ServiceEndpoint
-		break
-	}
-
-	if endpoint == "" {
-		return nil, errcode.ErrServiceReplicationMissingEndpoint
-	}
-
 	gopts := []grpc.DialOption{
-		grpc.WithPerRPCCredentials(grpcutil.NewUnsecureSimpleAuthAccess("bearer", token.Token)),
+		grpc.WithPerRPCCredentials(grpcutil.NewUnsecureSimpleAuthAccess("bearer", request.Token)),
 	}
 
 	if s.grpcInsecure {
@@ -99,7 +87,7 @@ func (s *service) ReplicationServiceRegisterGroup(ctx context.Context, request *
 		gopts = append(gopts, grpc.WithTransportCredentials(tlsconfig))
 	}
 
-	cc, err := grpc.DialContext(context.Background(), endpoint, gopts...)
+	cc, err := grpc.DialContext(context.Background(), request.ReplicationServer, gopts...)
 	if err != nil {
 		return nil, errcode.ErrStreamWrite.Wrap(err)
 	}
@@ -114,7 +102,7 @@ func (s *service) ReplicationServiceRegisterGroup(ctx context.Context, request *
 
 	s.logger.Info("group will be replicated", logutil.PrivateString("public-key", base64.RawURLEncoding.EncodeToString(request.GroupPK)))
 
-	if _, err := gc.metadataStore.SendGroupReplicating(ctx, token, endpoint); err != nil {
+	if _, err := gc.metadataStore.SendGroupReplicating(ctx, request.AuthenticationURL, request.ReplicationServer); err != nil {
 		s.logger.Error("error while notifying group about replication", zap.Error(err))
 	}
 

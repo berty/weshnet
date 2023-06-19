@@ -27,7 +27,6 @@ type metadataStoreIndex struct {
 	contacts                 map[string]*AccountContact
 	contactsFromGroupPK      map[string]*AccountContact
 	groups                   map[string]*accountGroup
-	serviceTokens            map[string]*protocoltypes.ServiceToken
 	contactRequestMetadata   map[string][]byte
 	verifiedCredentials      []*protocoltypes.AccountVerifiedCredentialRegistered
 	contactRequestSeed       []byte
@@ -67,7 +66,6 @@ func (m *metadataStoreIndex) UpdateIndex(log ipfslog.Log, _ []ipfslog.Entry) err
 	m.contacts = map[string]*AccountContact{}
 	m.contactsFromGroupPK = map[string]*AccountContact{}
 	m.groups = map[string]*accountGroup{}
-	m.serviceTokens = map[string]*protocoltypes.ServiceToken{}
 	m.contactRequestMetadata = map[string][]byte{}
 	m.contactRequestEnabled = nil
 	m.contactRequestSeed = []byte(nil)
@@ -623,49 +621,6 @@ func (m *metadataStoreIndex) handleContactAliasKeyAdded(event proto.Message) err
 	return nil
 }
 
-func (m *metadataStoreIndex) listServiceTokens() []*protocoltypes.ServiceToken {
-	m.lock.RLock()
-	defer m.lock.RUnlock()
-
-	ret := []*protocoltypes.ServiceToken(nil)
-
-	for _, t := range m.serviceTokens {
-		if t == nil {
-			continue
-		}
-
-		ret = append(ret, t)
-	}
-
-	return ret
-}
-
-func (m *metadataStoreIndex) handleAccountServiceTokenAdded(event proto.Message) error {
-	evt, ok := event.(*protocoltypes.AccountServiceTokenAdded)
-	if !ok {
-		return errcode.ErrInvalidInput
-	}
-
-	if _, ok := m.serviceTokens[evt.ServiceToken.TokenID()]; ok {
-		return nil
-	}
-
-	m.serviceTokens[evt.ServiceToken.TokenID()] = evt.ServiceToken
-
-	return nil
-}
-
-func (m *metadataStoreIndex) handleAccountServiceTokenRemoved(event proto.Message) error {
-	evt, ok := event.(*protocoltypes.AccountServiceTokenRemoved)
-	if !ok {
-		return errcode.ErrInvalidInput
-	}
-
-	m.serviceTokens[evt.TokenID] = nil
-
-	return nil
-}
-
 func (m *metadataStoreIndex) handleMultiMemberInitialMember(event proto.Message) error {
 	e, ok := event.(*protocoltypes.MultiMemberGroupInitialMemberAnnounced)
 	if !ok {
@@ -818,7 +773,6 @@ func newMetadataIndex(ctx context.Context, g *protocoltypes.Group, md secretstor
 			contacts:               map[string]*AccountContact{},
 			contactsFromGroupPK:    map[string]*AccountContact{},
 			groups:                 map[string]*accountGroup{},
-			serviceTokens:          map[string]*protocoltypes.ServiceToken{},
 			contactRequestMetadata: map[string][]byte{},
 			group:                  g,
 			ownMemberDevice:        md,
@@ -845,8 +799,6 @@ func newMetadataIndex(ctx context.Context, g *protocoltypes.Group, md secretstor
 			protocoltypes.EventTypeGroupMemberDeviceAdded:                 {m.handleGroupMemberDeviceAdded},
 			protocoltypes.EventTypeMultiMemberGroupAdminRoleGranted:       {m.handleMultiMemberGrantAdminRole},
 			protocoltypes.EventTypeMultiMemberGroupInitialMemberAnnounced: {m.handleMultiMemberInitialMember},
-			protocoltypes.EventTypeAccountServiceTokenAdded:               {m.handleAccountServiceTokenAdded},
-			protocoltypes.EventTypeAccountServiceTokenRemoved:             {m.handleAccountServiceTokenRemoved},
 			protocoltypes.EventTypeGroupMetadataPayloadSent:               {m.handleGroupMetadataPayloadSent},
 			protocoltypes.EventTypeAccountVerifiedCredentialRegistered:    {m.handleAccountVerifiedCredentialRegistered},
 		}

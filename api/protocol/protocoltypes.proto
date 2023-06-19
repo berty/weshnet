@@ -106,15 +106,7 @@ service ProtocolService {
 
   rpc DebugGroup (DebugGroup.Request) returns (DebugGroup.Reply);
 
-  rpc DebugAuthServiceSetToken(DebugAuthServiceSetToken.Request) returns (DebugAuthServiceSetToken.Reply);
-
   rpc SystemInfo (SystemInfo.Request) returns (SystemInfo.Reply);
-
-  // AuthServiceInitFlow Initialize an authentication flow
-  rpc AuthServiceInitFlow (AuthServiceInitFlow.Request) returns (AuthServiceInitFlow.Reply);
-
-  // AuthServiceCompleteFlow Completes an authentication flow
-  rpc AuthServiceCompleteFlow (AuthServiceCompleteFlow.Request) returns (AuthServiceCompleteFlow.Reply);
 
   // CredentialVerificationServiceInitFlow Initialize a credential verification flow
   rpc CredentialVerificationServiceInitFlow (CredentialVerificationServiceInitFlow.Request) returns (CredentialVerificationServiceInitFlow.Reply);
@@ -124,9 +116,6 @@ service ProtocolService {
 
   // VerifiedCredentialsList Retrieves the list of verified credentials
   rpc VerifiedCredentialsList (VerifiedCredentialsList.Request) returns (stream VerifiedCredentialsList.Reply);
-
-  // ServicesTokenList Retrieves the list of services tokens
-  rpc ServicesTokenList (ServicesTokenList.Request) returns (stream ServicesTokenList.Reply);
 
   // ReplicationServiceRegisterGroup Asks a replication service to distribute a group contents
   rpc ReplicationServiceRegisterGroup (ReplicationServiceRegisterGroup.Request) returns (ReplicationServiceRegisterGroup.Reply);
@@ -231,12 +220,6 @@ enum EventType {
 
   // EventTypeMultiMemberGroupAdminRoleGranted indicates the payload includes that an admin of the group granted another member as an admin
   EventTypeMultiMemberGroupAdminRoleGranted = 303;
-
-  // EventTypeAccountServiceTokenAdded indicates that a new service provider has been registered for this account
-  EventTypeAccountServiceTokenAdded = 401;
-
-  // EventTypeAccountServiceTokenRemoved indicates that a service provider is not available anymore
-  EventTypeAccountServiceTokenRemoved = 402;
 
   // EventTypeGroupReplicating indicates that the group has been registered for replication on a server
   EventTypeGroupReplicating = 403;
@@ -614,22 +597,6 @@ message AccountContactUnblocked {
 
   // contact_pk is the contact unblocked
   bytes contact_pk = 2 [(gogoproto.customname) = "ContactPK"];
-}
-
-// AccountServiceTokenAdded indicates a token has been added to the account
-message AccountServiceTokenAdded {
-  // device_pk is the device sending the event, signs the message
-  bytes device_pk = 1 [(gogoproto.customname) = "DevicePK"];
-
-  ServiceToken service_token = 2;
-}
-
-// AccountServiceTokenRemoved indicates a token has removed
-message AccountServiceTokenRemoved {
-  // device_pk is the device sending the event, signs the message
-  bytes device_pk = 1 [(gogoproto.customname) = "DevicePK"];
-
-  string token_id = 2 [(gogoproto.customname) = "TokenID"];
 }
 
 message GroupReplicating {
@@ -1100,22 +1067,6 @@ message DebugGroup {
   }
 }
 
-message AuthExchangeResponse {
-  string access_token = 1;
-  string scope = 2;
-  string error = 3;
-  string error_description = 4;
-  map<string, string> services = 5;
-}
-
-message DebugAuthServiceSetToken {
-  message Request {
-    AuthExchangeResponse token = 1;
-    string authentication_url = 2 [(gogoproto.customname) = "AuthenticationURL"];
-  }
-  message Reply {}
-}
-
 enum DebugInspectGroupLogType {
   DebugInspectGroupLogTypeUndefined = 0;
   DebugInspectGroupLogTypeMessage = 1;
@@ -1156,26 +1107,6 @@ message ServiceToken {
   int64 expiration = 4;
 }
 
-message AuthServiceCompleteFlow {
-  message Request{
-    string callback_url = 1 [(gogoproto.customname) = "CallbackURL"];
-  }
-  message Reply{
-    string token_id = 1 [(gogoproto.customname) = "TokenID"];
-  }
-}
-
-message AuthServiceInitFlow {
-  message Request {
-    string auth_url = 1 [(gogoproto.customname) = "AuthURL"];
-    repeated string services = 3;
-  }
-  message Reply {
-    string url = 1 [(gogoproto.customname) = "URL"];
-    bool secure_url = 2 [(gogoproto.customname) = "SecureURL"];
-  }
-}
-
 message CredentialVerificationServiceInitFlow {
   message Request {
     string service_url = 1 [(gogoproto.customname) = "ServiceURL"];
@@ -1208,25 +1139,12 @@ message VerifiedCredentialsList {
   }
 }
 
-message ServicesTokenList {
-  message Request{}
-  message Reply{
-    string token_id = 1 [(gogoproto.customname) = "TokenID"];
-    ServiceToken service = 2;
-  }
-}
-
-message ServicesTokenCode {
-  repeated string services = 1;
-  string code_challenge = 2;
-  string token_id = 3 [(gogoproto.customname) = "TokenID"];
-}
-
-
 message ReplicationServiceRegisterGroup {
   message Request{
-    string token_id = 1 [(gogoproto.customname) = "TokenID"];
-    bytes group_pk = 2 [(gogoproto.customname) = "GroupPK"];
+    bytes group_pk = 1 [(gogoproto.customname) = "GroupPK"];
+    string token = 2;
+    string authentication_url = 3 [(gogoproto.customname) = "AuthenticationURL"];
+    string replication_server = 4;
   }
   message Reply{}
 }
