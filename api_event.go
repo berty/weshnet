@@ -60,10 +60,6 @@ func (s *service) GroupMetadataList(req *protocoltypes.GroupMetadataList_Request
 		}
 		defer sub.Close()
 		newEvents = sub.Out()
-	} else {
-		noop := make(chan interface{})
-		newEvents = noop
-		defer close(noop)
 	}
 
 	// Subscribe to previous metadata events and stream them if requested
@@ -149,10 +145,6 @@ func (s *service) GroupMessageList(req *protocoltypes.GroupMessageList_Request, 
 		}
 		defer messageStoreSub.Close()
 		newEvents = messageStoreSub.Out()
-	} else {
-		noop := make(chan interface{})
-		newEvents = noop
-		defer close(noop)
 	}
 
 	// Subscribe to previous message events and stream them if requested
