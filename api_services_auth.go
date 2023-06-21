@@ -17,7 +17,6 @@ import (
 	"berty.tech/weshnet/pkg/errcode"
 	"berty.tech/weshnet/pkg/logutil"
 	"berty.tech/weshnet/pkg/protocoltypes"
-	"berty.tech/weshnet/pkg/pushtypes"
 )
 
 func (s *service) authInitURL(baseURL string, services ...string) (string, error) {
@@ -169,21 +168,21 @@ func (s *service) AuthServiceCompleteFlow(ctx context.Context, request *protocol
 			continue
 		}
 
-		s.logger.Debug("registering push server", logutil.PrivateString("endpoint", service.GetServiceEndpoint()))
-		client, err := s.getPushClient(service.ServiceEndpoint)
-		if err != nil {
-			s.logger.Warn("unable to connect to push server", logutil.PrivateString("endpoint", service.ServiceEndpoint), zap.Error(err))
-			continue
-		}
+		// s.logger.Debug("registering push server", logutil.PrivateString("endpoint", service.GetServiceEndpoint()))
+		// client, err := s.getPushClient(service.ServiceEndpoint)
+		// if err != nil {
+		// 	s.logger.Warn("unable to connect to push server", logutil.PrivateString("endpoint", service.ServiceEndpoint), zap.Error(err))
+		// 	continue
+		// }
 
-		repl, err := client.ServerInfo(ctx, &pushtypes.PushServiceServerInfo_Request{})
+		// repl, err := client.ServerInfo(ctx, &pushtypes.PushServiceServerInfo_Request{})
 
-		s.logger.Debug("server info", zap.Int("supported push services ", len(repl.GetSupportedTokenTypes())))
+		// s.logger.Debug("server info", zap.Int("supported push services ", len(repl.GetSupportedTokenTypes())))
 
-		if err != nil {
-			s.logger.Warn("unable to get server info from push server", logutil.PrivateString("endpoint", service.ServiceEndpoint), zap.Error(err))
-			continue
-		}
+		// if err != nil {
+		// 	s.logger.Warn("unable to get server info from push server", logutil.PrivateString("endpoint", service.ServiceEndpoint), zap.Error(err))
+		// 	continue
+		// }
 
 		// _, err = s.PushSetServer(ctx, &protocoltypes.PushSetServer_Request{
 		// 	Server: &protocoltypes.PushServer{

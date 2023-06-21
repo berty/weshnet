@@ -39,9 +39,6 @@ var eventTypesMapper = map[protocoltypes.EventType]struct {
 	protocoltypes.EventTypeAccountServiceTokenAdded:               {Message: &protocoltypes.AccountServiceTokenAdded{}, SigChecker: sigCheckerDeviceSigned},
 	protocoltypes.EventTypeAccountServiceTokenRemoved:             {Message: &protocoltypes.AccountServiceTokenRemoved{}, SigChecker: sigCheckerDeviceSigned},
 	protocoltypes.EventTypeGroupReplicating:                       {Message: &protocoltypes.GroupReplicating{}, SigChecker: sigCheckerDeviceSigned},
-	protocoltypes.EventTypePushDeviceServerRegistered:             {Message: &protocoltypes.PushDeviceServerRegistered{}, SigChecker: sigCheckerDeviceSigned},
-	protocoltypes.EventTypePushDeviceTokenRegistered:              {Message: &protocoltypes.PushDeviceTokenRegistered{}, SigChecker: sigCheckerDeviceSigned},
-	protocoltypes.EventTypePushMemberTokenUpdate:                  {Message: &protocoltypes.PushMemberTokenUpdate{}, SigChecker: sigCheckerDeviceSigned},
 	protocoltypes.EventTypeAccountVerifiedCredentialRegistered:    {Message: &protocoltypes.AccountVerifiedCredentialRegistered{}, SigChecker: sigCheckerDeviceSigned},
 }
 

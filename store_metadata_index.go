@@ -1,7 +1,6 @@
 package weshnet
 
 import (
-	"bytes"
 	"context"
 	"fmt"
 	"sync"
@@ -29,9 +28,6 @@ type metadataStoreIndex struct {
 	contactsFromGroupPK      map[string]*AccountContact
 	groups                   map[string]*accountGroup
 	serviceTokens            map[string]*protocoltypes.ServiceToken
-	devicePushToken          *protocoltypes.PushDeviceTokenRegistered
-	devicePushServer         *protocoltypes.PushDeviceServerRegistered
-	membersPushTokens        map[string]*protocoltypes.PushMemberTokenUpdate
 	contactRequestMetadata   map[string][]byte
 	verifiedCredentials      []*protocoltypes.AccountVerifiedCredentialRegistered
 	contactRequestSeed       []byte
@@ -75,10 +71,7 @@ func (m *metadataStoreIndex) UpdateIndex(log ipfslog.Log, _ []ipfslog.Entry) err
 	m.contactRequestMetadata = map[string][]byte{}
 	m.contactRequestEnabled = nil
 	m.contactRequestSeed = []byte(nil)
-	m.devicePushToken = nil
-	m.devicePushServer = nil
 	m.verifiedCredentials = nil
-	m.membersPushTokens = map[string]*protocoltypes.PushMemberTokenUpdate{}
 	m.handledEvents = map[string]struct{}{}
 
 	for i := len(entries) - 1; i >= 0; i-- {
@@ -699,70 +692,7 @@ func (m *metadataStoreIndex) handleMultiMemberGrantAdminRole(event proto.Message
 	return nil
 }
 
-func (m *metadataStoreIndex) handlePushMemberTokenUpdate(event proto.Message) error {
-	e, ok := event.(*protocoltypes.PushMemberTokenUpdate)
-	if !ok {
-		return errcode.ErrInvalidInput
-	}
-
-	if _, ok := m.membersPushTokens[string(e.DevicePK)]; ok {
-		return nil
-	}
-
-	m.membersPushTokens[string(e.DevicePK)] = e
-
-	return nil
-}
-
-func (m *metadataStoreIndex) handlePushDeviceTokenRegistered(event proto.Message) error {
-	e, ok := event.(*protocoltypes.PushDeviceTokenRegistered)
-	if !ok {
-		return errcode.ErrInvalidInput
-	}
-
-	devicePK, err := m.ownMemberDevice.Device().Raw()
-	if err != nil {
-		return errcode.ErrSerialization.Wrap(err)
-	}
-
-	if !bytes.Equal(devicePK, e.DevicePK) {
-		return nil
-	}
-
-	if m.devicePushToken != nil {
-		return nil
-	}
-
-	m.devicePushToken = e
-
-	return nil
-}
-
 func (m *metadataStoreIndex) handleGroupMetadataPayloadSent(_ proto.Message) error {
-	return nil
-}
-
-func (m *metadataStoreIndex) handlePushServerTokenRegistered(event proto.Message) error {
-	e, ok := event.(*protocoltypes.PushDeviceServerRegistered)
-	if !ok {
-		return errcode.ErrInvalidInput
-	}
-
-	devicePK, err := m.ownMemberDevice.Device().Raw()
-	if err != nil {
-		return errcode.ErrSerialization.Wrap(err)
-	}
-
-	if !bytes.Equal(devicePK, e.DevicePK) {
-		return nil
-	}
-
-	if m.devicePushServer != nil {
-		return nil
-	}
-
-	m.devicePushServer = e
-
 	return nil
 }
 
@@ -851,20 +781,6 @@ func (m *metadataStoreIndex) getContact(pk crypto.PubKey) (*AccountContact, erro
 	return contact, nil
 }
 
-func (m *metadataStoreIndex) getCurrentDevicePushToken() *protocoltypes.PushDeviceTokenRegistered {
-	m.lock.RLock()
-	defer m.lock.RUnlock()
-
-	return m.devicePushToken
-}
-
-func (m *metadataStoreIndex) getCurrentDevicePushServer() *protocoltypes.PushDeviceServerRegistered {
-	m.lock.RLock()
-	defer m.lock.RUnlock()
-
-	return m.devicePushServer
-}
-
 func (m *metadataStoreIndex) postHandlerSentAliases() error {
 	for _, evt := range m.eventsContactAddAliasKey {
 		memberPublicKey, err := m.unsafeGetMemberByDevice(evt.DevicePK)
@@ -904,7 +820,6 @@ func newMetadataIndex(ctx context.Context, g *protocoltypes.Group, md secretstor
 			groups:                 map[string]*accountGroup{},
 			serviceTokens:          map[string]*protocoltypes.ServiceToken{},
 			contactRequestMetadata: map[string][]byte{},
-			membersPushTokens:      map[string]*protocoltypes.PushMemberTokenUpdate{},
 			group:                  g,
 			ownMemberDevice:        md,
 			secretStore:            secretStore,
@@ -932,9 +847,6 @@ func newMetadataIndex(ctx context.Context, g *protocoltypes.Group, md secretstor
 			protocoltypes.EventTypeMultiMemberGroupInitialMemberAnnounced: {m.handleMultiMemberInitialMember},
 			protocoltypes.EventTypeAccountServiceTokenAdded:               {m.handleAccountServiceTokenAdded},
 			protocoltypes.EventTypeAccountServiceTokenRemoved:             {m.handleAccountServiceTokenRemoved},
-			protocoltypes.EventTypePushMemberTokenUpdate:                  {m.handlePushMemberTokenUpdate},
-			protocoltypes.EventTypePushDeviceTokenRegistered:              {m.handlePushDeviceTokenRegistered},
-			protocoltypes.EventTypePushDeviceServerRegistered:             {m.handlePushServerTokenRegistered},
 			protocoltypes.EventTypeGroupMetadataPayloadSent:               {m.handleGroupMetadataPayloadSent},
 			protocoltypes.EventTypeAccountVerifiedCredentialRegistered:    {m.handleAccountVerifiedCredentialRegistered},
 		}

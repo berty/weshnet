@@ -25,7 +25,6 @@ import (
 	"berty.tech/weshnet/pkg/errcode"
 	"berty.tech/weshnet/pkg/logutil"
 	"berty.tech/weshnet/pkg/protocoltypes"
-	"berty.tech/weshnet/pkg/pushtypes"
 	"berty.tech/weshnet/pkg/secretstore"
 	"berty.tech/weshnet/pkg/tyber"
 )
@@ -497,7 +496,7 @@ func (m *MessageStore) GetMessageByCID(c cid.Cid) (operation.Operation, error) {
 	return op, nil
 }
 
-func (m *MessageStore) GetOutOfStoreMessageEnvelope(ctx context.Context, c cid.Cid) (*pushtypes.OutOfStoreMessageEnvelope, error) {
+func (m *MessageStore) GetOutOfStoreMessageEnvelope(ctx context.Context, c cid.Cid) (*protocoltypes.OutOfStoreMessageEnvelope, error) {
 	op, err := m.GetMessageByCID(c)
 	if err != nil {
 		return nil, errcode.ErrInvalidInput.Wrap(err)

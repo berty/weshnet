@@ -100,18 +100,6 @@ func (m *GroupReplicating) SetDevicePK(pk []byte) {
 	m.DevicePK = pk
 }
 
-func (m *PushDeviceTokenRegistered) SetDevicePK(pk []byte) {
-	m.DevicePK = pk
-}
-
-func (m *PushDeviceServerRegistered) SetDevicePK(pk []byte) {
-	m.DevicePK = pk
-}
-
-func (m *PushMemberTokenUpdate) SetDevicePK(pk []byte) {
-	m.DevicePK = pk
-}
-
 func (m *AccountVerifiedCredentialRegistered) SetDevicePK(pk []byte) {
 	m.DevicePK = pk
 }

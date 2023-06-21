@@ -87,6 +87,8 @@ func (s *service) GroupMetadataList(req *protocoltypes.GroupMetadataList_Request
 						previousEvents <- protocoltypes.GroupMetadataEvent{EventContext: nil}
 					}
 
+					cg.logger.Debug("GroupMetadataList: previous events stream ended")
+
 					return
 				}
 
@@ -171,6 +173,8 @@ func (s *service) GroupMessageList(req *protocoltypes.GroupMessageList_Request, 
 					} else {
 						previousEvents <- protocoltypes.GroupMessageEvent{EventContext: nil}
 					}
+
+					cg.logger.Debug("GroupMessageList: previous events stream ended")
 
 					return
 				}

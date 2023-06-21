@@ -17,7 +17,6 @@ import (
 	"berty.tech/weshnet/pkg/errcode"
 	"berty.tech/weshnet/pkg/ipfsutil"
 	"berty.tech/weshnet/pkg/protocoltypes"
-	"berty.tech/weshnet/pkg/pushtypes"
 )
 
 const (
@@ -140,7 +139,7 @@ func (s *secretStore) GetOwnMemberDeviceForGroup(g *protocoltypes.Group) (OwnMem
 }
 
 func (s *secretStore) OpenOutOfStoreMessage(ctx context.Context, payload []byte) (*protocoltypes.OutOfStoreMessage, *protocoltypes.Group, []byte, bool, error) {
-	oosMessageEnv := &pushtypes.OutOfStoreMessageEnvelope{}
+	oosMessageEnv := &protocoltypes.OutOfStoreMessageEnvelope{}
 	if err := oosMessageEnv.Unmarshal(payload); err != nil {
 		return nil, nil, nil, false, errcode.ErrDeserialization.Wrap(err)
 	}
@@ -170,7 +169,7 @@ func (s *secretStore) OpenOutOfStoreMessage(ctx context.Context, payload []byte)
 	return oosMessage, group, clear, !newlyDecrypted, nil
 }
 
-func (s *secretStore) decryptOutOfStoreMessageEnv(ctx context.Context, env *pushtypes.OutOfStoreMessageEnvelope, groupPK crypto.PubKey) (*protocoltypes.OutOfStoreMessage, error) {
+func (s *secretStore) decryptOutOfStoreMessageEnv(ctx context.Context, env *protocoltypes.OutOfStoreMessageEnvelope, groupPK crypto.PubKey) (*protocoltypes.OutOfStoreMessage, error) {
 	nonce, err := cryptoutil.NonceSliceToArray(env.Nonce)
 	if err != nil {
 		return nil, errcode.ErrInvalidInput.Wrap(err)
@@ -329,7 +328,7 @@ func (s *secretStore) OpenEnvelopeHeaders(data []byte, g *protocoltypes.Group) (
 	return env, headers, nil
 }
 
-func (s *secretStore) SealOutOfStoreMessageEnvelope(id cid.Cid, env *protocoltypes.MessageEnvelope, headers *protocoltypes.MessageHeaders, g *protocoltypes.Group) (*pushtypes.OutOfStoreMessageEnvelope, error) {
+func (s *secretStore) SealOutOfStoreMessageEnvelope(id cid.Cid, env *protocoltypes.MessageEnvelope, headers *protocoltypes.MessageHeaders, group *protocoltypes.Group) (*protocoltypes.OutOfStoreMessageEnvelope, error) {
 	oosMessage := &protocoltypes.OutOfStoreMessage{
 		CID:              id.Bytes(),
 		DevicePK:         headers.DevicePK,
@@ -349,19 +348,19 @@ func (s *secretStore) SealOutOfStoreMessageEnvelope(id cid.Cid, env *protocoltyp
 		return nil, errcode.ErrCryptoNonceGeneration.Wrap(err)
 	}
 
-	secret, err := cryptoutil.KeySliceToArray(g.Secret)
+	secret, err := cryptoutil.KeySliceToArray(group.Secret)
 	if err != nil {
 		return nil, errcode.ErrCryptoKeyConversion.Wrap(fmt.Errorf("unable to convert slice to array: %w", err))
 	}
 
 	encryptedData := secretbox.Seal(nil, data, nonce, secret)
 
-	pushGroupRef, err := createOutOfStoreGroupReference(g, headers.DevicePK, headers.Counter)
+	pushGroupRef, err := createOutOfStoreGroupReference(group, headers.DevicePK, headers.Counter)
 	if err != nil {
 		return nil, errcode.ErrCryptoKeyGeneration.Wrap(err)
 	}
 
-	return &pushtypes.OutOfStoreMessageEnvelope{
+	return &protocoltypes.OutOfStoreMessageEnvelope{
 		Nonce:          nonce[:],
 		Box:            encryptedData,
 		GroupReference: pushGroupRef,

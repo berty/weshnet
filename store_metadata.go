@@ -24,7 +24,6 @@ import (
 	"berty.tech/go-orbit-db/stores/basestore"
 	"berty.tech/go-orbit-db/stores/operation"
 	"berty.tech/weshnet/pkg/errcode"
-	"berty.tech/weshnet/pkg/logutil"
 	"berty.tech/weshnet/pkg/protocoltypes"
 	"berty.tech/weshnet/pkg/secretstore"
 	"berty.tech/weshnet/pkg/tyber"
@@ -1079,62 +1078,6 @@ func constructorFactoryGroupMetadata(s *WeshOrbitDB, logger *zap.Logger) iface.S
 
 		return store, nil
 	}
-}
-
-func (m *MetadataStore) SendPushToken(ctx context.Context, t *protocoltypes.PushMemberTokenUpdate) (operation.Operation, error) {
-	m.logger.Debug("sending push token to device", logutil.PrivateString("server", t.Server.ServiceAddr))
-	return m.attributeSignAndAddEvent(ctx, &protocoltypes.PushMemberTokenUpdate{
-		Server: t.Server,
-		Token:  t.Token,
-	}, protocoltypes.EventTypePushMemberTokenUpdate)
-}
-
-func (m *MetadataStore) RegisterDevicePushToken(ctx context.Context, token *protocoltypes.PushServiceReceiver) (operation.Operation, error) {
-	m.logger.Debug("register push token")
-	return m.attributeSignAndAddEvent(ctx, &protocoltypes.PushDeviceTokenRegistered{
-		Token: token,
-	}, protocoltypes.EventTypePushDeviceTokenRegistered)
-}
-
-func (m *MetadataStore) RegisterDevicePushServer(ctx context.Context, server *protocoltypes.PushServer) (operation.Operation, error) {
-	return m.attributeSignAndAddEvent(ctx, &protocoltypes.PushDeviceServerRegistered{
-		Server: server,
-	}, protocoltypes.EventTypePushDeviceServerRegistered)
-}
-
-func (m *MetadataStore) getCurrentDevicePushToken() *protocoltypes.PushServiceReceiver {
-	receiver := m.Index().(*metadataStoreIndex).getCurrentDevicePushToken()
-	if receiver == nil {
-		return nil
-	}
-
-	return receiver.Token
-}
-
-func (m *MetadataStore) getCurrentDevicePushServer() *protocoltypes.PushServer {
-	registration := m.Index().(*metadataStoreIndex).getCurrentDevicePushServer()
-	if registration == nil {
-		return nil
-	}
-
-	return registration.Server
-}
-
-func (m *MetadataStore) GetPushTokenForDevice(d crypto.PubKey) (*protocoltypes.PushMemberTokenUpdate, error) {
-	m.Index().(*metadataStoreIndex).lock.RLock()
-	defer m.Index().(*metadataStoreIndex).lock.RUnlock()
-
-	pk, err := d.Raw()
-	if err != nil {
-		return nil, errcode.ErrSerialization.Wrap(err)
-	}
-
-	token, ok := m.Index().(*metadataStoreIndex).membersPushTokens[string(pk)]
-	if !ok {
-		return nil, errcode.ErrInvalidInput.Wrap(fmt.Errorf("token not found"))
-	}
-
-	return token, nil
 }
 
 func (m *MetadataStore) initEmitter() (err error) {

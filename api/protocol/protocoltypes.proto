@@ -3,7 +3,6 @@ syntax = "proto3";
 package weshnet.protocol.v1;
 
 import "gogoproto/gogo.proto";
-import "pushtypes/pushtypes.proto";
 
 option go_package = "berty.tech/weshnet/pkg/protocoltypes";
 
@@ -241,15 +240,6 @@ enum EventType {
 
   // EventTypeGroupReplicating indicates that the group has been registered for replication on a server
   EventTypeGroupReplicating = 403;
-
-  // EventTypePushMemberTokenUpdate
-  EventTypePushMemberTokenUpdate = 404;
-
-  // EventTypePushDeviceTokenRegistered
-  EventTypePushDeviceTokenRegistered = 405;
-
-  // EventTypePushDeviceServerRegistered
-  EventTypePushDeviceServerRegistered = 406;
 
   // EventTypeAccountVerifiedCredentialRegistered
   EventTypeAccountVerifiedCredentialRegistered = 500;
@@ -691,8 +681,6 @@ message ServiceGetConfiguration {
     SettingState wifi_p2p_enabled = 7; // MultiPeerConnectivity for Darwin and Nearby for Android
     SettingState mdns_enabled = 8;
     SettingState relay_enabled = 9;
-    PushServiceReceiver device_push_token = 10;
-    PushServer device_push_server = 11;
   }
 }
 
@@ -1380,11 +1368,6 @@ message Progress {
   uint64 delay = 6;
 }
 
-message MemberWithDevices {
-  bytes member_pk = 1 [(gogoproto.customname) = "MemberPK"];
-  repeated bytes devices_pks = 2 [(gogoproto.customname) = "DevicePKs"];
-}
-
 message OutOfStoreMessage {
   bytes cid = 1 [(gogoproto.customname) = "CID"];
   bytes device_pk = 2 [(gogoproto.customname) = "DevicePK"];
@@ -1395,63 +1378,10 @@ message OutOfStoreMessage {
   bytes nonce = 7;
 }
 
-message PushServiceReceiver {
-  // token_type is the type of the token used, it allows us to act as a proxy to the appropriate push server
-  push.v1.PushServiceTokenType token_type = 1;
-
-  // bundle_id is the app identifier
-  string bundle_id = 2 [(gogoproto.customname) = "BundleID"];
-
-  // token is the device identifier used
-  bytes token = 3;
-
-  // recipient_public_key is the public key which will be used to encrypt the payload
-  bytes recipient_public_key = 4;
-}
-
-message PushServer {
-  bytes server_key = 1;
-  string service_addr = 2;
-}
-
-message PushDeviceTokenRegistered {
-  PushServiceReceiver token = 1;
-
-  // device_pk is the public key of the device sending the message
-  bytes device_pk = 2 [(gogoproto.customname) = "DevicePK"];
-}
-
-message PushDeviceServerRegistered {
-  PushServer server = 1;
-
-  // device_pk is the public key of the device sending the message
-  bytes device_pk = 2 [(gogoproto.customname) = "DevicePK"];
-}
-
-message AccountVerifiedCredentialRegistered {
-  // device_pk is the public key of the device sending the message
-  bytes device_pk = 1 [(gogoproto.customname) = "DevicePK"];
-
-  bytes signed_identity_public_key = 2;
-
-  string verified_credential = 3;
-
-  int64 registration_date = 4;
-
-  int64 expiration_date = 5;
-
-  string identifier = 6;
-
-  string issuer = 7;
-}
-
-message PushMemberTokenUpdate {
-  PushServer server = 1;
-
-  bytes token = 2;
-
-  // device_pk is the public key of the device sending the message
-  bytes device_pk = 3 [(gogoproto.customname) = "DevicePK"];
+message OutOfStoreMessageEnvelope {
+  bytes nonce = 1;
+  bytes box = 2;
+  bytes group_reference = 3;
 }
 
 message OutOfStoreReceive {
@@ -1474,6 +1404,23 @@ message OutOfStoreSeal {
   message Reply {
     bytes encrypted = 1;
   }
+}
+
+message AccountVerifiedCredentialRegistered {
+  // device_pk is the public key of the device sending the message
+  bytes device_pk = 1 [(gogoproto.customname) = "DevicePK"];
+
+  bytes signed_identity_public_key = 2;
+
+  string verified_credential = 3;
+
+  int64 registration_date = 4;
+
+  int64 expiration_date = 5;
+
+  string identifier = 6;
+
+  string issuer = 7;
 }
 
 message FirstLastCounters {
