@@ -7,7 +7,7 @@ import (
 
 	ds "github.com/ipfs/go-datastore"
 	dsync "github.com/ipfs/go-datastore/sync"
-	libp2p_mocknet "github.com/libp2p/go-libp2p/p2p/net/mock"
+	libp2p_mocknet "github.com/berty/go-libp2p-mock"
 	"github.com/stretchr/testify/require"
 
 	"berty.tech/weshnet"
