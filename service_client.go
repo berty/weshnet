@@ -34,9 +34,11 @@ type ServiceClient interface {
 func NewServiceClient(opts Opts) (ServiceClient, error) {
 	var err error
 
-	cleanupLogger := func() {}
+	var cleanupLogger func()
 	if opts.Logger == nil {
-		opts.Logger, cleanupLogger, err = setupDefaultLogger()
+		if opts.Logger, cleanupLogger, err = setupDefaultLogger(); err != nil {
+			return nil, fmt.Errorf("unable to setup logger: %w", err)
+		}
 	}
 
 	svc, err := NewService(opts)
@@ -113,8 +115,10 @@ func NewPersistentServiceClient(path string) (ServiceClient, error) {
 
 	opts.RootDatastore = ds
 
-	cleanupLogger := func() {}
-	opts.Logger, cleanupLogger, err = setupDefaultLogger()
+	var cleanupLogger func()
+	if opts.Logger, cleanupLogger, err = setupDefaultLogger(); err != nil {
+		return nil, fmt.Errorf("uanble to setup logger: %w", err)
+	}
 
 	cl, err := NewServiceClient(opts)
 	if err != nil {
