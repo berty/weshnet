@@ -4,17 +4,25 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"os"
 	"time"
 
 	"github.com/dgraph-io/badger/v2/options"
 	"github.com/ipfs/go-datastore"
 	badger "github.com/ipfs/go-ds-badger2"
+	"go.uber.org/zap"
 	"google.golang.org/grpc"
 
 	"berty.tech/weshnet/pkg/grpcutil"
 	"berty.tech/weshnet/pkg/ipfsutil"
 	ipfs_mobile "berty.tech/weshnet/pkg/ipfsutil/mobile"
+	"berty.tech/weshnet/pkg/logutil"
 	"berty.tech/weshnet/pkg/protocoltypes"
+)
+
+const (
+	defaultLoggingFiltersKey   = ":default:"
+	defaultLoggingFiltersValue = "info+:bty.* error+:*,-ipfs*,-*.tyber"
 )
 
 type ServiceClient interface {
@@ -24,6 +32,13 @@ type ServiceClient interface {
 }
 
 func NewServiceClient(opts Opts) (ServiceClient, error) {
+	var err error
+
+	cleanupLogger := func() {}
+	if opts.Logger == nil {
+		opts.Logger, cleanupLogger, err = setupDefaultLogger()
+	}
+
 	svc, err := NewService(opts)
 	if err != nil {
 		return nil, err
@@ -43,6 +58,7 @@ func NewServiceClient(opts Opts) (ServiceClient, error) {
 		ServiceClient: c,
 		server:        s,
 		service:       svc,
+		cleanup:       cleanupLogger,
 	}, nil
 }
 
@@ -97,6 +113,9 @@ func NewPersistentServiceClient(path string) (ServiceClient, error) {
 
 	opts.RootDatastore = ds
 
+	cleanupLogger := func() {}
+	opts.Logger, cleanupLogger, err = setupDefaultLogger()
+
 	cl, err := NewServiceClient(opts)
 	if err != nil {
 		return nil, err
@@ -105,6 +124,7 @@ func NewPersistentServiceClient(path string) (ServiceClient, error) {
 	return &persistentServiceClient{
 		ServiceClient: cl,
 		ds:            ds,
+		cleanup:       cleanupLogger,
 	}, nil
 }
 
@@ -115,11 +135,13 @@ type serviceClient struct {
 
 	service Service
 	server  *grpc.Server
+	cleanup func()
 }
 
 type persistentServiceClient struct {
 	ServiceClient
-	ds datastore.Batching
+	ds      datastore.Batching
+	cleanup func()
 }
 
 func (p *persistentServiceClient) Close() error {
@@ -129,13 +151,25 @@ func (p *persistentServiceClient) Close() error {
 		// only return ds error if no error have been catch earlier
 		err = fmt.Errorf("unable to close datastore: %w", dserr)
 	}
+
+	if p.cleanup != nil {
+		p.cleanup()
+	}
+
 	return err
 }
 
-func (c *serviceClient) Close() error {
+func (c *serviceClient) Close() (err error) {
 	c.server.GracefulStop()     // gracefully stop grpc server
 	_ = c.ServiceClient.Close() // close client and discard error
-	return c.service.Close()    // return real service error
+
+	err = c.service.Close()
+
+	if c.cleanup != nil {
+		c.cleanup()
+	}
+
+	return // return real service error
 }
 
 type client struct {
@@ -169,4 +203,18 @@ func NewClientFromService(ctx context.Context, s *grpc.Server, svc Service, opts
 		cc:                    cc,
 		l:                     bl,
 	}, nil
+}
+
+func setupDefaultLogger() (logger *zap.Logger, cleanup func(), err error) {
+	// setup log from env
+	if logfilter := os.Getenv("WESHNET_LOG_FILTER"); logfilter != "" {
+		if logfilter == defaultLoggingFiltersKey {
+			logfilter = defaultLoggingFiltersValue
+		}
+
+		s := logutil.NewStdStream(logfilter, "color", os.Stderr.Name())
+		return logutil.NewLogger(s)
+	}
+
+	return zap.NewNop(), func() {}, nil
 }
