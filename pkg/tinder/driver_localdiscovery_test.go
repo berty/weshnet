@@ -12,7 +12,7 @@ import (
 	"berty.tech/weshnet/pkg/testutil"
 )
 
-func TestLocalDiscorvery(t *testing.T) {
+func TestServiceLocalDiscorvery(t *testing.T) {
 	ctx := context.Background()
 	mn := mocknet.New()
 	defer mn.Close()
@@ -71,5 +71,62 @@ func TestLocalDiscorvery(t *testing.T) {
 		require.NoError(t, err)
 		require.Equal(t, p1.ID(), p.ID)
 		require.Equal(t, p1.Addrs(), p.Addrs)
+	}
+}
+
+func TestServiceLocalDiscorveryBeforeProtocolRegister(t *testing.T) {
+	const topic = "test_topic"
+
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	mn := mocknet.New()
+	defer mn.Close()
+
+	logger, cleanup := testutil.Logger(t)
+	defer cleanup()
+
+	p1 := genLocalPeer(t, mn)
+	p2 := genLocalPeer(t, mn)
+
+	err := mn.LinkAll()
+	require.NoError(t, err)
+
+	disc1, err := NewLocalDiscovery(logger, p1, rand.New(rand.NewSource(rand.Int63())))
+	require.NoError(t, err)
+
+	// create service for peer 1
+	s1, err := NewService(p1, logger, disc1)
+	require.NoError(t, err)
+
+	// start advertising
+	s1.StartAdvertises(ctx, topic)
+
+	// connect both peer BEFORE registering local discovery protocol for peer 2
+	err = mn.ConnectAllButSelf()
+	require.NoError(t, err)
+
+	// let some time to peers to connect and trigger protocol exchange
+	time.Sleep(time.Millisecond * 200)
+
+	// register p2 local discovery
+	disc2, err := NewLocalDiscovery(logger, p2, rand.New(rand.NewSource(rand.Int63())))
+	require.NoError(t, err)
+
+	s2, err := NewService(p2, logger, disc2)
+	require.NoError(t, err)
+
+	// start subscribe and wait for connection
+	sub := s2.Subscribe(topic)
+	defer sub.Close()
+
+	// pull to fetch current peers on the topic
+	sub.Pull()
+
+	select {
+	case p := <-sub.Out():
+		require.Equal(t, p.ID, p1.ID())
+	case <-time.After(time.Second * 5):
+		require.FailNow(t, "unable to wait for peer on local discovery")
 	}
 }

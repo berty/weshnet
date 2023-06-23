@@ -403,7 +403,6 @@ func (ld *LocalDiscovery) handleConnection(ctx context.Context, p peer.ID) {
 	conns := ld.h.Network().ConnsToPeer(p)
 	for _, conn := range conns {
 		if manet.IsPrivateAddr(conn.RemoteMultiaddr()) || isProximityProtocol(conn.RemoteMultiaddr()) {
-			ld.logger.Info("found local peer", logutil.PrivateString("peer", conn.RemotePeer().String()))
 			go func() {
 				records := ld.getLocalReccord()
 				if err := ld.sendRecordsTo(ctx, p, records); err != nil {
@@ -411,6 +410,8 @@ func (ld *LocalDiscovery) handleConnection(ctx context.Context, p peer.ID) {
 						logutil.PrivateString("peer", p.String()),
 						zap.Int("records", len(records.Records)),
 						zap.Error(err))
+				} else {
+					ld.logger.Info("send topics to local peer", logutil.PrivateString("peer", conn.RemotePeer().String()))
 				}
 			}()
 
@@ -420,8 +421,10 @@ func (ld *LocalDiscovery) handleConnection(ctx context.Context, p peer.ID) {
 }
 
 func (ld *LocalDiscovery) monitorConnection(ctx context.Context) error {
-	sub, err := ld.h.EventBus().Subscribe(new(event.EvtPeerConnectednessChanged),
-		eventbus.Name("weshnet/tinder/monitor-connection"))
+	sub, err := ld.h.EventBus().Subscribe([]interface{}{
+		new(event.EvtPeerConnectednessChanged),
+		new(event.EvtPeerProtocolsUpdated),
+	}, eventbus.Name("weshnet/tinder/monitor-connection"))
 	if err != nil {
 		return fmt.Errorf("unable to subscribe to `EvtPeerConnectednessChanged`: %w", err)
 	}
@@ -443,14 +446,20 @@ func (ld *LocalDiscovery) monitorConnection(ctx context.Context) error {
 				return
 			}
 
-			evt := e.(event.EvtPeerConnectednessChanged)
-
-			// send record to connected peer only
-			if evt.Connectedness != network.Connected {
-				continue
+			switch evt := e.(type) {
+			case event.EvtPeerConnectednessChanged:
+				// send record to connected peer only
+				if evt.Connectedness == network.Connected {
+					ld.handleConnection(ctx, evt.Peer)
+				}
+			case event.EvtPeerProtocolsUpdated:
+				for _, added := range evt.Added {
+					if added == recProtocolID {
+						ld.handleConnection(ctx, evt.Peer)
+						break
+					}
+				}
 			}
-
-			ld.handleConnection(ctx, evt.Peer)
 		}
 	}()
 
