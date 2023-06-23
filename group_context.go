@@ -9,7 +9,6 @@ import (
 	"time"
 
 	"github.com/libp2p/go-libp2p/core/crypto"
-	"github.com/libp2p/go-libp2p/p2p/host/eventbus"
 	"go.uber.org/zap"
 
 	"berty.tech/go-orbit-db/stores"
@@ -28,8 +27,14 @@ type GroupContext struct {
 	messageStore    *MessageStore
 	secretStore     secretstore.SecretStore
 	ownMemberDevice secretstore.OwnMemberDevice
-	logger          *zap.Logger
-	closed          uint32
+
+	logger            *zap.Logger
+	closed            uint32
+	tasks             sync.WaitGroup
+	devicesAdded      map[string]chan struct{}
+	muDevicesAdded    sync.RWMutex
+	selfAnnounced     chan struct{}
+	selfAnnouncedOnce sync.Once
 }
 
 func (gc *GroupContext) SecretStore() secretstore.SecretStore {
@@ -57,15 +62,20 @@ func (gc *GroupContext) DevicePubKey() crypto.PubKey {
 }
 
 func (gc *GroupContext) Close() error {
-	gc.logger.Debug("closing group context", zap.String("groupID", gc.group.GroupIDAsString()))
+	gc.cancel()
 
+	// @NOTE(gfanton): wait for active tasks to end, doing this we avoid to do
+	// some operations on a closed store
+	gc.tasks.Wait()
+
+	// mark group context has closed
 	atomic.StoreUint32(&gc.closed, 1)
 
+	// @FIXME(gfanton): should we really handle store closing here ?
 	gc.metadataStore.Close()
 	gc.messageStore.Close()
 
-	gc.cancel()
-
+	gc.logger.Debug("group context closed", zap.String("groupID", gc.group.GroupIDAsString()))
 	return nil
 }
 
@@ -90,241 +100,162 @@ func NewContextGroup(group *protocoltypes.Group, metadataStore *MetadataStore, m
 		ownMemberDevice: memberDevice,
 		logger:          logger.With(logutil.PrivateString("group-id", fmt.Sprintf("%.6s", base64.StdEncoding.EncodeToString(group.PublicKey)))),
 		closed:          0,
+		devicesAdded:    make(map[string]chan struct{}),
+		selfAnnounced:   make(chan struct{}),
 	}
 }
 
-func (gc *GroupContext) ActivateGroupContext(contact crypto.PubKey) error {
-	return gc.activateGroupContext(contact, true)
-}
+func (gc *GroupContext) ActivateGroupContext(contactPK crypto.PubKey) (err error) {
+	ctx := gc.ctx
 
-func (gc *GroupContext) activateGroupContext(contact crypto.PubKey, selfAnnouncement bool) error {
-	// syncChMKH := make(chan bool, 1)
-	// syncChSecrets := make(chan bool, 1)
-
-	wgFinished := sync.WaitGroup{}
-	wgFinished.Add(1)
-
+	// start watching for GroupMetadataEvent to send secret and register
+	// chainkey of new members.
 	{
-		// Fill keystore
-		chNewData := gc.FillMessageKeysHolderUsingNewData()
-		go func() {
-			for pk := range chNewData {
-				if !pk.Equals(gc.ownMemberDevice.Device()) {
-					gc.logger.Warn("gc member device public key doesn't match")
-				}
-			}
-		}()
-
-		chMember := gc.WatchNewMembersAndSendSecrets()
-		go func() {
-			calledDone := false
-			for pk := range chMember {
-				if !pk.Equals(gc.ownMemberDevice.Member()) {
-					gc.logger.Warn("gc member device public key doesn't match")
-					continue
-				}
-
-				if !calledDone {
-					calledDone = true
-					wgFinished.Done()
-				}
-			}
-		}()
-	}
-
-	{
-		wg := sync.WaitGroup{}
-		wg.Add(2)
-		start := time.Now()
-
-		chPreviousData := gc.FillMessageKeysHolderUsingPreviousData()
-		go func() {
-			for pk := range chPreviousData {
-				if !pk.Equals(gc.ownMemberDevice.Device()) {
-					gc.logger.Warn("gc member device public key doesn't match")
-				}
-			}
-
-			gc.logger.Info(fmt.Sprintf("FillMessageKeysHolderUsingPreviousData took %s", time.Since(start)))
-			wg.Done()
-		}()
-
-		chSecrets := gc.SendSecretsToExistingMembers(contact)
-		go func() {
-			for pk := range chSecrets {
-				if !pk.Equals(gc.ownMemberDevice.Member()) {
-					gc.logger.Warn("gc member device public key doesn't match")
-				}
-			}
-
-			gc.logger.Info(fmt.Sprintf("SendSecretsToExistingMembers took %s", time.Since(start)))
-			wg.Done()
-		}()
-
-		wg.Wait()
-	}
-
-	if selfAnnouncement {
-		start := time.Now()
-		op, err := gc.MetadataStore().AddDeviceToGroup(gc.ctx)
+		m := gc.MetadataStore()
+		sub, err := m.EventBus().Subscribe(new(protocoltypes.GroupMetadataEvent))
 		if err != nil {
-			return errcode.ErrInternal.Wrap(err)
+			return fmt.Errorf("unable to subscribe to group metadata event: %w", err)
 		}
 
-		gc.logger.Info(fmt.Sprintf("AddDeviceToGroup took %s", time.Since(start)))
+		gc.tasks.Add(1)
+		go func() {
+			defer gc.tasks.Done() // ultimately, mark bg task has done
+			defer sub.Close()
 
-		// op.
-		if op != nil {
-			// Waiting for async events to be handled
-			wgFinished.Wait()
-			// 	if ok := <-syncChMKH; !ok {
-			// 		return errcode.ErrInternal.Wrap(fmt.Errorf("error while registering own secrets"))
-			// 	}
+			for {
+				var evt interface{}
+				select {
+				case <-ctx.Done():
+					return
+				case evt = <-sub.Out():
+				}
 
-			// 	if ok := <-syncChSecrets; !ok {
-			// 		return errcode.ErrInternal.Wrap(fmt.Errorf("error while sending own secrets"))
-			// 	}
+				// @TODO(gfanton): should we handle this in a sub gorouting ?
+				e := evt.(protocoltypes.GroupMetadataEvent)
+				// start := time.Now()
+				if err := gc.handleGroupMetadataEvent(&e); err != nil {
+					gc.logger.Error("unable to handle EventTypeGroupDeviceSecretAdded", zap.Error(err))
+				}
+
+				// if t := time.Since(start).Milliseconds(); t > 0 {
+				// 	fmt.Printf("elapsed: %dms\n", t)
+				// }
+			}
+		}()
+	}
+
+	// send secret and register key from existing memebers.
+	// we should wait until all the events have been retreived.
+	{
+		var wgExistingMembers sync.WaitGroup
+
+		wgExistingMembers.Add(2)
+
+		go func() {
+			start := time.Now()
+			gc.fillMessageKeysHolderUsingPreviousData()
+			wgExistingMembers.Done()
+			gc.logger.Info(fmt.Sprintf("FillMessageKeysHolderUsingPreviousData took %s", time.Since(start)))
+		}()
+
+		go func() {
+			start := time.Now()
+			gc.sendSecretsToExistingMembers(contactPK)
+			wgExistingMembers.Done()
+			gc.logger.Info(fmt.Sprintf("SendSecretsToExistingMembers took %s", time.Since(start)))
+		}()
+
+		wgExistingMembers.Wait()
+	}
+
+	start := time.Now()
+	op, err := gc.MetadataStore().AddDeviceToGroup(gc.ctx)
+	if err != nil {
+		return fmt.Errorf("unable to add device to groupo: %w", err)
+	}
+
+	gc.logger.Info(fmt.Sprintf("AddDeviceToGroup took %s", time.Since(start)))
+	if op != nil {
+		// Waiting for async events to be handled
+		select {
+		case <-ctx.Done():
+			return ctx.Err()
+		case <-gc.selfAnnounced: // device has been selfAnnounced
 		}
 	}
 
 	return nil
 }
 
-func (gc *GroupContext) FillMessageKeysHolderUsingNewData() <-chan crypto.PubKey {
-	m := gc.MetadataStore()
-	ch := make(chan crypto.PubKey)
-	sub, err := m.EventBus().Subscribe(new(protocoltypes.GroupMetadataEvent), eventbus.Name("weshnet/group-context/fill-message-keys"))
-	if err != nil {
-		m.logger.Warn("unable to subscribe to events", zap.Error(err))
-		close(ch)
-		return ch
+func (gc *GroupContext) handleGroupMetadataEvent(e *protocoltypes.GroupMetadataEvent) (err error) {
+	switch e.Metadata.EventType {
+	case protocoltypes.EventTypeGroupMemberDeviceAdded:
+		event := &protocoltypes.GroupAddMemberDevice{}
+		if err := event.Unmarshal(e.Event); err != nil {
+			gc.logger.Error("unable to unmarshal payload", zap.Error(err))
+		}
+
+		memberPK, err := crypto.UnmarshalEd25519PublicKey(event.MemberPK)
+		if err != nil {
+			return fmt.Errorf("unable to unmarshal sender member pk: %w", err)
+		}
+
+		if memberPK.Equals(gc.ownMemberDevice.Member()) {
+			gc.selfAnnouncedOnce.Do(func() { close(gc.selfAnnounced) }) // mark has self announced
+		}
+
+		if _, err := gc.MetadataStore().SendSecret(gc.ctx, memberPK); err != nil {
+			if !errcode.Is(err, errcode.ErrGroupSecretAlreadySentToMember) {
+				return fmt.Errorf("unable to send secret to member: %w", err)
+			}
+		}
+
+	case protocoltypes.EventTypeGroupDeviceChainKeyAdded:
+		senderPublicKey, encryptedDeviceChainKey, err := getAndFilterGroupAddDeviceChainKeyPayload(e.Metadata, gc.ownMemberDevice.Member())
+		switch err {
+		case nil: // ok
+		case errcode.ErrInvalidInput, errcode.ErrGroupSecretOtherDestMember:
+			// @FIXME(gfanton): should we log this ?
+			return nil
+		default:
+			return fmt.Errorf("an error occurred while opening device secrets: %w", err)
+		}
+
+		if err = gc.SecretStore().RegisterChainKey(gc.ctx, gc.Group(), senderPublicKey, encryptedDeviceChainKey); err != nil {
+			return fmt.Errorf("unable to register chain key: %w", err)
+		}
+
+		if rawPK, err := senderPublicKey.Raw(); err == nil {
+			// A new chainKey has been registered, notify watcher
+			go gc.notifyDeviceAdded(rawPK)
+			// process queued message and check if cached messages can be opened with it
+			gc.MessageStore().ProcessMessageQueueForDevicePK(gc.ctx, rawPK)
+		}
 	}
 
-	go func() {
-		defer close(ch)
-		defer sub.Close()
-		for {
-			var evt interface{}
-			select {
-			case <-gc.ctx.Done():
-				return
-			case evt = <-sub.Out():
-			}
-
-			e := evt.(protocoltypes.GroupMetadataEvent)
-			if e.Metadata.EventType != protocoltypes.EventTypeGroupDeviceChainKeyAdded {
-				continue
-			}
-
-			senderPublicKey, encryptedDeviceChainKey, err := getAndFilterGroupAddDeviceChainKeyPayload(e.Metadata, gc.ownMemberDevice.Member())
-			if errcode.Is(err, errcode.ErrInvalidInput) {
-				continue
-			}
-
-			if errcode.Is(err, errcode.ErrGroupSecretOtherDestMember) {
-				continue
-			}
-
-			if err != nil {
-				gc.logger.Error("an error occurred while opening device chain key", zap.Error(err))
-				continue
-			}
-
-			if err = gc.SecretStore().RegisterChainKey(gc.ctx, gc.Group(), senderPublicKey, encryptedDeviceChainKey); err != nil {
-				gc.logger.Error("unable to register chain key", zap.Error(err))
-				continue
-			}
-
-			// A new chainKey is registered, check if cached messages can be opened with it
-			if rawPK, err := senderPublicKey.Raw(); err == nil {
-				gc.MessageStore().ProcessMessageQueueForDevicePK(gc.ctx, rawPK)
-			}
-
-			ch <- senderPublicKey
-		}
-	}()
-
-	return ch
+	return nil
 }
 
-func (gc *GroupContext) WatchNewMembersAndSendSecrets() <-chan crypto.PubKey {
-	ch := make(chan crypto.PubKey)
-	sub, err := gc.MetadataStore().EventBus().Subscribe(new(protocoltypes.GroupMetadataEvent), eventbus.Name("weshnet/group-context/new-members-and-secrets"))
-	if err != nil {
-		gc.logger.Warn("unable to subscribe to group metadata", zap.Error(err))
-		close(ch)
-		return ch
-	}
-
-	go func() {
-		defer close(ch)
-		defer sub.Close()
-		for {
-			var evt interface{}
-			select {
-			case evt = <-sub.Out():
-			case <-gc.ctx.Done():
-				return
-			}
-
-			e := evt.(protocoltypes.GroupMetadataEvent)
-			if e.Metadata.EventType != protocoltypes.EventTypeGroupMemberDeviceAdded {
-				continue
-			}
-
-			event := &protocoltypes.GroupAddMemberDevice{}
-			if err := event.Unmarshal(e.Event); err != nil {
-				gc.logger.Error("unable to unmarshal payload", zap.Error(err))
-				continue
-			}
-
-			memberPK, err := crypto.UnmarshalEd25519PublicKey(event.MemberPK)
-			if err != nil {
-				gc.logger.Error("unable to unmarshal sender member pk", zap.Error(err))
-				continue
-			}
-
-			if _, err := gc.MetadataStore().SendSecret(gc.ctx, memberPK); err != nil {
-				if !errcode.Is(err, errcode.ErrGroupSecretAlreadySentToMember) {
-					gc.logger.Error("unable to send secret to member", zap.Error(err))
-				}
-			}
-
-			ch <- memberPK
-		}
-	}()
-
-	return ch
-}
-
-func (gc *GroupContext) FillMessageKeysHolderUsingPreviousData() <-chan crypto.PubKey {
-	ch := make(chan crypto.PubKey)
+func (gc *GroupContext) fillMessageKeysHolderUsingPreviousData() {
 	publishedSecrets := gc.metadataStoreListSecrets()
 
-	go func() {
-		for senderPublicKey, encryptedSecret := range publishedSecrets {
-			if err := gc.SecretStore().RegisterChainKey(gc.ctx, gc.Group(), senderPublicKey, encryptedSecret); err != nil {
-				gc.logger.Error("unable to register chain key", zap.Error(err))
-				continue
-			}
-			// A new chainKey is registered, check if cached messages can be opened with it
-			if rawPK, err := senderPublicKey.Raw(); err == nil {
-				gc.MessageStore().ProcessMessageQueueForDevicePK(gc.ctx, rawPK)
-			}
-
-			ch <- senderPublicKey
+	for senderPublicKey, encryptedSecret := range publishedSecrets {
+		if err := gc.SecretStore().RegisterChainKey(gc.ctx, gc.Group(), senderPublicKey, encryptedSecret); err != nil {
+			gc.logger.Error("unable to register chain key", zap.Error(err))
+			continue
 		}
-
-		close(ch)
-	}()
-
-	return ch
+		// A new chainKey is registered, check if cached messages can be opened with it
+		if rawPK, err := senderPublicKey.Raw(); err == nil {
+			gc.MessageStore().ProcessMessageQueueForDevicePK(gc.ctx, rawPK)
+		}
+	}
 }
 
 func (gc *GroupContext) metadataStoreListSecrets() map[crypto.PubKey][]byte {
 	publishedSecrets := map[crypto.PubKey][]byte{}
 
 	m := gc.MetadataStore()
+
 	metadatas, err := m.ListEvents(gc.ctx, nil, nil, false)
 	if err != nil {
 		return nil
@@ -340,7 +271,7 @@ func (gc *GroupContext) metadataStoreListSecrets() map[crypto.PubKey][]byte {
 		}
 
 		if err != nil {
-			gc.logger.Error("unable to open device chain key", zap.Error(err))
+			gc.logger.Error("unable to open chain key", zap.Error(err))
 			continue
 		}
 
@@ -350,8 +281,7 @@ func (gc *GroupContext) metadataStoreListSecrets() map[crypto.PubKey][]byte {
 	return publishedSecrets
 }
 
-func (gc *GroupContext) SendSecretsToExistingMembers(contact crypto.PubKey) <-chan crypto.PubKey {
-	ch := make(chan crypto.PubKey)
+func (gc *GroupContext) sendSecretsToExistingMembers(contact crypto.PubKey) {
 	members := gc.MetadataStore().ListMembers()
 
 	// Force sending secret to contact member in contact group
@@ -370,44 +300,34 @@ func (gc *GroupContext) SendSecretsToExistingMembers(contact crypto.PubKey) <-ch
 		}
 	}
 
-	go func() {
-		for _, pk := range members {
-			rawPK, err := pk.Raw()
-			if err != nil {
-				gc.logger.Error("failed to serialize pk", zap.Error(err))
-				continue
-			}
-
-			if _, err := gc.MetadataStore().SendSecret(gc.ctx, pk); err != nil {
-				if !errcode.Is(err, errcode.ErrGroupSecretAlreadySentToMember) {
-					gc.logger.Info("secret already sent secret to member", logutil.PrivateString("memberpk", base64.StdEncoding.EncodeToString(rawPK)))
-					ch <- pk
-					continue
-				}
-			} else {
-				gc.logger.Info("sent secret to existing member", logutil.PrivateString("memberpk", base64.StdEncoding.EncodeToString(rawPK)))
-				ch <- pk
-			}
+	for _, pk := range members {
+		rawPK, err := pk.Raw()
+		if err != nil {
+			gc.logger.Error("failed to serialize pk", zap.Error(err))
+			continue
 		}
 
-		close(ch)
-	}()
-
-	return ch
+		if _, err := gc.MetadataStore().SendSecret(gc.ctx, pk); err != nil {
+			if !errcode.Is(err, errcode.ErrGroupSecretAlreadySentToMember) {
+				gc.logger.Info("secret already sent secret to member", logutil.PrivateString("memberpk", base64.StdEncoding.EncodeToString(rawPK)))
+				continue
+			}
+		} else {
+			gc.logger.Info("sent secret to existing member", logutil.PrivateString("memberpk", base64.StdEncoding.EncodeToString(rawPK)))
+		}
+	}
 }
 
 func (gc *GroupContext) TagGroupContextPeers(ipfsCoreAPI ipfsutil.ExtendedCoreAPI, weight int) {
 	id := gc.Group().GroupIDAsString()
 
-	chSub1, err := gc.metadataStore.EventBus().Subscribe(new(stores.EventNewPeer),
-		eventbus.Name("weshnet/group-context/tag-meta"))
+	chSub1, err := gc.metadataStore.EventBus().Subscribe(new(stores.EventNewPeer))
 	if err != nil {
 		gc.logger.Warn("unable to subscribe to metadata event new peer")
 		return
 	}
 
-	chSub2, err := gc.messageStore.EventBus().Subscribe(new(stores.EventNewPeer),
-		eventbus.Name("weshnet/group-context/tag-msg"))
+	chSub2, err := gc.messageStore.EventBus().Subscribe(new(stores.EventNewPeer))
 	if err != nil {
 		gc.logger.Warn("unable to subscribe to message event new peer")
 		return
@@ -434,4 +354,46 @@ func (gc *GroupContext) TagGroupContextPeers(ipfsCoreAPI ipfsutil.ExtendedCoreAP
 			ipfsCoreAPI.ConnMgr().TagPeer(evt.Peer, tag, weight)
 		}
 	}()
+}
+
+func (gc *GroupContext) WaitForDeviceAdded(ctx context.Context, devicePK crypto.PubKey) (found chan struct{}) {
+	gc.muDevicesAdded.Lock()
+	defer gc.muDevicesAdded.Unlock()
+
+	rawpk, err := devicePK.Raw()
+	if err != nil {
+		gc.logger.Error("unable to get raw public key", zap.Error(err))
+		return
+	}
+
+	k := string(rawpk)
+	var ok bool
+	if found, ok = gc.devicesAdded[k]; ok {
+		return
+	}
+
+	groupPublicKey, err := gc.group.GetPubKey()
+	if err != nil {
+		gc.logger.Error("unable to get group public key", zap.Error(err))
+		return
+	}
+
+	found = make(chan struct{})
+	if gc.secretStore.IsChainKeyKnownForDevice(ctx, groupPublicKey, devicePK) {
+		close(found)
+		return
+	}
+
+	gc.devicesAdded[k] = found
+	return
+}
+
+func (gc *GroupContext) notifyDeviceAdded(dPK []byte) {
+	gc.muDevicesAdded.Lock()
+	k := string(dPK)
+	if cc, ok := gc.devicesAdded[k]; ok {
+		close(cc)
+		delete(gc.devicesAdded, k)
+	}
+	gc.muDevicesAdded.Unlock()
 }

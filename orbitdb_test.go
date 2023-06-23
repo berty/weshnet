@@ -93,11 +93,6 @@ func TestDifferentStores(t *testing.T) {
 	require.NoError(t, err)
 	defer g2b.Close()
 
-	require.NoError(t, g1a.ActivateGroupContext(nil))
-	require.NoError(t, g2a.ActivateGroupContext(nil))
-	require.NoError(t, g1b.ActivateGroupContext(nil))
-	require.NoError(t, g2b.ActivateGroupContext(nil))
-
 	assert.Equal(t, g1a.MetadataStore().Address().String(), g2a.MetadataStore().Address().String())
 	assert.Equal(t, g1b.MetadataStore().Address().String(), g2b.MetadataStore().Address().String())
 	assert.NotEqual(t, g1a.MetadataStore().Address().String(), g1a.MessageStore().Address().String())

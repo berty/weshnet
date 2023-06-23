@@ -9,10 +9,10 @@ import (
 	"testing"
 	"time"
 
+	libp2p_mocknet "github.com/berty/go-libp2p-mock"
 	datastore "github.com/ipfs/go-datastore"
 	ds_sync "github.com/ipfs/go-datastore/sync"
 	"github.com/libp2p/go-libp2p/core/crypto"
-	libp2p_mocknet "github.com/berty/go-libp2p-mock"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap"
@@ -40,8 +40,6 @@ func TestMetadataStoreSecret_Basic(t *testing.T) {
 	msA := peers[0].GC.MetadataStore()
 	msB := peers[1].GC.MetadataStore()
 
-	go peers[0].GC.WatchNewMembersAndSendSecrets()
-	go peers[1].GC.WatchNewMembersAndSendSecrets()
 	go waitForBertyEventType(ctx, t, msA, protocoltypes.EventTypeGroupDeviceChainKeyAdded, 2, secretsAdded)
 	go waitForBertyEventType(ctx, t, msB, protocoltypes.EventTypeGroupDeviceChainKeyAdded, 2, secretsAdded)
 	inviteAllPeersToGroup(ctx, t, peers, groupSK)
