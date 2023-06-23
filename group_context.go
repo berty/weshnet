@@ -150,6 +150,7 @@ func (gc *GroupContext) ActivateGroupContext(contactPK crypto.PubKey) (err error
 		var wgExistingMembers sync.WaitGroup
 
 		wgExistingMembers.Add(2)
+
 		go func() {
 			start := time.Now()
 			gc.fillMessageKeysHolderUsingPreviousData()
@@ -163,9 +164,10 @@ func (gc *GroupContext) ActivateGroupContext(contactPK crypto.PubKey) (err error
 			wgExistingMembers.Done()
 			gc.logger.Info(fmt.Sprintf("SendSecretsToExistingMembers took %s", time.Since(start)))
 		}()
+
+		wgExistingMembers.Wait()
 	}
 
-	// if selfAnnouncement is enable wait until we get our own secret
 	start := time.Now()
 	op, err := gc.MetadataStore().AddDeviceToGroup(gc.ctx)
 	if err != nil {
@@ -209,9 +211,6 @@ func (gc *GroupContext) handleGroupMetadataEvent(e *protocoltypes.GroupMetadataE
 		}
 
 	case protocoltypes.EventTypeGroupDeviceChainKeyAdded:
-		gc.muDevicesAdded.RLock()
-		defer gc.muDevicesAdded.RUnlock()
-
 		senderPublicKey, encryptedDeviceChainKey, err := getAndFilterGroupAddDeviceChainKeyPayload(e.Metadata, gc.ownMemberDevice.Member())
 		switch err {
 		case nil: // ok
@@ -227,8 +226,7 @@ func (gc *GroupContext) handleGroupMetadataEvent(e *protocoltypes.GroupMetadataE
 		}
 
 		if rawPK, err := senderPublicKey.Raw(); err == nil {
-			// A new chainKey has been registered
-			// notify watcher, start in subroutine to avoid deadlock
+			// A new chainKey has been registered, notify watcher
 			go gc.notifyDeviceAdded(rawPK)
 			// process queued message and check if cached messages can be opened with it
 			gc.MessageStore().ProcessMessageQueueForDevicePK(gc.ctx, rawPK)
