@@ -7,11 +7,11 @@ import (
 	"testing"
 	"time"
 
+	mocknet "github.com/berty/go-libp2p-mock"
 	rendezvous "github.com/berty/go-libp2p-rendezvous"
 	dht "github.com/libp2p/go-libp2p-kad-dht"
 	"github.com/libp2p/go-libp2p/core/host"
 	"github.com/libp2p/go-libp2p/core/peer"
-	mocknet "github.com/berty/go-libp2p-mock"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap"
 

@@ -7,11 +7,11 @@ import (
 	"testing"
 	"time"
 
+	p2pmocknet "github.com/berty/go-libp2p-mock"
 	ggio "github.com/gogo/protobuf/io"
 	p2pcrypto "github.com/libp2p/go-libp2p/core/crypto"
 	p2pnetwork "github.com/libp2p/go-libp2p/core/network"
 	p2ppeer "github.com/libp2p/go-libp2p/core/peer"
-	p2pmocknet "github.com/berty/go-libp2p-mock"
 	"github.com/stretchr/testify/require"
 
 	"berty.tech/weshnet/pkg/ipfsutil"
