@@ -276,7 +276,8 @@ func (m *MessageStore) ListEvents(ctx context.Context, since, until []byte, reve
 			func(entry ipliface.IPFSLogEntry) {
 				message, err := m.openMessage(ctx, entry)
 				if err != nil {
-					m.logger.Error("unable to open message", zap.Error(err))
+					m.logger.Error("unable to open message, adding to queue for later decrypt", zap.Error(err))
+
 				} else {
 					out <- message
 					m.logger.Info("message store - sent 1 event from log history")

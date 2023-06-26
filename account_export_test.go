@@ -6,11 +6,12 @@ import (
 	"io"
 	"os"
 	"testing"
+	"time"
 
+	mocknet "github.com/berty/go-libp2p-mock"
 	"github.com/ipfs/go-cid"
 	ds "github.com/ipfs/go-datastore"
 	dsync "github.com/ipfs/go-datastore/sync"
-	mocknet "github.com/berty/go-libp2p-mock"
 	"github.com/stretchr/testify/require"
 
 	orbitdb "berty.tech/go-orbit-db"
@@ -216,6 +217,8 @@ func TestRestoreAccount(t *testing.T) {
 
 		_, err = nodeB.Service.ActivateGroup(ctx, &protocoltypes.ActivateGroup_Request{GroupPK: g.PublicKey})
 		require.NoError(t, err)
+
+		<-time.After(time.Millisecond * 500)
 
 		for _, gPK := range [][]byte{nodeBInstanceConfig.AccountGroupPK, g.PublicKey} {
 			sub, err := nodeB.Client.GroupMessageList(
