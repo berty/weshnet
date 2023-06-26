@@ -8,9 +8,9 @@ import (
 	"testing"
 	"time"
 
+	mocknet "github.com/berty/go-libp2p-mock"
 	datastore "github.com/ipfs/go-datastore"
 	sync_ds "github.com/ipfs/go-datastore/sync"
-	mocknet "github.com/berty/go-libp2p-mock"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap"

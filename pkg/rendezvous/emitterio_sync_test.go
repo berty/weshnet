@@ -8,11 +8,11 @@ import (
 	"testing"
 	"time"
 
+	mocknet "github.com/berty/go-libp2p-mock"
 	rendezvous "github.com/berty/go-libp2p-rendezvous"
 	db "github.com/berty/go-libp2p-rendezvous/db/sqlcipher"
 	"github.com/berty/go-libp2p-rendezvous/test_utils"
 	"github.com/libp2p/go-libp2p/core/host"
-	mocknet "github.com/berty/go-libp2p-mock"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap"
 
