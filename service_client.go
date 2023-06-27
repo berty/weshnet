@@ -5,11 +5,10 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"path/filepath"
 	"time"
 
-	"github.com/dgraph-io/badger/v2/options"
-	"github.com/ipfs/go-datastore"
-	badger "github.com/ipfs/go-ds-badger2"
+	leveldb "github.com/ipfs/go-ds-leveldb"
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
 
@@ -85,14 +84,6 @@ func NewInMemoryServiceClient() (ServiceClient, error) {
 func NewPersistentServiceClient(path string) (ServiceClient, error) {
 	var opts Opts
 
-	bopts := badger.DefaultOptions
-	bopts.ValueLogLoadingMode = options.FileIO
-
-	ds, err := badger.NewDatastore(path, &bopts)
-	if err != nil {
-		return nil, fmt.Errorf("unable to init badger datastore: %w", err)
-	}
-
 	repo, err := ipfsutil.LoadRepoFromPath(path)
 	if err != nil {
 		return nil, err
@@ -113,13 +104,20 @@ func NewPersistentServiceClient(path string) (ServiceClient, error) {
 		return nil, err
 	}
 
-	opts.RootDatastore = ds
-
 	var cleanupLogger func()
 	if opts.Logger, cleanupLogger, err = setupDefaultLogger(); err != nil {
 		return nil, fmt.Errorf("uanble to setup logger: %w", err)
 	}
 
+	dspath := filepath.Join(path, "weshds")
+	ds, err := leveldb.NewDatastore(dspath, &leveldb.Options{})
+	if err != nil {
+		_ = mnode.Close()
+		return nil, fmt.Errorf("unable to open leveldb datastore: %w", err)
+	}
+
+	// use ipfs datastore as root datastore for wesh
+	opts.RootDatastore = ds
 	cl, err := NewServiceClient(opts)
 	if err != nil {
 		return nil, err
@@ -127,7 +125,6 @@ func NewPersistentServiceClient(path string) (ServiceClient, error) {
 
 	return &persistentServiceClient{
 		ServiceClient: cl,
-		ds:            ds,
 		cleanup:       cleanupLogger,
 	}, nil
 }
@@ -144,22 +141,14 @@ type serviceClient struct {
 
 type persistentServiceClient struct {
 	ServiceClient
-	ds      datastore.Batching
 	cleanup func()
 }
 
 func (p *persistentServiceClient) Close() error {
 	err := p.ServiceClient.Close()
-
-	if dserr := p.ds.Close(); err == nil && dserr != nil {
-		// only return ds error if no error have been catch earlier
-		err = fmt.Errorf("unable to close datastore: %w", dserr)
-	}
-
 	if p.cleanup != nil {
 		p.cleanup()
 	}
-
 	return err
 }
 

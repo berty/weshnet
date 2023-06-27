@@ -10,7 +10,9 @@ import (
 	"sync/atomic"
 	"time"
 
+	"github.com/ipfs/go-datastore"
 	ds "github.com/ipfs/go-datastore"
+	"github.com/ipfs/go-datastore/namespace"
 	ds_sync "github.com/ipfs/go-datastore/sync"
 	ipfs_interface "github.com/ipfs/interface-go-ipfs-core"
 	pubsub "github.com/libp2p/go-libp2p-pubsub"
@@ -128,6 +130,8 @@ func (opts *Opts) applyDefaultsGetDatastore() {
 			opts.RootDatastore = nil
 		}
 	}
+
+	opts.RootDatastore = namespace.Wrap(opts.RootDatastore, datastore.NewKey("wesh"))
 }
 
 func (opts *Opts) applyDefaults(ctx context.Context) error {
