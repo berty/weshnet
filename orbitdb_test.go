@@ -140,32 +140,32 @@ func TestDifferentStores(t *testing.T) {
 	{
 		var err error
 		var cc <-chan *protocoltypes.GroupMetadataEvent
-		var ops []*protocoltypes.AppMetadata
+		var ops []*protocoltypes.GroupMetadataPayloadSent
 
 		assert.Eventually(t, func() bool {
 			cc, err = g1a.MetadataStore().ListEvents(ctx, nil, nil, false)
-			ops = testutil.TestFilterAppMetadata(t, cc)
+			ops = testutil.TestFilterGroupMetadataPayloadSent(t, cc)
 			return len(ops) == 2
 		}, time.Second*2, time.Millisecond*100, "have: %d, want: %d", len(ops), 2)
 		require.NoError(t, err)
 
 		assert.Eventually(t, func() bool {
 			cc, err = g2a.MetadataStore().ListEvents(ctx, nil, nil, false)
-			ops = testutil.TestFilterAppMetadata(t, cc)
+			ops = testutil.TestFilterGroupMetadataPayloadSent(t, cc)
 			return len(ops) == 2
 		}, time.Second*2, time.Millisecond*100, "have: %d, want: %d", len(ops), 2)
 		require.NoError(t, err)
 
 		assert.Eventually(t, func() bool {
 			cc, err = g1b.MetadataStore().ListEvents(ctx, nil, nil, false)
-			ops = testutil.TestFilterAppMetadata(t, cc)
+			ops = testutil.TestFilterGroupMetadataPayloadSent(t, cc)
 			return len(ops) == 4
 		}, time.Second*2, time.Millisecond*100, "have: %d, want: %d", len(ops), 5)
 		require.NoError(t, err)
 
 		assert.Eventually(t, func() bool {
 			cc, err = g2b.MetadataStore().ListEvents(ctx, nil, nil, false)
-			ops = testutil.TestFilterAppMetadata(t, cc)
+			ops = testutil.TestFilterGroupMetadataPayloadSent(t, cc)
 			return len(ops) == 4
 		}, time.Second*2, time.Millisecond*100, "have: %d, want: %d", len(ops), 4)
 		require.NoError(t, err)

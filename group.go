@@ -15,12 +15,12 @@ func NewGroupMultiMember() (*protocoltypes.Group, crypto.PrivKey, error) {
 	return protocoltypes.NewGroupMultiMember()
 }
 
-func getAndFilterGroupAddDeviceChainKeyPayload(m *protocoltypes.GroupMetadata, localMemberPublicKey crypto.PubKey) (crypto.PubKey, []byte, error) {
+func getAndFilterGroupDeviceChainKeyAddedPayload(m *protocoltypes.GroupMetadata, localMemberPublicKey crypto.PubKey) (crypto.PubKey, []byte, error) {
 	if m == nil || m.EventType != protocoltypes.EventTypeGroupDeviceChainKeyAdded {
 		return nil, nil, errcode.ErrInvalidInput
 	}
 
-	s := &protocoltypes.GroupAddDeviceChainKey{}
+	s := &protocoltypes.GroupDeviceChainKeyAdded{}
 	if err := s.Unmarshal(m.Payload); err != nil {
 		return nil, nil, errcode.ErrDeserialization.Wrap(err)
 	}

@@ -38,7 +38,7 @@ type metadataStoreIndex struct {
 	contactRequestEnabled    *bool
 	eventHandlers            map[protocoltypes.EventType][]func(event proto.Message) error
 	postIndexActions         []func() error
-	eventsContactAddAliasKey []*protocoltypes.ContactAddAliasKey
+	eventsContactAddAliasKey []*protocoltypes.ContactAliasKeyAdded
 	ownAliasKeySent          bool
 	otherAliasKey            []byte
 	group                    *protocoltypes.Group
@@ -131,8 +131,8 @@ func (m *metadataStoreIndex) UpdateIndex(log ipfslog.Log, _ []ipfslog.Entry) err
 	return nil
 }
 
-func (m *metadataStoreIndex) handleGroupAddMemberDevice(event proto.Message) error {
-	e, ok := event.(*protocoltypes.GroupAddMemberDevice)
+func (m *metadataStoreIndex) handleGroupMemberDeviceAdded(event proto.Message) error {
+	e, ok := event.(*protocoltypes.GroupMemberDeviceAdded)
 	if !ok {
 		return errcode.ErrInvalidInput
 	}
@@ -159,8 +159,8 @@ func (m *metadataStoreIndex) handleGroupAddMemberDevice(event proto.Message) err
 	return nil
 }
 
-func (m *metadataStoreIndex) handleGroupAddDeviceChainKey(event proto.Message) error {
-	e, ok := event.(*protocoltypes.GroupAddDeviceChainKey)
+func (m *metadataStoreIndex) handleGroupDeviceChainKeyAdded(event proto.Message) error {
+	e, ok := event.(*protocoltypes.GroupDeviceChainKeyAdded)
 	if !ok {
 		return errcode.ErrInvalidInput
 	}
@@ -435,7 +435,7 @@ func (m *metadataStoreIndex) registerContactFromGroupPK(ac *AccountContact) erro
 }
 
 func (m *metadataStoreIndex) handleContactRequestOutgoingEnqueued(event proto.Message) error {
-	evt, ok := event.(*protocoltypes.AccountContactRequestEnqueued)
+	evt, ok := event.(*protocoltypes.AccountContactRequestOutgoingEnqueued)
 	if ko := !ok || evt.Contact == nil; ko {
 		return errcode.ErrInvalidInput
 	}
@@ -472,7 +472,7 @@ func (m *metadataStoreIndex) handleContactRequestOutgoingEnqueued(event proto.Me
 }
 
 func (m *metadataStoreIndex) handleContactRequestOutgoingSent(event proto.Message) error {
-	evt, ok := event.(*protocoltypes.AccountContactRequestSent)
+	evt, ok := event.(*protocoltypes.AccountContactRequestOutgoingSent)
 	if !ok {
 		return errcode.ErrInvalidInput
 	}
@@ -495,7 +495,7 @@ func (m *metadataStoreIndex) handleContactRequestOutgoingSent(event proto.Messag
 }
 
 func (m *metadataStoreIndex) handleContactRequestIncomingReceived(event proto.Message) error {
-	evt, ok := event.(*protocoltypes.AccountContactRequestReceived)
+	evt, ok := event.(*protocoltypes.AccountContactRequestIncomingReceived)
 	if !ok {
 		return errcode.ErrInvalidInput
 	}
@@ -528,7 +528,7 @@ func (m *metadataStoreIndex) handleContactRequestIncomingReceived(event proto.Me
 }
 
 func (m *metadataStoreIndex) handleContactRequestIncomingDiscarded(event proto.Message) error {
-	evt, ok := event.(*protocoltypes.AccountContactRequestDiscarded)
+	evt, ok := event.(*protocoltypes.AccountContactRequestIncomingDiscarded)
 	if !ok {
 		return errcode.ErrInvalidInput
 	}
@@ -551,7 +551,7 @@ func (m *metadataStoreIndex) handleContactRequestIncomingDiscarded(event proto.M
 }
 
 func (m *metadataStoreIndex) handleContactRequestIncomingAccepted(event proto.Message) error {
-	evt, ok := event.(*protocoltypes.AccountContactRequestAccepted)
+	evt, ok := event.(*protocoltypes.AccountContactRequestIncomingAccepted)
 	if !ok {
 		return errcode.ErrInvalidInput
 	}
@@ -620,7 +620,7 @@ func (m *metadataStoreIndex) handleContactUnblocked(event proto.Message) error {
 }
 
 func (m *metadataStoreIndex) handleContactAliasKeyAdded(event proto.Message) error {
-	evt, ok := event.(*protocoltypes.ContactAddAliasKey)
+	evt, ok := event.(*protocoltypes.ContactAliasKeyAdded)
 	if !ok {
 		return errcode.ErrInvalidInput
 	}
@@ -674,7 +674,7 @@ func (m *metadataStoreIndex) handleAccountServiceTokenRemoved(event proto.Messag
 }
 
 func (m *metadataStoreIndex) handleMultiMemberInitialMember(event proto.Message) error {
-	e, ok := event.(*protocoltypes.MultiMemberInitialMember)
+	e, ok := event.(*protocoltypes.MultiMemberGroupInitialMemberAnnounced)
 	if !ok {
 		return errcode.ErrInvalidInput
 	}
@@ -926,8 +926,8 @@ func newMetadataIndex(ctx context.Context, g *protocoltypes.Group, md secretstor
 			protocoltypes.EventTypeAccountGroupJoined:                     {m.handleGroupJoined},
 			protocoltypes.EventTypeAccountGroupLeft:                       {m.handleGroupLeft},
 			protocoltypes.EventTypeContactAliasKeyAdded:                   {m.handleContactAliasKeyAdded},
-			protocoltypes.EventTypeGroupDeviceChainKeyAdded:               {m.handleGroupAddDeviceChainKey},
-			protocoltypes.EventTypeGroupMemberDeviceAdded:                 {m.handleGroupAddMemberDevice},
+			protocoltypes.EventTypeGroupDeviceChainKeyAdded:               {m.handleGroupDeviceChainKeyAdded},
+			protocoltypes.EventTypeGroupMemberDeviceAdded:                 {m.handleGroupMemberDeviceAdded},
 			protocoltypes.EventTypeMultiMemberGroupAdminRoleGranted:       {m.handleMultiMemberGrantAdminRole},
 			protocoltypes.EventTypeMultiMemberGroupInitialMemberAnnounced: {m.handleMultiMemberInitialMember},
 			protocoltypes.EventTypeAccountServiceTokenAdded:               {m.handleAccountServiceTokenAdded},

@@ -190,7 +190,7 @@ func (gc *GroupContext) ActivateGroupContext(contactPK crypto.PubKey) (err error
 func (gc *GroupContext) handleGroupMetadataEvent(e *protocoltypes.GroupMetadataEvent) (err error) {
 	switch e.Metadata.EventType {
 	case protocoltypes.EventTypeGroupMemberDeviceAdded:
-		event := &protocoltypes.GroupAddMemberDevice{}
+		event := &protocoltypes.GroupMemberDeviceAdded{}
 		if err := event.Unmarshal(e.Event); err != nil {
 			gc.logger.Error("unable to unmarshal payload", zap.Error(err))
 		}
@@ -211,7 +211,7 @@ func (gc *GroupContext) handleGroupMetadataEvent(e *protocoltypes.GroupMetadataE
 		}
 
 	case protocoltypes.EventTypeGroupDeviceChainKeyAdded:
-		senderPublicKey, encryptedDeviceChainKey, err := getAndFilterGroupAddDeviceChainKeyPayload(e.Metadata, gc.ownMemberDevice.Member())
+		senderPublicKey, encryptedDeviceChainKey, err := getAndFilterGroupDeviceChainKeyAddedPayload(e.Metadata, gc.ownMemberDevice.Member())
 		switch err {
 		case nil: // ok
 		case errcode.ErrInvalidInput, errcode.ErrGroupSecretOtherDestMember:
@@ -265,7 +265,7 @@ func (gc *GroupContext) metadataStoreListSecrets() map[crypto.PubKey][]byte {
 			continue
 		}
 
-		pk, encryptedDeviceChainKey, err := getAndFilterGroupAddDeviceChainKeyPayload(metadata.Metadata, gc.MemberPubKey())
+		pk, encryptedDeviceChainKey, err := getAndFilterGroupDeviceChainKeyAddedPayload(metadata.Metadata, gc.MemberPubKey())
 		if errcode.Is(err, errcode.ErrInvalidInput) || errcode.Is(err, errcode.ErrGroupSecretOtherDestMember) {
 			continue
 		}

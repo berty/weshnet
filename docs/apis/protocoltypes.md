@@ -6,14 +6,14 @@
 - [protocoltypes.proto](#protocoltypes-proto)
     - [Account](#weshnet-protocol-v1-Account)
     - [AccountContactBlocked](#weshnet-protocol-v1-AccountContactBlocked)
-    - [AccountContactRequestAccepted](#weshnet-protocol-v1-AccountContactRequestAccepted)
     - [AccountContactRequestDisabled](#weshnet-protocol-v1-AccountContactRequestDisabled)
-    - [AccountContactRequestDiscarded](#weshnet-protocol-v1-AccountContactRequestDiscarded)
     - [AccountContactRequestEnabled](#weshnet-protocol-v1-AccountContactRequestEnabled)
-    - [AccountContactRequestEnqueued](#weshnet-protocol-v1-AccountContactRequestEnqueued)
-    - [AccountContactRequestReceived](#weshnet-protocol-v1-AccountContactRequestReceived)
+    - [AccountContactRequestIncomingAccepted](#weshnet-protocol-v1-AccountContactRequestIncomingAccepted)
+    - [AccountContactRequestIncomingDiscarded](#weshnet-protocol-v1-AccountContactRequestIncomingDiscarded)
+    - [AccountContactRequestIncomingReceived](#weshnet-protocol-v1-AccountContactRequestIncomingReceived)
+    - [AccountContactRequestOutgoingEnqueued](#weshnet-protocol-v1-AccountContactRequestOutgoingEnqueued)
+    - [AccountContactRequestOutgoingSent](#weshnet-protocol-v1-AccountContactRequestOutgoingSent)
     - [AccountContactRequestReferenceReset](#weshnet-protocol-v1-AccountContactRequestReferenceReset)
-    - [AccountContactRequestSent](#weshnet-protocol-v1-AccountContactRequestSent)
     - [AccountContactUnblocked](#weshnet-protocol-v1-AccountContactUnblocked)
     - [AccountGroupJoined](#weshnet-protocol-v1-AccountGroupJoined)
     - [AccountGroupLeft](#weshnet-protocol-v1-AccountGroupLeft)
@@ -26,7 +26,6 @@
     - [AppMessageSend](#weshnet-protocol-v1-AppMessageSend)
     - [AppMessageSend.Reply](#weshnet-protocol-v1-AppMessageSend-Reply)
     - [AppMessageSend.Request](#weshnet-protocol-v1-AppMessageSend-Request)
-    - [AppMetadata](#weshnet-protocol-v1-AppMetadata)
     - [AppMetadataSend](#weshnet-protocol-v1-AppMetadataSend)
     - [AppMetadataSend.Reply](#weshnet-protocol-v1-AppMetadataSend-Reply)
     - [AppMetadataSend.Request](#weshnet-protocol-v1-AppMetadataSend-Request)
@@ -38,7 +37,7 @@
     - [AuthServiceInitFlow](#weshnet-protocol-v1-AuthServiceInitFlow)
     - [AuthServiceInitFlow.Reply](#weshnet-protocol-v1-AuthServiceInitFlow-Reply)
     - [AuthServiceInitFlow.Request](#weshnet-protocol-v1-AuthServiceInitFlow-Request)
-    - [ContactAddAliasKey](#weshnet-protocol-v1-ContactAddAliasKey)
+    - [ContactAliasKeyAdded](#weshnet-protocol-v1-ContactAliasKeyAdded)
     - [ContactAliasKeySend](#weshnet-protocol-v1-ContactAliasKeySend)
     - [ContactAliasKeySend.Reply](#weshnet-protocol-v1-ContactAliasKeySend-Reply)
     - [ContactAliasKeySend.Request](#weshnet-protocol-v1-ContactAliasKeySend-Request)
@@ -99,8 +98,7 @@
     - [FirstLastCounters](#weshnet-protocol-v1-FirstLastCounters)
     - [Group](#weshnet-protocol-v1-Group)
     - [GroupAddAdditionalRendezvousSeed](#weshnet-protocol-v1-GroupAddAdditionalRendezvousSeed)
-    - [GroupAddDeviceChainKey](#weshnet-protocol-v1-GroupAddDeviceChainKey)
-    - [GroupAddMemberDevice](#weshnet-protocol-v1-GroupAddMemberDevice)
+    - [GroupDeviceChainKeyAdded](#weshnet-protocol-v1-GroupDeviceChainKeyAdded)
     - [GroupDeviceStatus](#weshnet-protocol-v1-GroupDeviceStatus)
     - [GroupDeviceStatus.Reply](#weshnet-protocol-v1-GroupDeviceStatus-Reply)
     - [GroupDeviceStatus.Reply.PeerConnected](#weshnet-protocol-v1-GroupDeviceStatus-Reply-PeerConnected)
@@ -112,6 +110,7 @@
     - [GroupInfo](#weshnet-protocol-v1-GroupInfo)
     - [GroupInfo.Reply](#weshnet-protocol-v1-GroupInfo-Reply)
     - [GroupInfo.Request](#weshnet-protocol-v1-GroupInfo-Request)
+    - [GroupMemberDeviceAdded](#weshnet-protocol-v1-GroupMemberDeviceAdded)
     - [GroupMessageEvent](#weshnet-protocol-v1-GroupMessageEvent)
     - [GroupMessageList](#weshnet-protocol-v1-GroupMessageList)
     - [GroupMessageList.Request](#weshnet-protocol-v1-GroupMessageList-Request)
@@ -119,23 +118,25 @@
     - [GroupMetadataEvent](#weshnet-protocol-v1-GroupMetadataEvent)
     - [GroupMetadataList](#weshnet-protocol-v1-GroupMetadataList)
     - [GroupMetadataList.Request](#weshnet-protocol-v1-GroupMetadataList-Request)
+    - [GroupMetadataPayloadSent](#weshnet-protocol-v1-GroupMetadataPayloadSent)
     - [GroupRemoveAdditionalRendezvousSeed](#weshnet-protocol-v1-GroupRemoveAdditionalRendezvousSeed)
     - [GroupReplicating](#weshnet-protocol-v1-GroupReplicating)
     - [MemberWithDevices](#weshnet-protocol-v1-MemberWithDevices)
     - [MessageEnvelope](#weshnet-protocol-v1-MessageEnvelope)
     - [MessageHeaders](#weshnet-protocol-v1-MessageHeaders)
     - [MessageHeaders.MetadataEntry](#weshnet-protocol-v1-MessageHeaders-MetadataEntry)
-    - [MultiMemberGrantAdminRole](#weshnet-protocol-v1-MultiMemberGrantAdminRole)
-    - [MultiMemberGroupAddAliasResolver](#weshnet-protocol-v1-MultiMemberGroupAddAliasResolver)
     - [MultiMemberGroupAdminRoleGrant](#weshnet-protocol-v1-MultiMemberGroupAdminRoleGrant)
     - [MultiMemberGroupAdminRoleGrant.Reply](#weshnet-protocol-v1-MultiMemberGroupAdminRoleGrant-Reply)
     - [MultiMemberGroupAdminRoleGrant.Request](#weshnet-protocol-v1-MultiMemberGroupAdminRoleGrant-Request)
+    - [MultiMemberGroupAdminRoleGranted](#weshnet-protocol-v1-MultiMemberGroupAdminRoleGranted)
+    - [MultiMemberGroupAliasResolverAdded](#weshnet-protocol-v1-MultiMemberGroupAliasResolverAdded)
     - [MultiMemberGroupAliasResolverDisclose](#weshnet-protocol-v1-MultiMemberGroupAliasResolverDisclose)
     - [MultiMemberGroupAliasResolverDisclose.Reply](#weshnet-protocol-v1-MultiMemberGroupAliasResolverDisclose-Reply)
     - [MultiMemberGroupAliasResolverDisclose.Request](#weshnet-protocol-v1-MultiMemberGroupAliasResolverDisclose-Request)
     - [MultiMemberGroupCreate](#weshnet-protocol-v1-MultiMemberGroupCreate)
     - [MultiMemberGroupCreate.Reply](#weshnet-protocol-v1-MultiMemberGroupCreate-Reply)
     - [MultiMemberGroupCreate.Request](#weshnet-protocol-v1-MultiMemberGroupCreate-Request)
+    - [MultiMemberGroupInitialMemberAnnounced](#weshnet-protocol-v1-MultiMemberGroupInitialMemberAnnounced)
     - [MultiMemberGroupInvitationCreate](#weshnet-protocol-v1-MultiMemberGroupInvitationCreate)
     - [MultiMemberGroupInvitationCreate.Reply](#weshnet-protocol-v1-MultiMemberGroupInvitationCreate-Reply)
     - [MultiMemberGroupInvitationCreate.Request](#weshnet-protocol-v1-MultiMemberGroupInvitationCreate-Request)
@@ -145,7 +146,6 @@
     - [MultiMemberGroupLeave](#weshnet-protocol-v1-MultiMemberGroupLeave)
     - [MultiMemberGroupLeave.Reply](#weshnet-protocol-v1-MultiMemberGroupLeave-Reply)
     - [MultiMemberGroupLeave.Request](#weshnet-protocol-v1-MultiMemberGroupLeave-Request)
-    - [MultiMemberInitialMember](#weshnet-protocol-v1-MultiMemberInitialMember)
     - [OrbitDBMessageHeads](#weshnet-protocol-v1-OrbitDBMessageHeads)
     - [OrbitDBMessageHeads.Box](#weshnet-protocol-v1-OrbitDBMessageHeads-Box)
     - [OutOfStoreMessage](#weshnet-protocol-v1-OutOfStoreMessage)
@@ -246,19 +246,6 @@ AccountContactBlocked indicates that a contact is blocked
 | device_pk | [bytes](#bytes) |  | device_pk is the device sending the event, signs the message |
 | contact_pk | [bytes](#bytes) |  | contact_pk is the contact blocked |
 
-<a name="weshnet-protocol-v1-AccountContactRequestAccepted"></a>
-
-### AccountContactRequestAccepted
-This event should be followed by an AccountGroupJoined event
-This event should be followed by GroupAddMemberDevice and GroupAddDeviceChainKey events within the AccountGroup
-AccountContactRequestAccepted indicates that a contact request has been accepted
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| device_pk | [bytes](#bytes) |  | device_pk is the device sending the event, signs the message |
-| contact_pk | [bytes](#bytes) |  | contact_pk is the contact whom request is accepted |
-| group_pk | [bytes](#bytes) |  | group_pk is the 1to1 group with the requester user |
-
 <a name="weshnet-protocol-v1-AccountContactRequestDisabled"></a>
 
 ### AccountContactRequestDisabled
@@ -268,44 +255,42 @@ AccountContactRequestDisabled indicates that the account should not be advertise
 | ----- | ---- | ----- | ----------- |
 | device_pk | [bytes](#bytes) |  | device_pk is the device sending the event, signs the message |
 
-<a name="weshnet-protocol-v1-AccountContactRequestDiscarded"></a>
+<a name="weshnet-protocol-v1-AccountContactRequestEnabled"></a>
 
-### AccountContactRequestDiscarded
-AccountContactRequestDiscarded indicates that a contact request has been refused
+### AccountContactRequestEnabled
+AccountContactRequestEnabled indicates that the account should be advertised on a public rendezvous point
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| device_pk | [bytes](#bytes) |  | device_pk is the device sending the event, signs the message |
+
+<a name="weshnet-protocol-v1-AccountContactRequestIncomingAccepted"></a>
+
+### AccountContactRequestIncomingAccepted
+This event should be followed by an AccountGroupJoined event
+This event should be followed by GroupMemberDeviceAdded and GroupDeviceChainKeyAdded events within the AccountGroup
+AccountContactRequestIncomingAccepted indicates that a contact request has been accepted
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| device_pk | [bytes](#bytes) |  | device_pk is the device sending the event, signs the message |
+| contact_pk | [bytes](#bytes) |  | contact_pk is the contact whom request is accepted |
+| group_pk | [bytes](#bytes) |  | group_pk is the 1to1 group with the requester user |
+
+<a name="weshnet-protocol-v1-AccountContactRequestIncomingDiscarded"></a>
+
+### AccountContactRequestIncomingDiscarded
+AccountContactRequestIncomingDiscarded indicates that a contact request has been refused
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | device_pk | [bytes](#bytes) |  | device_pk is the device sending the event, signs the message |
 | contact_pk | [bytes](#bytes) |  | contact_pk is the contact whom request is refused |
 
-<a name="weshnet-protocol-v1-AccountContactRequestEnabled"></a>
+<a name="weshnet-protocol-v1-AccountContactRequestIncomingReceived"></a>
 
-### AccountContactRequestEnabled
-AccountContactRequestDisabled indicates that the account should be advertised on a public rendezvous point
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| device_pk | [bytes](#bytes) |  | device_pk is the device sending the event, signs the message |
-
-<a name="weshnet-protocol-v1-AccountContactRequestEnqueued"></a>
-
-### AccountContactRequestEnqueued
-This event should be followed by an AccountGroupJoined event
-This event should be followed by a GroupAddMemberDevice event within the AccountGroup
-This event should be followed by a GroupAddDeviceChainKey event within the AccountGroup
-AccountContactRequestEnqueued indicates that the account will attempt to send a contact request when a matching peer is discovered
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| device_pk | [bytes](#bytes) |  | device_pk is the device sending the event, signs the message |
-| group_pk | [bytes](#bytes) |  | group_pk is the 1to1 group with the requested user |
-| contact | [ShareableContact](#weshnet-protocol-v1-ShareableContact) |  | contact is a message describing how to connect to the other account |
-| own_metadata | [bytes](#bytes) |  | own_metadata is the identifying metadata that will be shared to the other account |
-
-<a name="weshnet-protocol-v1-AccountContactRequestReceived"></a>
-
-### AccountContactRequestReceived
-AccountContactRequestReceived indicates that the account has received a new contact request
+### AccountContactRequestIncomingReceived
+AccountContactRequestIncomingReceived indicates that the account has received a new contact request
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
@@ -314,25 +299,40 @@ AccountContactRequestReceived indicates that the account has received a new cont
 | contact_rendezvous_seed | [bytes](#bytes) |  | TODO: is this necessary? contact_rendezvous_seed is the rendezvous seed of the contact sending the request |
 | contact_metadata | [bytes](#bytes) |  | TODO: is this necessary? contact_metadata is the metadata specific to the app to identify the contact for the request |
 
-<a name="weshnet-protocol-v1-AccountContactRequestReferenceReset"></a>
+<a name="weshnet-protocol-v1-AccountContactRequestOutgoingEnqueued"></a>
 
-### AccountContactRequestReferenceReset
-AccountContactRequestDisabled indicates that the account should be advertised on different public rendezvous points
+### AccountContactRequestOutgoingEnqueued
+This event should be followed by an AccountGroupJoined event
+This event should be followed by a GroupMemberDeviceAdded event within the AccountGroup
+This event should be followed by a GroupDeviceChainKeyAdded event within the AccountGroup
+AccountContactRequestOutgoingEnqueued indicates that the account will attempt to send a contact request when a matching peer is discovered
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | device_pk | [bytes](#bytes) |  | device_pk is the device sending the event, signs the message |
-| public_rendezvous_seed | [bytes](#bytes) |  | public_rendezvous_seed is the new rendezvous point seed |
+| group_pk | [bytes](#bytes) |  | group_pk is the 1to1 group with the requested user |
+| contact | [ShareableContact](#weshnet-protocol-v1-ShareableContact) |  | contact is a message describing how to connect to the other account |
+| own_metadata | [bytes](#bytes) |  | own_metadata is the identifying metadata that will be shared to the other account |
 
-<a name="weshnet-protocol-v1-AccountContactRequestSent"></a>
+<a name="weshnet-protocol-v1-AccountContactRequestOutgoingSent"></a>
 
-### AccountContactRequestSent
-AccountContactRequestSent indicates that the account has sent a contact request
+### AccountContactRequestOutgoingSent
+AccountContactRequestOutgoingSent indicates that the account has sent a contact request
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | device_pk | [bytes](#bytes) |  | device_pk is the device sending the account event, signs the message |
 | contact_pk | [bytes](#bytes) |  | contact_pk is the contacted account |
+
+<a name="weshnet-protocol-v1-AccountContactRequestReferenceReset"></a>
+
+### AccountContactRequestReferenceReset
+AccountContactRequestReferenceReset indicates that the account should be advertised on different public rendezvous points
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| device_pk | [bytes](#bytes) |  | device_pk is the device sending the event, signs the message |
+| public_rendezvous_seed | [bytes](#bytes) |  | public_rendezvous_seed is the new rendezvous point seed |
 
 <a name="weshnet-protocol-v1-AccountContactUnblocked"></a>
 
@@ -357,7 +357,7 @@ AccountGroupJoined indicates that the account is now part of a new group
 <a name="weshnet-protocol-v1-AccountGroupLeft"></a>
 
 ### AccountGroupLeft
-AccountGroupJoined indicates that the account has left a group
+AccountGroupLeft indicates that the account has left a group
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
@@ -435,16 +435,6 @@ AccountServiceTokenRemoved indicates a token has removed
 | ----- | ---- | ----- | ----------- |
 | group_pk | [bytes](#bytes) |  | group_pk is the identifier of the group |
 | payload | [bytes](#bytes) |  | payload is the payload to send |
-
-<a name="weshnet-protocol-v1-AppMetadata"></a>
-
-### AppMetadata
-AppMetadata is an app defined message, accessible to future group members
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| device_pk | [bytes](#bytes) |  | device_pk is the device sending the event, signs the message |
-| message | [bytes](#bytes) |  | message is the payload |
 
 <a name="weshnet-protocol-v1-AppMetadataSend"></a>
 
@@ -530,10 +520,10 @@ AppMetadata is an app defined message, accessible to future group members
 | auth_url | [string](#string) |  |  |
 | services | [string](#string) | repeated |  |
 
-<a name="weshnet-protocol-v1-ContactAddAliasKey"></a>
+<a name="weshnet-protocol-v1-ContactAliasKeyAdded"></a>
 
-### ContactAddAliasKey
-ContactAddAliasKey is an event type where ones shares their alias public key
+### ContactAliasKeyAdded
+ContactAliasKeyAdded is an event type where ones shares their alias public key
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
@@ -922,30 +912,16 @@ GroupAddAdditionalRendezvousSeed indicates that an additional rendezvous point s
 | device_pk | [bytes](#bytes) |  | device_pk is the device sending the event, signs the message, must be the device of an admin of the group |
 | seed | [bytes](#bytes) |  | seed is the additional rendezvous point seed which should be used |
 
-<a name="weshnet-protocol-v1-GroupAddDeviceChainKey"></a>
+<a name="weshnet-protocol-v1-GroupDeviceChainKeyAdded"></a>
 
-### GroupAddDeviceChainKey
-GroupAddDeviceChainKey is an event which indicates to a group member a device chain key
+### GroupDeviceChainKeyAdded
+GroupDeviceChainKeyAdded is an event which indicates to a group member a device chain key
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | device_pk | [bytes](#bytes) |  | device_pk is the device sending the event, signs the message |
 | dest_member_pk | [bytes](#bytes) |  | dest_member_pk is the member who should receive the secret |
 | payload | [bytes](#bytes) |  | payload is the serialization of Payload encrypted for the specified member |
-
-<a name="weshnet-protocol-v1-GroupAddMemberDevice"></a>
-
-### GroupAddMemberDevice
-GroupAddMemberDevice is an event which indicates to a group a new device (and eventually a new member) is joining it
-When added on AccountGroup, this event should be followed by appropriate GroupAddMemberDevice and GroupAddDeviceChainKey events
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| member_pk | [bytes](#bytes) |  | member_pk is the member sending the event |
-| device_pk | [bytes](#bytes) |  | device_pk is the device sending the event, signs the message |
-| member_sig | [bytes](#bytes) |  | member_sig is used to prove the ownership of the member pk
-
-TODO: signature of what ??? ensure it can&#39;t be replayed |
 
 <a name="weshnet-protocol-v1-GroupDeviceStatus"></a>
 
@@ -1040,6 +1016,20 @@ GroupEnvelope is a publicly exposed structure containing a group metadata event
 | group_pk | [bytes](#bytes) |  | group_pk is the identifier of the group |
 | contact_pk | [bytes](#bytes) |  | contact_pk is the identifier of the contact |
 
+<a name="weshnet-protocol-v1-GroupMemberDeviceAdded"></a>
+
+### GroupMemberDeviceAdded
+GroupMemberDeviceAdded is an event which indicates to a group a new device (and eventually a new member) is joining it
+When added on AccountGroup, this event should be followed by appropriate GroupMemberDeviceAdded and GroupDeviceChainKeyAdded events
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| member_pk | [bytes](#bytes) |  | member_pk is the member sending the event |
+| device_pk | [bytes](#bytes) |  | device_pk is the device sending the event, signs the message |
+| member_sig | [bytes](#bytes) |  | member_sig is used to prove the ownership of the member pk
+
+TODO: signature of what ??? ensure it can&#39;t be replayed |
+
 <a name="weshnet-protocol-v1-GroupMessageEvent"></a>
 
 ### GroupMessageEvent
@@ -1106,6 +1096,16 @@ GroupMetadata is used in GroupEnvelope and only readable by invited group member
 | until_now | [bool](#bool) |  | until_now will not list new event to come until_id must not be set |
 | reverse_order | [bool](#bool) |  | reverse_order indicates whether the previous events should be returned in reverse chronological order |
 
+<a name="weshnet-protocol-v1-GroupMetadataPayloadSent"></a>
+
+### GroupMetadataPayloadSent
+GroupMetadataPayloadSent is an app defined message, accessible to future group members
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| device_pk | [bytes](#bytes) |  | device_pk is the device sending the event, signs the message |
+| message | [bytes](#bytes) |  | message is the payload |
+
 <a name="weshnet-protocol-v1-GroupRemoveAdditionalRendezvousSeed"></a>
 
 ### GroupRemoveAdditionalRendezvousSeed
@@ -1167,27 +1167,6 @@ MessageHeaders is used in MessageEnvelope and only readable by invited group mem
 | key | [string](#string) |  |  |
 | value | [string](#string) |  |  |
 
-<a name="weshnet-protocol-v1-MultiMemberGrantAdminRole"></a>
-
-### MultiMemberGrantAdminRole
-MultiMemberGrantAdminRole indicates that a group admin allows another group member to act as an admin
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| device_pk | [bytes](#bytes) |  | device_pk is the device sending the event, signs the message, must be the device of an admin of the group |
-| grantee_member_pk | [bytes](#bytes) |  | grantee_member_pk is the member public key of the member granted of the admin role |
-
-<a name="weshnet-protocol-v1-MultiMemberGroupAddAliasResolver"></a>
-
-### MultiMemberGroupAddAliasResolver
-MultiMemberGroupAddAliasResolver indicates that a group member want to disclose their presence in the group to their contacts
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| device_pk | [bytes](#bytes) |  | device_pk is the device sending the event, signs the message |
-| alias_resolver | [bytes](#bytes) |  | alias_resolver allows contact of an account to resolve the real identity behind an alias (Multi-Member Group Member) Generated by both contacts and account independently using: hmac(aliasPK, GroupID) |
-| alias_proof | [bytes](#bytes) |  | alias_proof ensures that the associated alias_resolver has been issued by the right account Generated using aliasSKSig(GroupID) |
-
 <a name="weshnet-protocol-v1-MultiMemberGroupAdminRoleGrant"></a>
 
 ### MultiMemberGroupAdminRoleGrant
@@ -1204,6 +1183,27 @@ MultiMemberGroupAddAliasResolver indicates that a group member want to disclose 
 | ----- | ---- | ----- | ----------- |
 | group_pk | [bytes](#bytes) |  | group_pk is the identifier of the group |
 | member_pk | [bytes](#bytes) |  | member_pk is the identifier of the member which will be granted the admin role |
+
+<a name="weshnet-protocol-v1-MultiMemberGroupAdminRoleGranted"></a>
+
+### MultiMemberGroupAdminRoleGranted
+MultiMemberGroupAdminRoleGranted indicates that a group admin allows another group member to act as an admin
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| device_pk | [bytes](#bytes) |  | device_pk is the device sending the event, signs the message, must be the device of an admin of the group |
+| grantee_member_pk | [bytes](#bytes) |  | grantee_member_pk is the member public key of the member granted of the admin role |
+
+<a name="weshnet-protocol-v1-MultiMemberGroupAliasResolverAdded"></a>
+
+### MultiMemberGroupAliasResolverAdded
+MultiMemberGroupAliasResolverAdded indicates that a group member want to disclose their presence in the group to their contacts
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| device_pk | [bytes](#bytes) |  | device_pk is the device sending the event, signs the message |
+| alias_resolver | [bytes](#bytes) |  | alias_resolver allows contact of an account to resolve the real identity behind an alias (Multi-Member Group Member) Generated by both contacts and account independently using: hmac(aliasPK, GroupID) |
+| alias_proof | [bytes](#bytes) |  | alias_proof ensures that the associated alias_resolver has been issued by the right account Generated using aliasSKSig(GroupID) |
 
 <a name="weshnet-protocol-v1-MultiMemberGroupAliasResolverDisclose"></a>
 
@@ -1236,6 +1236,15 @@ MultiMemberGroupAddAliasResolver indicates that a group member want to disclose 
 <a name="weshnet-protocol-v1-MultiMemberGroupCreate-Request"></a>
 
 ### MultiMemberGroupCreate.Request
+
+<a name="weshnet-protocol-v1-MultiMemberGroupInitialMemberAnnounced"></a>
+
+### MultiMemberGroupInitialMemberAnnounced
+MultiMemberGroupInitialMemberAnnounced indicates that a member is the group creator, this event is signed using the group ID private key
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| member_pk | [bytes](#bytes) |  | member_pk is the public key of the member who is the group creator |
 
 <a name="weshnet-protocol-v1-MultiMemberGroupInvitationCreate"></a>
 
@@ -1288,15 +1297,6 @@ MultiMemberGroupAddAliasResolver indicates that a group member want to disclose 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | group_pk | [bytes](#bytes) |  |  |
-
-<a name="weshnet-protocol-v1-MultiMemberInitialMember"></a>
-
-### MultiMemberInitialMember
-MultiMemberInitialMember indicates that a member is the group creator, this event is signed using the group ID private key
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| member_pk | [bytes](#bytes) |  | member_pk is the public key of the member who is the group creator |
 
 <a name="weshnet-protocol-v1-OrbitDBMessageHeads"></a>
 
@@ -1823,11 +1823,11 @@ Progress define a generic object that can be used to display a progress bar for 
 | EventTypeAccountContactRequestDisabled | 103 | EventTypeAccountContactRequestDisabled indicates the payload includes that the account has disabled incoming contact requests |
 | EventTypeAccountContactRequestEnabled | 104 | EventTypeAccountContactRequestEnabled indicates the payload includes that the account has enabled incoming contact requests |
 | EventTypeAccountContactRequestReferenceReset | 105 | EventTypeAccountContactRequestReferenceReset indicates the payload includes that the account has a new contact request rendezvous seed |
-| EventTypeAccountContactRequestOutgoingEnqueued | 106 | EventTypeAccountContactRequestEnqueued indicates the payload includes that the account will attempt to send a new contact request |
-| EventTypeAccountContactRequestOutgoingSent | 107 | EventTypeAccountContactRequestSent indicates the payload includes that the account has sent a contact request |
-| EventTypeAccountContactRequestIncomingReceived | 108 | EventTypeAccountContactRequestReceived indicates the payload includes that the account has received a contact request |
+| EventTypeAccountContactRequestOutgoingEnqueued | 106 | EventTypeAccountContactRequestOutgoingEnqueued indicates the payload includes that the account will attempt to send a new contact request |
+| EventTypeAccountContactRequestOutgoingSent | 107 | EventTypeAccountContactRequestOutgoingSent indicates the payload includes that the account has sent a contact request |
+| EventTypeAccountContactRequestIncomingReceived | 108 | EventTypeAccountContactRequestIncomingReceived indicates the payload includes that the account has received a contact request |
 | EventTypeAccountContactRequestIncomingDiscarded | 109 | EventTypeAccountContactRequestIncomingDiscarded indicates the payload includes that the account has ignored a contact request |
-| EventTypeAccountContactRequestIncomingAccepted | 110 | EventTypeAccountContactRequestAccepted indicates the payload includes that the account has accepted a contact request |
+| EventTypeAccountContactRequestIncomingAccepted | 110 | EventTypeAccountContactRequestIncomingAccepted indicates the payload includes that the account has accepted a contact request |
 | EventTypeAccountContactBlocked | 111 | EventTypeAccountContactBlocked indicates the payload includes that the account has blocked a contact |
 | EventTypeAccountContactUnblocked | 112 | EventTypeAccountContactUnblocked indicates the payload includes that the account has unblocked a contact |
 | EventTypeContactAliasKeyAdded | 201 | EventTypeContactAliasKeyAdded indicates the payload includes that the contact group has received an alias key |

@@ -570,7 +570,7 @@ func addAsContact(ctx context.Context, t *testing.T, senders, receivers []*weshn
 					continue
 				}
 
-				req := &protocoltypes.AccountContactRequestReceived{}
+				req := &protocoltypes.AccountContactRequestIncomingReceived{}
 				err = req.Unmarshal(evt.Event)
 
 				require.NoError(t, err)

@@ -677,7 +677,7 @@ func isEventAddSecretTargetedToMember(ownRawPK []byte, evt *protocoltypes.GroupM
 		return nil, nil
 	}
 
-	sec := &protocoltypes.GroupAddDeviceChainKey{}
+	sec := &protocoltypes.GroupDeviceChainKeyAdded{}
 	err := sec.Unmarshal(evt.Event)
 	if err != nil {
 		return nil, err
