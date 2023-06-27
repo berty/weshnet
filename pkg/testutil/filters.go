@@ -6,10 +6,10 @@ import (
 	"berty.tech/weshnet/pkg/protocoltypes"
 )
 
-func TestFilterAppMetadata(t *testing.T, events <-chan *protocoltypes.GroupMetadataEvent) []*protocoltypes.AppMetadata {
+func TestFilterGroupMetadataPayloadSent(t *testing.T, events <-chan *protocoltypes.GroupMetadataEvent) []*protocoltypes.GroupMetadataPayloadSent {
 	t.Helper()
 
-	out := []*protocoltypes.AppMetadata(nil)
+	out := []*protocoltypes.GroupMetadataPayloadSent(nil)
 
 	for evt := range events {
 		if evt == nil {
@@ -20,7 +20,7 @@ func TestFilterAppMetadata(t *testing.T, events <-chan *protocoltypes.GroupMetad
 			continue
 		}
 
-		m := &protocoltypes.AppMetadata{}
+		m := &protocoltypes.GroupMetadataPayloadSent{}
 		if err := m.Unmarshal(evt.Event); err != nil {
 			continue
 		}

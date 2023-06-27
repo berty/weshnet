@@ -20,23 +20,23 @@ func (m *AccountContactRequestReferenceReset) SetDevicePK(pk []byte) {
 	m.DevicePK = pk
 }
 
-func (m *AccountContactRequestEnqueued) SetDevicePK(pk []byte) {
+func (m *AccountContactRequestOutgoingEnqueued) SetDevicePK(pk []byte) {
 	m.DevicePK = pk
 }
 
-func (m *AccountContactRequestSent) SetDevicePK(pk []byte) {
+func (m *AccountContactRequestOutgoingSent) SetDevicePK(pk []byte) {
 	m.DevicePK = pk
 }
 
-func (m *AccountContactRequestReceived) SetDevicePK(pk []byte) {
+func (m *AccountContactRequestIncomingReceived) SetDevicePK(pk []byte) {
 	m.DevicePK = pk
 }
 
-func (m *AccountContactRequestDiscarded) SetDevicePK(pk []byte) {
+func (m *AccountContactRequestIncomingDiscarded) SetDevicePK(pk []byte) {
 	m.DevicePK = pk
 }
 
-func (m *AccountContactRequestAccepted) SetDevicePK(pk []byte) {
+func (m *AccountContactRequestIncomingAccepted) SetDevicePK(pk []byte) {
 	m.DevicePK = pk
 }
 
@@ -48,15 +48,15 @@ func (m *AccountContactUnblocked) SetDevicePK(pk []byte) {
 	m.DevicePK = pk
 }
 
-func (m *AccountContactRequestSent) SetContactPK(pk []byte) {
+func (m *AccountContactRequestOutgoingSent) SetContactPK(pk []byte) {
 	m.ContactPK = pk
 }
 
-func (m *AccountContactRequestDiscarded) SetContactPK(pk []byte) {
+func (m *AccountContactRequestIncomingDiscarded) SetContactPK(pk []byte) {
 	m.ContactPK = pk
 }
 
-func (m *AccountContactRequestAccepted) SetContactPK(pk []byte) {
+func (m *AccountContactRequestIncomingAccepted) SetContactPK(pk []byte) {
 	m.ContactPK = pk
 }
 
@@ -72,19 +72,19 @@ func (m *AccountGroupLeft) SetGroupPK(pk []byte) {
 	m.GroupPK = pk
 }
 
-func (m *ContactAddAliasKey) SetDevicePK(pk []byte) {
+func (m *ContactAliasKeyAdded) SetDevicePK(pk []byte) {
 	m.DevicePK = pk
 }
 
-func (m *MultiMemberGroupAddAliasResolver) SetDevicePK(pk []byte) {
+func (m *MultiMemberGroupAliasResolverAdded) SetDevicePK(pk []byte) {
 	m.DevicePK = pk
 }
 
-func (m *MultiMemberGrantAdminRole) SetDevicePK(pk []byte) {
+func (m *MultiMemberGroupAdminRoleGranted) SetDevicePK(pk []byte) {
 	m.DevicePK = pk
 }
 
-func (m *AppMetadata) SetDevicePK(pk []byte) {
+func (m *GroupMetadataPayloadSent) SetDevicePK(pk []byte) {
 	m.DevicePK = pk
 }
 

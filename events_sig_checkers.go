@@ -56,8 +56,8 @@ func sigCheckerDeviceSigned(g *protocoltypes.Group, metadata *protocoltypes.Grou
 	return nil
 }
 
-func sigCheckerMemberDeviceAdded(g *protocoltypes.Group, metadata *protocoltypes.GroupMetadata, message proto.Message) error {
-	msg, ok := message.(*protocoltypes.GroupAddMemberDevice)
+func sigCheckerGroupMemberDeviceAdded(g *protocoltypes.Group, metadata *protocoltypes.GroupMetadata, message proto.Message) error {
+	msg, ok := message.(*protocoltypes.GroupMemberDeviceAdded)
 	if !ok {
 		return errcode.ErrDeserialization
 	}

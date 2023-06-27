@@ -34,7 +34,7 @@ func inviteAllPeersToGroup(ctx context.Context, t *testing.T, peers []*mockedPee
 					continue
 				}
 
-				memdev := &protocoltypes.GroupAddMemberDevice{}
+				memdev := &protocoltypes.GroupMemberDeviceAdded{}
 				if err := memdev.Unmarshal(evt.Event); err != nil {
 					errChan <- err
 					return
@@ -102,7 +102,7 @@ func waitForBertyEventType(ctx context.Context, t *testing.T, ms *MetadataStore,
 
 			handledEvents[eID] = struct{}{}
 
-			e := &protocoltypes.GroupAddDeviceChainKey{}
+			e := &protocoltypes.GroupDeviceChainKeyAdded{}
 			if err := e.Unmarshal(evt.Event); err != nil {
 				t.Fatalf(" err: %+v\n", err.Error())
 			}

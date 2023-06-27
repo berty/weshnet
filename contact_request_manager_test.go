@@ -84,7 +84,7 @@ func TestContactRequestFlow(t *testing.T) {
 			continue
 		}
 
-		req := &protocoltypes.AccountContactRequestReceived{}
+		req := &protocoltypes.AccountContactRequestIncomingReceived{}
 		err = req.Unmarshal(evt.Event)
 
 		require.NoError(t, err)
@@ -208,7 +208,7 @@ func TestContactRequestFlowWithoutIncoming(t *testing.T) {
 			continue
 		}
 
-		req := &protocoltypes.AccountContactRequestReceived{}
+		req := &protocoltypes.AccountContactRequestIncomingReceived{}
 		err = req.Unmarshal(evt.Event)
 
 		require.NoError(t, err)

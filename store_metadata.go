@@ -167,7 +167,7 @@ func MetadataStoreAddDeviceToGroup(ctx context.Context, m *MetadataStore, g *pro
 		return nil, errcode.ErrCryptoSignature.Wrap(err)
 	}
 
-	event := &protocoltypes.GroupAddMemberDevice{
+	event := &protocoltypes.GroupMemberDeviceAdded{
 		MemberPK:  member,
 		DevicePK:  device,
 		MemberSig: memberSig,
@@ -216,7 +216,7 @@ func MetadataStoreSendSecret(ctx context.Context, m *MetadataStore, g *protocolt
 		return nil, errcode.ErrSerialization.Wrap(err)
 	}
 
-	event := &protocoltypes.GroupAddDeviceChainKey{
+	event := &protocoltypes.GroupDeviceChainKeyAdded{
 		DevicePK:     devicePKRaw,
 		DestMemberPK: memberPKRaw,
 		Payload:      encryptedSecret,
@@ -235,7 +235,7 @@ func (m *MetadataStore) ClaimGroupOwnership(ctx context.Context, groupSK crypto.
 		return nil, errcode.ErrGroupInvalidType
 	}
 
-	event := &protocoltypes.MultiMemberInitialMember{
+	event := &protocoltypes.MultiMemberGroupInitialMemberAnnounced{
 		MemberPK: m.devicePublicKeyRaw,
 	}
 
@@ -588,7 +588,7 @@ func (m *MetadataStore) ContactRequestOutgoingEnqueue(ctx context.Context, conta
 		return m.ContactRequestOutgoingSent(ctx, pk)
 	}
 
-	op, err := m.attributeSignAndAddEvent(ctx, &protocoltypes.AccountContactRequestEnqueued{
+	op, err := m.attributeSignAndAddEvent(ctx, &protocoltypes.AccountContactRequestOutgoingEnqueued{
 		Contact: &protocoltypes.ShareableContact{
 			PK:                   contact.PK,
 			PublicRendezvousSeed: contact.PublicRendezvousSeed,
@@ -624,7 +624,7 @@ func (m *MetadataStore) ContactRequestOutgoingSent(ctx context.Context, pk crypt
 		return nil, errcode.ErrInvalidInput
 	}
 
-	return m.contactAction(ctx, pk, &protocoltypes.AccountContactRequestSent{}, protocoltypes.EventTypeAccountContactRequestOutgoingSent)
+	return m.contactAction(ctx, pk, &protocoltypes.AccountContactRequestOutgoingSent{}, protocoltypes.EventTypeAccountContactRequestOutgoingSent)
 }
 
 // ContactRequestIncomingReceived indicates the payload includes that the deviceKeystore has received a contact request
@@ -670,7 +670,7 @@ func (m *MetadataStore) ContactRequestIncomingReceived(ctx context.Context, cont
 		return nil, errcode.ErrInvalidInput
 	}
 
-	return m.attributeSignAndAddEvent(ctx, &protocoltypes.AccountContactRequestReceived{
+	return m.attributeSignAndAddEvent(ctx, &protocoltypes.AccountContactRequestIncomingReceived{
 		ContactPK:             contact.PK,
 		ContactRendezvousSeed: contact.PublicRendezvousSeed,
 		ContactMetadata:       contact.Metadata,
@@ -687,7 +687,7 @@ func (m *MetadataStore) ContactRequestIncomingDiscard(ctx context.Context, pk cr
 		return nil, errcode.ErrInvalidInput
 	}
 
-	return m.contactAction(ctx, pk, &protocoltypes.AccountContactRequestDiscarded{}, protocoltypes.EventTypeAccountContactRequestIncomingDiscarded)
+	return m.contactAction(ctx, pk, &protocoltypes.AccountContactRequestIncomingDiscarded{}, protocoltypes.EventTypeAccountContactRequestIncomingDiscarded)
 }
 
 // ContactRequestIncomingAccept indicates the payload includes that the deviceKeystore has accepted a contact request
@@ -700,7 +700,7 @@ func (m *MetadataStore) ContactRequestIncomingAccept(ctx context.Context, pk cry
 		return nil, errcode.ErrInvalidInput
 	}
 
-	return m.contactAction(ctx, pk, &protocoltypes.AccountContactRequestAccepted{}, protocoltypes.EventTypeAccountContactRequestIncomingAccepted)
+	return m.contactAction(ctx, pk, &protocoltypes.AccountContactRequestIncomingAccepted{}, protocoltypes.EventTypeAccountContactRequestIncomingAccepted)
 }
 
 // ContactBlock indicates the payload includes that the deviceKeystore has blocked a contact
@@ -749,7 +749,7 @@ func (m *MetadataStore) ContactSendAliasKey(ctx context.Context) (operation.Oper
 		return nil, errcode.ErrInternal.Wrap(err)
 	}
 
-	return m.attributeSignAndAddEvent(ctx, &protocoltypes.ContactAddAliasKey{
+	return m.attributeSignAndAddEvent(ctx, &protocoltypes.ContactAliasKeyAdded{
 		AliasPK: alias,
 	}, protocoltypes.EventTypeContactAliasKeyAdded)
 }
@@ -762,14 +762,14 @@ func (m *MetadataStore) SendAliasProof(ctx context.Context) (operation.Operation
 	resolver := []byte(nil) // TODO: should be a hmac value of something for quicker searches
 	proof := []byte(nil)    // TODO: should be a signed value of something
 
-	return m.attributeSignAndAddEvent(ctx, &protocoltypes.MultiMemberGroupAddAliasResolver{
+	return m.attributeSignAndAddEvent(ctx, &protocoltypes.MultiMemberGroupAliasResolverAdded{
 		AliasResolver: resolver,
 		AliasProof:    proof,
 	}, protocoltypes.EventTypeMultiMemberGroupAliasResolverAdded)
 }
 
 func (m *MetadataStore) SendAppMetadata(ctx context.Context, message []byte) (operation.Operation, error) {
-	return m.attributeSignAndAddEvent(ctx, &protocoltypes.AppMetadata{
+	return m.attributeSignAndAddEvent(ctx, &protocoltypes.GroupMetadataPayloadSent{
 		Message: message,
 	}, protocoltypes.EventTypeGroupMetadataPayloadSent)
 }

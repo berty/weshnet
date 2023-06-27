@@ -200,19 +200,19 @@ enum EventType {
   // EventTypeAccountContactRequestReferenceReset indicates the payload includes that the account has a new contact request rendezvous seed
   EventTypeAccountContactRequestReferenceReset = 105;
 
-  // EventTypeAccountContactRequestEnqueued indicates the payload includes that the account will attempt to send a new contact request
+  // EventTypeAccountContactRequestOutgoingEnqueued indicates the payload includes that the account will attempt to send a new contact request
   EventTypeAccountContactRequestOutgoingEnqueued = 106;
 
-  // EventTypeAccountContactRequestSent indicates the payload includes that the account has sent a contact request
+  // EventTypeAccountContactRequestOutgoingSent indicates the payload includes that the account has sent a contact request
   EventTypeAccountContactRequestOutgoingSent = 107;
 
-  // EventTypeAccountContactRequestReceived indicates the payload includes that the account has received a contact request
+  // EventTypeAccountContactRequestIncomingReceived indicates the payload includes that the account has received a contact request
   EventTypeAccountContactRequestIncomingReceived = 108;
 
   // EventTypeAccountContactRequestIncomingDiscarded indicates the payload includes that the account has ignored a contact request
   EventTypeAccountContactRequestIncomingDiscarded = 109;
 
-  // EventTypeAccountContactRequestAccepted indicates the payload includes that the account has accepted a contact request
+  // EventTypeAccountContactRequestIncomingAccepted indicates the payload includes that the account has accepted a contact request
   EventTypeAccountContactRequestIncomingAccepted = 110;
 
   // EventTypeAccountContactBlocked indicates the payload includes that the account has blocked a contact
@@ -403,8 +403,8 @@ message EventContext {
   reserved 4; // repeated bytes attachment_cids = 4 [(gogoproto.customname) = "AttachmentCIDs"];
 }
 
-// AppMetadata is an app defined message, accessible to future group members
-message AppMetadata {
+// GroupMetadataPayloadSent is an app defined message, accessible to future group members
+message GroupMetadataPayloadSent {
   // device_pk is the device sending the event, signs the message
   bytes device_pk = 1 [(gogoproto.customname) = "DevicePK"];
 
@@ -412,8 +412,8 @@ message AppMetadata {
   bytes message = 2;
 }
 
-// ContactAddAliasKey is an event type where ones shares their alias public key
-message ContactAddAliasKey {
+// ContactAliasKeyAdded is an event type where ones shares their alias public key
+message ContactAliasKeyAdded {
   // device_pk is the device sending the event, signs the message
   bytes device_pk = 1 [(gogoproto.customname) = "DevicePK"];
 
@@ -421,9 +421,9 @@ message ContactAddAliasKey {
   bytes alias_pk = 2 [(gogoproto.customname) = "AliasPK"];
 }
 
-// GroupAddMemberDevice is an event which indicates to a group a new device (and eventually a new member) is joining it
-// When added on AccountGroup, this event should be followed by appropriate GroupAddMemberDevice and GroupAddDeviceChainKey events
-message GroupAddMemberDevice {
+// GroupMemberDeviceAdded is an event which indicates to a group a new device (and eventually a new member) is joining it
+// When added on AccountGroup, this event should be followed by appropriate GroupMemberDeviceAdded and GroupDeviceChainKeyAdded events
+message GroupMemberDeviceAdded {
   // member_pk is the member sending the event
   bytes member_pk = 1 [(gogoproto.customname) = "MemberPK"];
 
@@ -443,8 +443,8 @@ message DeviceChainKey {
   uint64 counter = 2;
 }
 
-// GroupAddDeviceChainKey is an event which indicates to a group member a device chain key
-message GroupAddDeviceChainKey {
+// GroupDeviceChainKeyAdded is an event which indicates to a group member a device chain key
+message GroupDeviceChainKeyAdded {
   // device_pk is the device sending the event, signs the message
   bytes device_pk = 1 [(gogoproto.customname) = "DevicePK"];
 
@@ -455,8 +455,8 @@ message GroupAddDeviceChainKey {
   bytes payload = 3;
 }
 
-// MultiMemberGroupAddAliasResolver indicates that a group member want to disclose their presence in the group to their contacts
-message MultiMemberGroupAddAliasResolver {
+// MultiMemberGroupAliasResolverAdded indicates that a group member want to disclose their presence in the group to their contacts
+message MultiMemberGroupAliasResolverAdded {
   // device_pk is the device sending the event, signs the message
   bytes device_pk = 1 [(gogoproto.customname) = "DevicePK"];
 
@@ -469,8 +469,8 @@ message MultiMemberGroupAddAliasResolver {
   bytes alias_proof = 3;
 }
 
-// MultiMemberGrantAdminRole indicates that a group admin allows another group member to act as an admin
-message MultiMemberGrantAdminRole {
+// MultiMemberGroupAdminRoleGranted indicates that a group admin allows another group member to act as an admin
+message MultiMemberGroupAdminRoleGranted {
   // device_pk is the device sending the event, signs the message, must be the device of an admin of the group
   bytes device_pk = 1 [(gogoproto.customname) = "DevicePK"];
 
@@ -478,8 +478,8 @@ message MultiMemberGrantAdminRole {
   bytes grantee_member_pk = 2 [(gogoproto.customname) = "GranteeMemberPK"];
 }
 
-// MultiMemberInitialMember indicates that a member is the group creator, this event is signed using the group ID private key
-message MultiMemberInitialMember {
+// MultiMemberGroupInitialMemberAnnounced indicates that a member is the group creator, this event is signed using the group ID private key
+message MultiMemberGroupInitialMemberAnnounced {
   // member_pk is the public key of the member who is the group creator
   bytes member_pk = 1 [(gogoproto.customname) = "MemberPK"];
 }
@@ -511,7 +511,7 @@ message AccountGroupJoined {
   Group group = 2;
 }
 
-// AccountGroupJoined indicates that the account has left a group
+// AccountGroupLeft indicates that the account has left a group
 message AccountGroupLeft {
   // device_pk is the device sending the event, signs the message
   bytes device_pk = 1 [(gogoproto.customname) = "DevicePK"];
@@ -526,13 +526,13 @@ message AccountContactRequestDisabled {
   bytes device_pk = 1 [(gogoproto.customname) = "DevicePK"];
 }
 
-// AccountContactRequestDisabled indicates that the account should be advertised on a public rendezvous point
+// AccountContactRequestEnabled indicates that the account should be advertised on a public rendezvous point
 message AccountContactRequestEnabled {
   // device_pk is the device sending the event, signs the message
   bytes device_pk = 1 [(gogoproto.customname) = "DevicePK"];
 }
 
-// AccountContactRequestDisabled indicates that the account should be advertised on different public rendezvous points
+// AccountContactRequestReferenceReset indicates that the account should be advertised on different public rendezvous points
 message AccountContactRequestReferenceReset {
   // device_pk is the device sending the event, signs the message
   bytes device_pk = 1 [(gogoproto.customname) = "DevicePK"];
@@ -542,10 +542,10 @@ message AccountContactRequestReferenceReset {
 }
 
 // This event should be followed by an AccountGroupJoined event
-// This event should be followed by a GroupAddMemberDevice event within the AccountGroup
-// This event should be followed by a GroupAddDeviceChainKey event within the AccountGroup
-// AccountContactRequestEnqueued indicates that the account will attempt to send a contact request when a matching peer is discovered
-message AccountContactRequestEnqueued {
+// This event should be followed by a GroupMemberDeviceAdded event within the AccountGroup
+// This event should be followed by a GroupDeviceChainKeyAdded event within the AccountGroup
+// AccountContactRequestOutgoingEnqueued indicates that the account will attempt to send a contact request when a matching peer is discovered
+message AccountContactRequestOutgoingEnqueued {
   // device_pk is the device sending the event, signs the message
   bytes device_pk = 1 [(gogoproto.customname) = "DevicePK"];
 
@@ -559,8 +559,8 @@ message AccountContactRequestEnqueued {
   bytes own_metadata = 4;
 }
 
-// AccountContactRequestSent indicates that the account has sent a contact request
-message AccountContactRequestSent {
+// AccountContactRequestOutgoingSent indicates that the account has sent a contact request
+message AccountContactRequestOutgoingSent {
   // device_pk is the device sending the account event, signs the message
   bytes device_pk = 1 [(gogoproto.customname) = "DevicePK"];
 
@@ -568,8 +568,8 @@ message AccountContactRequestSent {
   bytes contact_pk = 2 [(gogoproto.customname) = "ContactPK"];
 }
 
-// AccountContactRequestReceived indicates that the account has received a new contact request
-message AccountContactRequestReceived {
+// AccountContactRequestIncomingReceived indicates that the account has received a new contact request
+message AccountContactRequestIncomingReceived {
   // device_pk is the device sending the account event (which received the contact request), signs the message
   bytes device_pk = 1 [(gogoproto.customname) = "DevicePK"];
 
@@ -585,8 +585,8 @@ message AccountContactRequestReceived {
   bytes contact_metadata = 4;
 }
 
-// AccountContactRequestDiscarded indicates that a contact request has been refused
-message AccountContactRequestDiscarded {
+// AccountContactRequestIncomingDiscarded indicates that a contact request has been refused
+message AccountContactRequestIncomingDiscarded {
   // device_pk is the device sending the event, signs the message
   bytes device_pk = 1 [(gogoproto.customname) = "DevicePK"];
 
@@ -595,9 +595,9 @@ message AccountContactRequestDiscarded {
 }
 
 // This event should be followed by an AccountGroupJoined event
-// This event should be followed by GroupAddMemberDevice and GroupAddDeviceChainKey events within the AccountGroup
-// AccountContactRequestAccepted indicates that a contact request has been accepted
-message AccountContactRequestAccepted {
+// This event should be followed by GroupMemberDeviceAdded and GroupDeviceChainKeyAdded events within the AccountGroup
+// AccountContactRequestIncomingAccepted indicates that a contact request has been accepted
+message AccountContactRequestIncomingAccepted {
   // device_pk is the device sending the event, signs the message
   bytes device_pk = 1 [(gogoproto.customname) = "DevicePK"];
 

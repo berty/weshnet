@@ -269,7 +269,7 @@ func (c *contactRequestsManager) metadataRequestEnqueued(ctx context.Context, ev
 		strings.TrimPrefix(evt.Metadata.EventType.String(), "EventType"), base64.RawURLEncoding.EncodeToString(evt.EventContext.GroupPK))
 	c.logger.Debug(traceName, tyber.FormatStepLogFields(ctx, []tyber.Detail{}, tyber.UpdateTraceName(traceName))...)
 
-	e := &protocoltypes.AccountContactRequestEnqueued{}
+	e := &protocoltypes.AccountContactRequestOutgoingEnqueued{}
 	if err := e.Unmarshal(evt.Event); err != nil {
 		return tyber.LogError(ctx, c.logger, "Failed to unmarshal event", err)
 	}
@@ -283,7 +283,7 @@ func (c *contactRequestsManager) metadataRequestEnqueued(ctx context.Context, ev
 }
 
 func (c *contactRequestsManager) metadataRequestSent(_ context.Context, evt *protocoltypes.GroupMetadataEvent) error {
-	e := &protocoltypes.AccountContactRequestSent{}
+	e := &protocoltypes.AccountContactRequestOutgoingSent{}
 	if err := e.Unmarshal(evt.Event); err != nil {
 		return errcode.ErrDeserialization.Wrap(err)
 	}
@@ -295,7 +295,7 @@ func (c *contactRequestsManager) metadataRequestSent(_ context.Context, evt *pro
 }
 
 func (c *contactRequestsManager) metadataRequestReceived(_ context.Context, evt *protocoltypes.GroupMetadataEvent) error {
-	e := &protocoltypes.AccountContactRequestReceived{}
+	e := &protocoltypes.AccountContactRequestIncomingReceived{}
 	if err := e.Unmarshal(evt.Event); err != nil {
 		return errcode.ErrDeserialization.Wrap(err)
 	}
