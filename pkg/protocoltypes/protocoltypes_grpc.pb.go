@@ -28,6 +28,8 @@ const (
 	ProtocolService_ContactRequestSend_FullMethodName                        = "/weshnet.protocol.v1.ProtocolService/ContactRequestSend"
 	ProtocolService_ContactRequestAccept_FullMethodName                      = "/weshnet.protocol.v1.ProtocolService/ContactRequestAccept"
 	ProtocolService_ContactRequestDiscard_FullMethodName                     = "/weshnet.protocol.v1.ProtocolService/ContactRequestDiscard"
+	ProtocolService_ShareContact_FullMethodName                              = "/weshnet.protocol.v1.ProtocolService/ShareContact"
+	ProtocolService_DecodeContact_FullMethodName                             = "/weshnet.protocol.v1.ProtocolService/DecodeContact"
 	ProtocolService_ContactBlock_FullMethodName                              = "/weshnet.protocol.v1.ProtocolService/ContactBlock"
 	ProtocolService_ContactUnblock_FullMethodName                            = "/weshnet.protocol.v1.ProtocolService/ContactUnblock"
 	ProtocolService_ContactAliasKeySend_FullMethodName                       = "/weshnet.protocol.v1.ProtocolService/ContactAliasKeySend"
@@ -85,6 +87,12 @@ type ProtocolServiceClient interface {
 	ContactRequestAccept(ctx context.Context, in *ContactRequestAccept_Request, opts ...grpc.CallOption) (*ContactRequestAccept_Reply, error)
 	// ContactRequestDiscard ignores a contact request, without informing the other user
 	ContactRequestDiscard(ctx context.Context, in *ContactRequestDiscard_Request, opts ...grpc.CallOption) (*ContactRequestDiscard_Reply, error)
+	// ShareContact uses ContactRequestReference to get the contact information for the current account and
+	// returns the Protobuf encoding of a shareable contact which you can further encode and share. If needed, this
+	// will reset the contact request reference and enable contact requests. To decode the result, see DecodeContact.
+	ShareContact(ctx context.Context, in *ShareContact_Request, opts ...grpc.CallOption) (*ShareContact_Reply, error)
+	// DecodeContact decodes the Protobuf encoding of a shareable contact which was returned by ShareContact.
+	DecodeContact(ctx context.Context, in *DecodeContact_Request, opts ...grpc.CallOption) (*DecodeContact_Reply, error)
 	// ContactBlock blocks a contact from sending requests
 	ContactBlock(ctx context.Context, in *ContactBlock_Request, opts ...grpc.CallOption) (*ContactBlock_Reply, error)
 	// ContactUnblock unblocks a contact from sending requests
@@ -254,6 +262,24 @@ func (c *protocolServiceClient) ContactRequestAccept(ctx context.Context, in *Co
 func (c *protocolServiceClient) ContactRequestDiscard(ctx context.Context, in *ContactRequestDiscard_Request, opts ...grpc.CallOption) (*ContactRequestDiscard_Reply, error) {
 	out := new(ContactRequestDiscard_Reply)
 	err := c.cc.Invoke(ctx, ProtocolService_ContactRequestDiscard_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *protocolServiceClient) ShareContact(ctx context.Context, in *ShareContact_Request, opts ...grpc.CallOption) (*ShareContact_Reply, error) {
+	out := new(ShareContact_Reply)
+	err := c.cc.Invoke(ctx, ProtocolService_ShareContact_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *protocolServiceClient) DecodeContact(ctx context.Context, in *DecodeContact_Request, opts ...grpc.CallOption) (*DecodeContact_Reply, error) {
+	out := new(DecodeContact_Reply)
+	err := c.cc.Invoke(ctx, ProtocolService_DecodeContact_FullMethodName, in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -740,6 +766,12 @@ type ProtocolServiceServer interface {
 	ContactRequestAccept(context.Context, *ContactRequestAccept_Request) (*ContactRequestAccept_Reply, error)
 	// ContactRequestDiscard ignores a contact request, without informing the other user
 	ContactRequestDiscard(context.Context, *ContactRequestDiscard_Request) (*ContactRequestDiscard_Reply, error)
+	// ShareContact uses ContactRequestReference to get the contact information for the current account and
+	// returns the Protobuf encoding of a shareable contact which you can further encode and share. If needed, this
+	// will reset the contact request reference and enable contact requests. To decode the result, see DecodeContact.
+	ShareContact(context.Context, *ShareContact_Request) (*ShareContact_Reply, error)
+	// DecodeContact decodes the Protobuf encoding of a shareable contact which was returned by ShareContact.
+	DecodeContact(context.Context, *DecodeContact_Request) (*DecodeContact_Reply, error)
 	// ContactBlock blocks a contact from sending requests
 	ContactBlock(context.Context, *ContactBlock_Request) (*ContactBlock_Reply, error)
 	// ContactUnblock unblocks a contact from sending requests
@@ -834,6 +866,12 @@ func (UnimplementedProtocolServiceServer) ContactRequestAccept(context.Context, 
 }
 func (UnimplementedProtocolServiceServer) ContactRequestDiscard(context.Context, *ContactRequestDiscard_Request) (*ContactRequestDiscard_Reply, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ContactRequestDiscard not implemented")
+}
+func (UnimplementedProtocolServiceServer) ShareContact(context.Context, *ShareContact_Request) (*ShareContact_Reply, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ShareContact not implemented")
+}
+func (UnimplementedProtocolServiceServer) DecodeContact(context.Context, *DecodeContact_Request) (*DecodeContact_Reply, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method DecodeContact not implemented")
 }
 func (UnimplementedProtocolServiceServer) ContactBlock(context.Context, *ContactBlock_Request) (*ContactBlock_Reply, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ContactBlock not implemented")
@@ -1108,6 +1146,42 @@ func _ProtocolService_ContactRequestDiscard_Handler(srv interface{}, ctx context
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(ProtocolServiceServer).ContactRequestDiscard(ctx, req.(*ContactRequestDiscard_Request))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _ProtocolService_ShareContact_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ShareContact_Request)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ProtocolServiceServer).ShareContact(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ProtocolService_ShareContact_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ProtocolServiceServer).ShareContact(ctx, req.(*ShareContact_Request))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _ProtocolService_DecodeContact_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(DecodeContact_Request)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ProtocolServiceServer).DecodeContact(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ProtocolService_DecodeContact_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ProtocolServiceServer).DecodeContact(ctx, req.(*DecodeContact_Request))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -1765,6 +1839,14 @@ var ProtocolService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "ContactRequestDiscard",
 			Handler:    _ProtocolService_ContactRequestDiscard_Handler,
+		},
+		{
+			MethodName: "ShareContact",
+			Handler:    _ProtocolService_ShareContact_Handler,
+		},
+		{
+			MethodName: "DecodeContact",
+			Handler:    _ProtocolService_DecodeContact_Handler,
 		},
 		{
 			MethodName: "ContactBlock",

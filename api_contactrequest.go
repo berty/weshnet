@@ -3,6 +3,7 @@ package weshnet
 import (
 	"context"
 
+	"github.com/gogo/protobuf/proto"
 	"github.com/libp2p/go-libp2p/core/crypto"
 
 	"berty.tech/weshnet/pkg/errcode"
@@ -174,4 +175,70 @@ func (s *service) ContactRequestDiscard(ctx context.Context, req *protocoltypes.
 	}
 
 	return &protocoltypes.ContactRequestDiscard_Reply{}, nil
+}
+
+// ShareContact uses ContactRequestReference to get the contact information for the current account and
+// returns the Protobuf encoding which you can further encode and share. If needed, his will reset the
+// contact request reference and enable contact requests.
+func (s *service) ShareContact(ctx context.Context, req *protocoltypes.ShareContact_Request) (_ *protocoltypes.ShareContact_Reply, err error) {
+	accountGroup := s.getAccountGroup()
+	if accountGroup == nil {
+		return nil, errcode.ErrGroupMissing
+	}
+
+	enabled, shareableContact := accountGroup.MetadataStore().GetIncomingContactRequestsStatus()
+	rdvSeed := []byte(nil)
+
+	if shareableContact != nil {
+		rdvSeed = shareableContact.PublicRendezvousSeed
+	}
+
+	if !enabled || len(rdvSeed) == 0 {
+		// We need to enable and reset the contact request reference.
+		if _, err := accountGroup.MetadataStore().ContactRequestEnable(ctx); err != nil {
+			return nil, errcode.ErrOrbitDBAppend.Wrap(err)
+		}
+
+		if _, err := accountGroup.MetadataStore().ContactRequestReferenceReset(ctx); err != nil {
+			return nil, errcode.ErrOrbitDBAppend.Wrap(err)
+		}
+
+		// Refresh the info.
+		_, shareableContact = accountGroup.MetadataStore().GetIncomingContactRequestsStatus()
+		rdvSeed = []byte(nil)
+
+		if shareableContact != nil {
+			rdvSeed = shareableContact.PublicRendezvousSeed
+		}
+	}
+
+	// Get the client's AccountPK.
+	member, err := accountGroup.MemberPubKey().Raw()
+	if err != nil {
+		return nil, errcode.ErrSerialization.Wrap(err)
+	}
+
+	encodedContact, err := proto.Marshal(&protocoltypes.ShareableContact{
+		PK:                   member,
+		PublicRendezvousSeed: rdvSeed,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return &protocoltypes.ShareContact_Reply{
+		EncodedContact: encodedContact,
+	}, nil
+}
+
+// DecodeContact decodes the Protobuf encoding of a shareable contact which was returned by ShareContact.
+func (s *service) DecodeContact(ctx context.Context, req *protocoltypes.DecodeContact_Request) (_ *protocoltypes.DecodeContact_Reply, err error) {
+	contact := &protocoltypes.ShareableContact{}
+	if err := proto.Unmarshal(req.EncodedContact, contact); err != nil {
+		panic(err)
+	}
+
+	return &protocoltypes.DecodeContact_Reply{
+		Contact: contact,
+	}, nil
 }
