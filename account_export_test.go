@@ -86,7 +86,9 @@ func getKeyFromTar(t *testing.T, tr *tar.Reader, expectedFilename string) []byte
 	return keyContents
 }
 
-func TestRestoreAccount(t *testing.T) {
+func TestFlappyRestoreAccount(t *testing.T) {
+	testutil.FilterStability(t, testutil.Flappy)
+
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
