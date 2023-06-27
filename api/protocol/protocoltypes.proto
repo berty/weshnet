@@ -42,6 +42,14 @@ service ProtocolService {
   // ContactRequestDiscard ignores a contact request, without informing the other user
   rpc ContactRequestDiscard (ContactRequestDiscard.Request) returns (ContactRequestDiscard.Reply);
 
+  // ShareContact uses ContactRequestReference to get the contact information for the current account and
+  // returns the Protobuf encoding of a shareable contact which you can further encode and share. If needed, this 
+  // will reset the contact request reference and enable contact requests. To decode the result, see DecodeContact.
+  rpc ShareContact (ShareContact.Request) returns (ShareContact.Reply);
+
+  // DecodeContact decodes the Protobuf encoding of a shareable contact which was returned by ShareContact.
+  rpc DecodeContact (DecodeContact.Request) returns (DecodeContact.Reply);
+
   // ContactBlock blocks a contact from sending requests
   rpc ContactBlock (ContactBlock.Request) returns (ContactBlock.Reply);
 
@@ -747,6 +755,25 @@ message ContactRequestDiscard {
   }
 
   message Reply {}
+}
+
+message ShareContact {
+  message Request {}
+  message Reply {
+    // encoded_contact is the Protobuf encoding of the ShareableContact. You can further encode the bytes for sharing, such as base58 or QR code.
+    bytes encoded_contact = 1;
+  }
+}
+
+message DecodeContact {
+  message Request {
+    // encoded_contact is the Protobuf encoding of the shareable contact (as returned by ShareContact).
+    bytes encoded_contact = 1;
+  }
+  message Reply {
+    // shareable_contact is the decoded shareable contact.
+    ShareableContact contact = 1;
+  }
 }
 
 message ContactBlock {

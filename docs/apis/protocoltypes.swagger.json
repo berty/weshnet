@@ -498,6 +498,15 @@
         }
       }
     },
+    "v1DecodeContactReply": {
+      "type": "object",
+      "properties": {
+        "contact": {
+          "$ref": "#/definitions/v1ShareableContact",
+          "description": "shareable_contact is the decoded shareable contact."
+        }
+      }
+    },
     "v1Direction": {
       "type": "string",
       "enum": [
@@ -1073,6 +1082,16 @@
         },
         "service": {
           "$ref": "#/definitions/v1ServiceToken"
+        }
+      }
+    },
+    "v1ShareContactReply": {
+      "type": "object",
+      "properties": {
+        "encoded_contact": {
+          "type": "string",
+          "format": "byte",
+          "description": "encoded_contact is the Protobuf encoding of the ShareableContact. You can further encode the bytes for sharing, such as base58 or QR code."
         }
       }
     },

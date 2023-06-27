@@ -90,6 +90,9 @@
     - [DebugListGroups](#weshnet-protocol-v1-DebugListGroups)
     - [DebugListGroups.Reply](#weshnet-protocol-v1-DebugListGroups-Reply)
     - [DebugListGroups.Request](#weshnet-protocol-v1-DebugListGroups-Request)
+    - [DecodeContact](#weshnet-protocol-v1-DecodeContact)
+    - [DecodeContact.Reply](#weshnet-protocol-v1-DecodeContact-Reply)
+    - [DecodeContact.Request](#weshnet-protocol-v1-DecodeContact-Request)
     - [DeviceChainKey](#weshnet-protocol-v1-DeviceChainKey)
     - [EncryptedMessage](#weshnet-protocol-v1-EncryptedMessage)
     - [EventContext](#weshnet-protocol-v1-EventContext)
@@ -187,6 +190,9 @@
     - [ServicesTokenList](#weshnet-protocol-v1-ServicesTokenList)
     - [ServicesTokenList.Reply](#weshnet-protocol-v1-ServicesTokenList-Reply)
     - [ServicesTokenList.Request](#weshnet-protocol-v1-ServicesTokenList-Request)
+    - [ShareContact](#weshnet-protocol-v1-ShareContact)
+    - [ShareContact.Reply](#weshnet-protocol-v1-ShareContact-Reply)
+    - [ShareContact.Request](#weshnet-protocol-v1-ShareContact-Request)
     - [ShareableContact](#weshnet-protocol-v1-ShareableContact)
     - [SystemInfo](#weshnet-protocol-v1-SystemInfo)
     - [SystemInfo.OrbitDB](#weshnet-protocol-v1-SystemInfo-OrbitDB)
@@ -830,6 +836,26 @@ ContactAddAliasKey is an event type where ones shares their alias public key
 <a name="weshnet-protocol-v1-DebugListGroups-Request"></a>
 
 ### DebugListGroups.Request
+
+<a name="weshnet-protocol-v1-DecodeContact"></a>
+
+### DecodeContact
+
+<a name="weshnet-protocol-v1-DecodeContact-Reply"></a>
+
+### DecodeContact.Reply
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| contact | [ShareableContact](#weshnet-protocol-v1-ShareableContact) |  | shareable_contact is the decoded shareable contact. |
+
+<a name="weshnet-protocol-v1-DecodeContact-Request"></a>
+
+### DecodeContact.Request
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| encoded_contact | [bytes](#bytes) |  | encoded_contact is the Protobuf encoding of the shareable contact (as returned by ShareContact). |
 
 <a name="weshnet-protocol-v1-DeviceChainKey"></a>
 
@@ -1623,6 +1649,22 @@ Progress define a generic object that can be used to display a progress bar for 
 
 ### ServicesTokenList.Request
 
+<a name="weshnet-protocol-v1-ShareContact"></a>
+
+### ShareContact
+
+<a name="weshnet-protocol-v1-ShareContact-Reply"></a>
+
+### ShareContact.Reply
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| encoded_contact | [bytes](#bytes) |  | encoded_contact is the Protobuf encoding of the ShareableContact. You can further encode the bytes for sharing, such as base58 or QR code. |
+
+<a name="weshnet-protocol-v1-ShareContact-Request"></a>
+
+### ShareContact.Request
+
 <a name="weshnet-protocol-v1-ShareableContact"></a>
 
 ### ShareableContact
@@ -1879,6 +1921,8 @@ Each active Wesh protocol service is considered as a Wesh device and is associat
 | ContactRequestSend | [ContactRequestSend.Request](#weshnet-protocol-v1-ContactRequestSend-Request) | [ContactRequestSend.Reply](#weshnet-protocol-v1-ContactRequestSend-Reply) | ContactRequestSend attempt to send a contact request |
 | ContactRequestAccept | [ContactRequestAccept.Request](#weshnet-protocol-v1-ContactRequestAccept-Request) | [ContactRequestAccept.Reply](#weshnet-protocol-v1-ContactRequestAccept-Reply) | ContactRequestAccept accepts a contact request |
 | ContactRequestDiscard | [ContactRequestDiscard.Request](#weshnet-protocol-v1-ContactRequestDiscard-Request) | [ContactRequestDiscard.Reply](#weshnet-protocol-v1-ContactRequestDiscard-Reply) | ContactRequestDiscard ignores a contact request, without informing the other user |
+| ShareContact | [ShareContact.Request](#weshnet-protocol-v1-ShareContact-Request) | [ShareContact.Reply](#weshnet-protocol-v1-ShareContact-Reply) | ShareContact uses ContactRequestReference to get the contact information for the current account and returns the Protobuf encoding of a shareable contact which you can further encode and share. If needed, this will reset the contact request reference and enable contact requests. To decode the result, see DecodeContact. |
+| DecodeContact | [DecodeContact.Request](#weshnet-protocol-v1-DecodeContact-Request) | [DecodeContact.Reply](#weshnet-protocol-v1-DecodeContact-Reply) | DecodeContact decodes the Protobuf encoding of a shareable contact which was returned by ShareContact. |
 | ContactBlock | [ContactBlock.Request](#weshnet-protocol-v1-ContactBlock-Request) | [ContactBlock.Reply](#weshnet-protocol-v1-ContactBlock-Reply) | ContactBlock blocks a contact from sending requests |
 | ContactUnblock | [ContactUnblock.Request](#weshnet-protocol-v1-ContactUnblock-Request) | [ContactUnblock.Reply](#weshnet-protocol-v1-ContactUnblock-Reply) | ContactUnblock unblocks a contact from sending requests |
 | ContactAliasKeySend | [ContactAliasKeySend.Request](#weshnet-protocol-v1-ContactAliasKeySend-Request) | [ContactAliasKeySend.Reply](#weshnet-protocol-v1-ContactAliasKeySend-Reply) | ContactAliasKeySend send an alias key to a contact, the contact will be able to assert that your account is being present on a multi-member group |
