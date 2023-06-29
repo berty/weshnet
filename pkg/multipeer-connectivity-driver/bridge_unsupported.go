@@ -1,5 +1,5 @@
-//go:build !darwin || (darwin && !cgo) || catalyst
-// +build !darwin darwin,!cgo catalyst
+//go:build !darwin || (darwin && !cgo) || catalyst || noproximitytransport
+// +build !darwin darwin,!cgo catalyst noproximitytransport
 
 package mc
 

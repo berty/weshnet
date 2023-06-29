@@ -1,4 +1,4 @@
-// +build darwin
+// +build darwin,!noproximitytransport
 //
 //  CountDownLatch.m
 //  ble

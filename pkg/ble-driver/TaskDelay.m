@@ -1,4 +1,4 @@
-// +build darwin
+// +build darwin,!noproximitytransport
 //
 //  TaskDelay.m
 //  BertyBridgeDemo
@@ -19,7 +19,7 @@
         _delay = delay;
         _index = index;
     }
-    
+
     return self;
 }
 

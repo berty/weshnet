@@ -1,5 +1,5 @@
-//go:build !darwin && !android
-// +build !darwin,!android
+//go:build (!darwin && !android) || noproximitytransport
+// +build !darwin,!android noproximitytransport
 
 package ble
 

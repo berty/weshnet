@@ -1,4 +1,4 @@
-// +build darwin
+// +build darwin,!noproximitytransport
 //
 //  Logger.m
 //  BertyBridgeDemo
@@ -14,31 +14,31 @@
 
 - (instancetype __nonnull)initLocalLoggerWithSubSystem:(const char *)subSystem andCategorie:(const char*)categorie showSensitiveData:(BOOL)showSensitiveData {
     self = [super init];
-    
+
     if (self) {
         _logger = os_log_create(subSystem, categorie);
         _useExternalLogger = FALSE;
         _showSensitiveData = showSensitiveData;
     }
-    
+
     return self;
 }
 
 - (instancetype __nonnull)initWithExternalLoggerAndShowSensitiveData:(BOOL)showSensitiveData {
     self = [super init];
-    
+
     if (self) {
         _logger = nil;
         _useExternalLogger = TRUE;
         _showSensitiveData = showSensitiveData;
     }
-    
+
     return self;
 }
 
 - (void)log:(enum level)level withFormat:(NSString *__nonnull)format withArgs:(va_list)args {
     NSString *message = [[NSString alloc] initWithFormat:format arguments:args];
-    
+
     if (self.useExternalLogger) {
         BLEBridgeLog(level, message);
     } else {
@@ -60,11 +60,11 @@
                     osLevel = OS_LOG_TYPE_DEFAULT;
                     break ;
             }
-            
+
             os_log_with_type(self.logger, osLevel, "%@", message);
         }
     }
-    
+
     [message release];
 }
 
@@ -101,7 +101,7 @@
     if (data == nil) {
         return @"";
     }
-    
+
     if (self.showSensitiveData) {
         return [NSString stringWithFormat:@"%s", data];
     } else {

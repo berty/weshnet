@@ -1,4 +1,4 @@
-// +build darwin
+// +build darwin,!noproximitytransport
 
 #import "CircularQueue.h"
 
@@ -6,7 +6,7 @@
 
 - (instancetype __nonnull)initWithCapacity:(NSUInteger)capacity {
 	self = [super init];
-    
+
 	if (self) {
         _capacity = capacity < 1 ? DEFAULT_CAPACITY : capacity;
         _data = [[NSMutableArray alloc] initWithCapacity:_capacity];
@@ -17,13 +17,13 @@
 			[_data addObject:[NSNull null]];
 		}
 	}
-    
+
 	return self;
 }
 
 - (void)dealloc {
     [_data release];
-    
+
     [super dealloc];
 }
 
@@ -31,7 +31,7 @@
     if ([self isNotFull]) {
         NSInteger nextWrite = (self.writeSequence + 1) % self.capacity;
         [self.data replaceObjectAtIndex:nextWrite withObject:obj];
-        
+
         self.writeSequence++;
     } else {
         @throw [[[NSException alloc] initWithName:NSRangeException reason:nil userInfo:nil] autorelease];
@@ -42,13 +42,13 @@
     if ([self isNotEmpty]) {
         NSInteger index = self.readSequence % self.capacity;
         id value = [[self.data objectAtIndex:index] retain];
-        
+
         [self.data replaceObjectAtIndex:index withObject:[NSNull null]];
         self.readSequence++;
-        
+
         return [value autorelease];
     }
-    
+
     return [NSNull null];
 }
 
@@ -57,7 +57,7 @@
         NSInteger index = self.readSequence % self.capacity;
         return [self.data objectAtIndex:index];
     }
-    
+
     return [NSNull null];
 }
 

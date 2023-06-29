@@ -1,4 +1,4 @@
-// +build darwin
+// +build darwin,!noproximitytransport
 
 #import <MultipeerConnectivity/MultipeerConnectivity.h>
 #import "mc-driver.h"
