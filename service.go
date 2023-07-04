@@ -4,12 +4,15 @@ import (
 	"context"
 	"encoding/hex"
 	"fmt"
+	"math/rand"
 	mrand "math/rand"
 	"path/filepath"
 	"sync"
 	"sync/atomic"
 	"time"
+	"unsafe"
 
+	pubsub_fix "github.com/berty/go-libp2p-pubsub"
 	ds "github.com/ipfs/go-datastore"
 	ds_sync "github.com/ipfs/go-datastore/sync"
 	ipfs_interface "github.com/ipfs/interface-go-ipfs-core"
@@ -18,6 +21,7 @@ import (
 	"github.com/libp2p/go-libp2p/core/event"
 	"github.com/libp2p/go-libp2p/core/host"
 	"github.com/libp2p/go-libp2p/core/network"
+	backoff "github.com/libp2p/go-libp2p/p2p/discovery/backoff"
 	"github.com/libp2p/go-libp2p/p2p/host/eventbus"
 	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
@@ -29,6 +33,7 @@ import (
 	"berty.tech/go-orbit-db/baseorbitdb"
 	"berty.tech/go-orbit-db/iface"
 	"berty.tech/go-orbit-db/pubsub/directchannel"
+	"berty.tech/go-orbit-db/pubsub/pubsubraw"
 	"berty.tech/weshnet/internal/bertyversion"
 	"berty.tech/weshnet/internal/datastoreutil"
 	"berty.tech/weshnet/pkg/bertyvcissuer"
@@ -168,7 +173,7 @@ func (opts *Opts) applyDefaults(ctx context.Context) error {
 		mrepo := ipfs_mobile.NewRepoMobile("", repo)
 		mnode, err = ipfsutil.NewIPFSMobile(ctx, mrepo, &ipfsutil.MobileOptions{
 			ExtraOpts: map[string]bool{
-				"pubsub": true,
+				"pubsub": false,
 			},
 		})
 		if err != nil {
@@ -218,15 +223,49 @@ func (opts *Opts) applyDefaults(ctx context.Context) error {
 		}
 	}
 
+	if opts.PubSub == nil {
+		var err error
+
+		rng := rand.New(rand.NewSource(time.Now().UnixNano()))
+		popts := []pubsub_fix.Option{
+			pubsub_fix.WithMessageSigning(true),
+			pubsub_fix.WithPeerExchange(true),
+		}
+
+		backoffstrat := backoff.NewExponentialBackoff(
+			time.Second*10, time.Hour,
+			backoff.FullJitter,
+			time.Second, 10.0, 0, rng)
+
+		cacheSize := 100
+		dialTimeout := time.Second * 20
+		backoffconnector := func(host host.Host) (*backoff.BackoffConnector, error) {
+			return backoff.NewBackoffConnector(host, cacheSize, dialTimeout, backoffstrat)
+		}
+
+		adaptater := tinder.NewDiscoveryAdaptater(opts.Logger.Named("disc"), opts.TinderService)
+		popts = append(popts, pubsub_fix.WithDiscovery(adaptater, pubsub_fix.WithDiscoverConnector(backoffconnector)))
+
+		// pubsub.DiscoveryPollInterval = m.Node.Protocol.PollInterval
+		ps, err := pubsub_fix.NewGossipSub(ctx, opts.Host, popts...)
+		if err != nil {
+			return fmt.Errorf("unable to init gossipsub: %w", err)
+		}
+
+		opts.PubSub = (*pubsub.PubSub)(unsafe.Pointer(ps))
+	}
+
 	if opts.OrbitDB == nil {
 		orbitDirectory := InMemoryDirectory
 		if opts.DatastoreDir != InMemoryDirectory {
 			orbitDirectory = filepath.Join(opts.DatastoreDir, NamespaceOrbitDBDirectory)
 		}
 
+		pubsub := pubsubraw.NewPubSub(opts.PubSub, opts.Host.ID(), opts.Logger, nil)
 		odbOpts := &NewOrbitDBOptions{
 			NewOrbitDBOptions: baseorbitdb.NewOrbitDBOptions{
 				Directory: &orbitDirectory,
+				PubSub:    pubsub,
 				Logger:    opts.Logger,
 			},
 			PrometheusRegister:     opts.PrometheusRegister,

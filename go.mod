@@ -10,6 +10,7 @@ require (
 	github.com/aead/ecdh v0.2.0
 	github.com/berty/emitter-go v0.0.0-20221031144724-5dae963c3622
 	github.com/berty/go-libp2p-mock v1.0.1
+	github.com/berty/go-libp2p-pubsub v0.9.4-0.20230706070911-6e35c0f470b8
 	github.com/berty/go-libp2p-rendezvous v0.5.0
 	github.com/buicongtan1997/protoc-gen-swagger-config v0.0.0-20200705084907-1342b78c1a7e
 	github.com/daixiang0/gci v0.8.2
