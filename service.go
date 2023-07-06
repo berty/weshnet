@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/hex"
 	"fmt"
-	"math/rand"
 	mrand "math/rand"
 	"path/filepath"
 	"sync"
@@ -140,6 +139,8 @@ func (opts *Opts) applyDefaults(ctx context.Context) error {
 		opts.Logger = zap.NewNop()
 	}
 
+	rng := mrand.New(mrand.NewSource(srand.MustSecure())) // nolint:gosec // we need to use math/rand here, but it is seeded from crypto/rand
+
 	opts.applyDefaultsGetDatastore()
 
 	if err := opts.applyPushDefaults(); err != nil {
@@ -198,7 +199,6 @@ func (opts *Opts) applyDefaults(ctx context.Context) error {
 
 	// setup default tinder service
 	if opts.TinderService == nil {
-		rng := mrand.New(mrand.NewSource(srand.MustSecure())) // nolint:gosec // we need to use math/rand here, but it is seeded from crypto/rand
 		drivers := []tinder.IDriver{}
 
 		// setup loac disc
@@ -222,7 +222,6 @@ func (opts *Opts) applyDefaults(ctx context.Context) error {
 	if opts.PubSub == nil {
 		var err error
 
-		rng := rand.New(rand.NewSource(time.Now().UnixNano()))
 		popts := []pubsub_fix.Option{
 			pubsub_fix.WithMessageSigning(true),
 			pubsub_fix.WithPeerExchange(true),
