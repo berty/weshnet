@@ -248,6 +248,9 @@ func (opts *Opts) applyDefaults(ctx context.Context) error {
 			return fmt.Errorf("unable to init gossipsub: %w", err)
 		}
 
+		// @NOTE(gfanton): we need to force cast here until our fix is push
+		// upstream on the original go-libp2p-pubsub
+		// see: https://github.com/gfanton/go-libp2p-pubsub/commit/8f4fd394f8dfcb3a5eb724a03f9e4e1e33194cbd
 		opts.PubSub = (*pubsub.PubSub)(unsafe.Pointer(ps))
 	}
 
