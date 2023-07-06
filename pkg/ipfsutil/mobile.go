@@ -54,6 +54,16 @@ func (o *MobileOptions) fillDefault() {
 	if o.IpfsConfigPatch == nil {
 		o.IpfsConfigPatch = defaultIpfsConfigPatch
 	}
+
+	// apply default extras
+	if o.ExtraOpts == nil {
+		o.ExtraOpts = make(map[string]bool)
+	}
+
+	//  if not set, disable pubsub by default to avoid collision
+	if _, ok := o.ExtraOpts["pubsub"]; !ok {
+		o.ExtraOpts["pubsub"] = false
+	}
 }
 
 func NewIPFSMobile(ctx context.Context, repo *ipfs_mobile.RepoMobile, opts *MobileOptions) (*ipfs_mobile.IpfsMobile, error) {
