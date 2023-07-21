@@ -17,8 +17,6 @@
     - [AccountContactUnblocked](#weshnet-protocol-v1-AccountContactUnblocked)
     - [AccountGroupJoined](#weshnet-protocol-v1-AccountGroupJoined)
     - [AccountGroupLeft](#weshnet-protocol-v1-AccountGroupLeft)
-    - [AccountServiceTokenAdded](#weshnet-protocol-v1-AccountServiceTokenAdded)
-    - [AccountServiceTokenRemoved](#weshnet-protocol-v1-AccountServiceTokenRemoved)
     - [AccountVerifiedCredentialRegistered](#weshnet-protocol-v1-AccountVerifiedCredentialRegistered)
     - [ActivateGroup](#weshnet-protocol-v1-ActivateGroup)
     - [ActivateGroup.Reply](#weshnet-protocol-v1-ActivateGroup-Reply)
@@ -29,14 +27,6 @@
     - [AppMetadataSend](#weshnet-protocol-v1-AppMetadataSend)
     - [AppMetadataSend.Reply](#weshnet-protocol-v1-AppMetadataSend-Reply)
     - [AppMetadataSend.Request](#weshnet-protocol-v1-AppMetadataSend-Request)
-    - [AuthExchangeResponse](#weshnet-protocol-v1-AuthExchangeResponse)
-    - [AuthExchangeResponse.ServicesEntry](#weshnet-protocol-v1-AuthExchangeResponse-ServicesEntry)
-    - [AuthServiceCompleteFlow](#weshnet-protocol-v1-AuthServiceCompleteFlow)
-    - [AuthServiceCompleteFlow.Reply](#weshnet-protocol-v1-AuthServiceCompleteFlow-Reply)
-    - [AuthServiceCompleteFlow.Request](#weshnet-protocol-v1-AuthServiceCompleteFlow-Request)
-    - [AuthServiceInitFlow](#weshnet-protocol-v1-AuthServiceInitFlow)
-    - [AuthServiceInitFlow.Reply](#weshnet-protocol-v1-AuthServiceInitFlow-Reply)
-    - [AuthServiceInitFlow.Request](#weshnet-protocol-v1-AuthServiceInitFlow-Request)
     - [ContactAliasKeyAdded](#weshnet-protocol-v1-ContactAliasKeyAdded)
     - [ContactAliasKeySend](#weshnet-protocol-v1-ContactAliasKeySend)
     - [ContactAliasKeySend.Reply](#weshnet-protocol-v1-ContactAliasKeySend-Reply)
@@ -77,9 +67,6 @@
     - [DeactivateGroup](#weshnet-protocol-v1-DeactivateGroup)
     - [DeactivateGroup.Reply](#weshnet-protocol-v1-DeactivateGroup-Reply)
     - [DeactivateGroup.Request](#weshnet-protocol-v1-DeactivateGroup-Request)
-    - [DebugAuthServiceSetToken](#weshnet-protocol-v1-DebugAuthServiceSetToken)
-    - [DebugAuthServiceSetToken.Reply](#weshnet-protocol-v1-DebugAuthServiceSetToken-Reply)
-    - [DebugAuthServiceSetToken.Request](#weshnet-protocol-v1-DebugAuthServiceSetToken-Request)
     - [DebugGroup](#weshnet-protocol-v1-DebugGroup)
     - [DebugGroup.Reply](#weshnet-protocol-v1-DebugGroup-Reply)
     - [DebugGroup.Request](#weshnet-protocol-v1-DebugGroup-Request)
@@ -121,7 +108,6 @@
     - [GroupMetadataPayloadSent](#weshnet-protocol-v1-GroupMetadataPayloadSent)
     - [GroupRemoveAdditionalRendezvousSeed](#weshnet-protocol-v1-GroupRemoveAdditionalRendezvousSeed)
     - [GroupReplicating](#weshnet-protocol-v1-GroupReplicating)
-    - [MemberWithDevices](#weshnet-protocol-v1-MemberWithDevices)
     - [MessageEnvelope](#weshnet-protocol-v1-MessageEnvelope)
     - [MessageHeaders](#weshnet-protocol-v1-MessageHeaders)
     - [MessageHeaders.MetadataEntry](#weshnet-protocol-v1-MessageHeaders-MetadataEntry)
@@ -149,6 +135,7 @@
     - [OrbitDBMessageHeads](#weshnet-protocol-v1-OrbitDBMessageHeads)
     - [OrbitDBMessageHeads.Box](#weshnet-protocol-v1-OrbitDBMessageHeads-Box)
     - [OutOfStoreMessage](#weshnet-protocol-v1-OutOfStoreMessage)
+    - [OutOfStoreMessageEnvelope](#weshnet-protocol-v1-OutOfStoreMessageEnvelope)
     - [OutOfStoreReceive](#weshnet-protocol-v1-OutOfStoreReceive)
     - [OutOfStoreReceive.Reply](#weshnet-protocol-v1-OutOfStoreReceive-Reply)
     - [OutOfStoreReceive.Request](#weshnet-protocol-v1-OutOfStoreReceive-Request)
@@ -163,11 +150,6 @@
     - [PeerList.Stream](#weshnet-protocol-v1-PeerList-Stream)
     - [Progress](#weshnet-protocol-v1-Progress)
     - [ProtocolMetadata](#weshnet-protocol-v1-ProtocolMetadata)
-    - [PushDeviceServerRegistered](#weshnet-protocol-v1-PushDeviceServerRegistered)
-    - [PushDeviceTokenRegistered](#weshnet-protocol-v1-PushDeviceTokenRegistered)
-    - [PushMemberTokenUpdate](#weshnet-protocol-v1-PushMemberTokenUpdate)
-    - [PushServer](#weshnet-protocol-v1-PushServer)
-    - [PushServiceReceiver](#weshnet-protocol-v1-PushServiceReceiver)
     - [RefreshContactRequest](#weshnet-protocol-v1-RefreshContactRequest)
     - [RefreshContactRequest.Peer](#weshnet-protocol-v1-RefreshContactRequest-Peer)
     - [RefreshContactRequest.Reply](#weshnet-protocol-v1-RefreshContactRequest-Reply)
@@ -186,10 +168,6 @@
     - [ServiceGetConfiguration.Request](#weshnet-protocol-v1-ServiceGetConfiguration-Request)
     - [ServiceToken](#weshnet-protocol-v1-ServiceToken)
     - [ServiceTokenSupportedService](#weshnet-protocol-v1-ServiceTokenSupportedService)
-    - [ServicesTokenCode](#weshnet-protocol-v1-ServicesTokenCode)
-    - [ServicesTokenList](#weshnet-protocol-v1-ServicesTokenList)
-    - [ServicesTokenList.Reply](#weshnet-protocol-v1-ServicesTokenList-Reply)
-    - [ServicesTokenList.Request](#weshnet-protocol-v1-ServicesTokenList-Request)
     - [ShareContact](#weshnet-protocol-v1-ShareContact)
     - [ShareContact.Reply](#weshnet-protocol-v1-ShareContact-Reply)
     - [ShareContact.Request](#weshnet-protocol-v1-ShareContact-Request)
@@ -364,26 +342,6 @@ AccountGroupLeft indicates that the account has left a group
 | device_pk | [bytes](#bytes) |  | device_pk is the device sending the event, signs the message |
 | group_pk | [bytes](#bytes) |  | group_pk references the group left |
 
-<a name="weshnet-protocol-v1-AccountServiceTokenAdded"></a>
-
-### AccountServiceTokenAdded
-AccountServiceTokenAdded indicates a token has been added to the account
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| device_pk | [bytes](#bytes) |  | device_pk is the device sending the event, signs the message |
-| service_token | [ServiceToken](#weshnet-protocol-v1-ServiceToken) |  |  |
-
-<a name="weshnet-protocol-v1-AccountServiceTokenRemoved"></a>
-
-### AccountServiceTokenRemoved
-AccountServiceTokenRemoved indicates a token has removed
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| device_pk | [bytes](#bytes) |  | device_pk is the device sending the event, signs the message |
-| token_id | [string](#string) |  |  |
-
 <a name="weshnet-protocol-v1-AccountVerifiedCredentialRegistered"></a>
 
 ### AccountVerifiedCredentialRegistered
@@ -456,69 +414,6 @@ AccountServiceTokenRemoved indicates a token has removed
 | ----- | ---- | ----- | ----------- |
 | group_pk | [bytes](#bytes) |  | group_pk is the identifier of the group |
 | payload | [bytes](#bytes) |  | payload is the payload to send |
-
-<a name="weshnet-protocol-v1-AuthExchangeResponse"></a>
-
-### AuthExchangeResponse
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| access_token | [string](#string) |  |  |
-| scope | [string](#string) |  |  |
-| error | [string](#string) |  |  |
-| error_description | [string](#string) |  |  |
-| services | [AuthExchangeResponse.ServicesEntry](#weshnet-protocol-v1-AuthExchangeResponse-ServicesEntry) | repeated |  |
-
-<a name="weshnet-protocol-v1-AuthExchangeResponse-ServicesEntry"></a>
-
-### AuthExchangeResponse.ServicesEntry
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| key | [string](#string) |  |  |
-| value | [string](#string) |  |  |
-
-<a name="weshnet-protocol-v1-AuthServiceCompleteFlow"></a>
-
-### AuthServiceCompleteFlow
-
-<a name="weshnet-protocol-v1-AuthServiceCompleteFlow-Reply"></a>
-
-### AuthServiceCompleteFlow.Reply
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| token_id | [string](#string) |  |  |
-
-<a name="weshnet-protocol-v1-AuthServiceCompleteFlow-Request"></a>
-
-### AuthServiceCompleteFlow.Request
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| callback_url | [string](#string) |  |  |
-
-<a name="weshnet-protocol-v1-AuthServiceInitFlow"></a>
-
-### AuthServiceInitFlow
-
-<a name="weshnet-protocol-v1-AuthServiceInitFlow-Reply"></a>
-
-### AuthServiceInitFlow.Reply
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| url | [string](#string) |  |  |
-| secure_url | [bool](#bool) |  |  |
-
-<a name="weshnet-protocol-v1-AuthServiceInitFlow-Request"></a>
-
-### AuthServiceInitFlow.Request
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| auth_url | [string](#string) |  |  |
-| services | [string](#string) | repeated |  |
 
 <a name="weshnet-protocol-v1-ContactAliasKeyAdded"></a>
 
@@ -746,23 +641,6 @@ ContactAliasKeyAdded is an event type where ones shares their alias public key
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | group_pk | [bytes](#bytes) |  | group_pk is the identifier of the group |
-
-<a name="weshnet-protocol-v1-DebugAuthServiceSetToken"></a>
-
-### DebugAuthServiceSetToken
-
-<a name="weshnet-protocol-v1-DebugAuthServiceSetToken-Reply"></a>
-
-### DebugAuthServiceSetToken.Reply
-
-<a name="weshnet-protocol-v1-DebugAuthServiceSetToken-Request"></a>
-
-### DebugAuthServiceSetToken.Request
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| token | [AuthExchangeResponse](#weshnet-protocol-v1-AuthExchangeResponse) |  |  |
-| authentication_url | [string](#string) |  |  |
 
 <a name="weshnet-protocol-v1-DebugGroup"></a>
 
@@ -1126,15 +1004,6 @@ GroupRemoveAdditionalRendezvousSeed indicates that a previously added rendezvous
 | authentication_url | [string](#string) |  | authentication_url indicates which server has been used for authentication |
 | replication_server | [string](#string) |  | replication_server indicates which server will be used for replication |
 
-<a name="weshnet-protocol-v1-MemberWithDevices"></a>
-
-### MemberWithDevices
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| member_pk | [bytes](#bytes) |  |  |
-| devices_pks | [bytes](#bytes) | repeated |  |
-
 <a name="weshnet-protocol-v1-MessageEnvelope"></a>
 
 ### MessageEnvelope
@@ -1333,6 +1202,16 @@ OrbitDBMessageHeads is the payload sent on orbitdb to share peer&#39;s heads
 | encrypted_payload | [bytes](#bytes) |  |  |
 | nonce | [bytes](#bytes) |  |  |
 
+<a name="weshnet-protocol-v1-OutOfStoreMessageEnvelope"></a>
+
+### OutOfStoreMessageEnvelope
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| nonce | [bytes](#bytes) |  |  |
+| box | [bytes](#bytes) |  |  |
+| group_reference | [bytes](#bytes) |  |  |
+
 <a name="weshnet-protocol-v1-OutOfStoreReceive"></a>
 
 ### OutOfStoreReceive
@@ -1445,54 +1324,6 @@ Progress define a generic object that can be used to display a progress bar for 
 
 ### ProtocolMetadata
 
-<a name="weshnet-protocol-v1-PushDeviceServerRegistered"></a>
-
-### PushDeviceServerRegistered
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| server | [PushServer](#weshnet-protocol-v1-PushServer) |  |  |
-| device_pk | [bytes](#bytes) |  | device_pk is the public key of the device sending the message |
-
-<a name="weshnet-protocol-v1-PushDeviceTokenRegistered"></a>
-
-### PushDeviceTokenRegistered
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| token | [PushServiceReceiver](#weshnet-protocol-v1-PushServiceReceiver) |  |  |
-| device_pk | [bytes](#bytes) |  | device_pk is the public key of the device sending the message |
-
-<a name="weshnet-protocol-v1-PushMemberTokenUpdate"></a>
-
-### PushMemberTokenUpdate
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| server | [PushServer](#weshnet-protocol-v1-PushServer) |  |  |
-| token | [bytes](#bytes) |  |  |
-| device_pk | [bytes](#bytes) |  | device_pk is the public key of the device sending the message |
-
-<a name="weshnet-protocol-v1-PushServer"></a>
-
-### PushServer
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| server_key | [bytes](#bytes) |  |  |
-| service_addr | [string](#string) |  |  |
-
-<a name="weshnet-protocol-v1-PushServiceReceiver"></a>
-
-### PushServiceReceiver
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| token_type | [weshnet.push.v1.PushServiceTokenType](#weshnet-push-v1-PushServiceTokenType) |  | token_type is the type of the token used, it allows us to act as a proxy to the appropriate push server |
-| bundle_id | [string](#string) |  | bundle_id is the app identifier |
-| token | [bytes](#bytes) |  | token is the device identifier used |
-| recipient_public_key | [bytes](#bytes) |  | recipient_public_key is the public key which will be used to encrypt the payload |
-
 <a name="weshnet-protocol-v1-RefreshContactRequest"></a>
 
 ### RefreshContactRequest
@@ -1537,8 +1368,10 @@ Progress define a generic object that can be used to display a progress bar for 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| token_id | [string](#string) |  |  |
 | group_pk | [bytes](#bytes) |  |  |
+| token | [string](#string) |  |  |
+| authentication_url | [string](#string) |  |  |
+| replication_server | [string](#string) |  |  |
 
 <a name="weshnet-protocol-v1-ReplicationServiceReplicateGroup"></a>
 
@@ -1595,8 +1428,6 @@ Progress define a generic object that can be used to display a progress bar for 
 | wifi_p2p_enabled | [ServiceGetConfiguration.SettingState](#weshnet-protocol-v1-ServiceGetConfiguration-SettingState) |  | MultiPeerConnectivity for Darwin and Nearby for Android |
 | mdns_enabled | [ServiceGetConfiguration.SettingState](#weshnet-protocol-v1-ServiceGetConfiguration-SettingState) |  |  |
 | relay_enabled | [ServiceGetConfiguration.SettingState](#weshnet-protocol-v1-ServiceGetConfiguration-SettingState) |  |  |
-| device_push_token | [PushServiceReceiver](#weshnet-protocol-v1-PushServiceReceiver) |  |  |
-| device_push_server | [PushServer](#weshnet-protocol-v1-PushServer) |  |  |
 
 <a name="weshnet-protocol-v1-ServiceGetConfiguration-Request"></a>
 
@@ -1621,33 +1452,6 @@ Progress define a generic object that can be used to display a progress bar for 
 | ----- | ---- | ----- | ----------- |
 | service_type | [string](#string) |  |  |
 | service_endpoint | [string](#string) |  |  |
-
-<a name="weshnet-protocol-v1-ServicesTokenCode"></a>
-
-### ServicesTokenCode
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| services | [string](#string) | repeated |  |
-| code_challenge | [string](#string) |  |  |
-| token_id | [string](#string) |  |  |
-
-<a name="weshnet-protocol-v1-ServicesTokenList"></a>
-
-### ServicesTokenList
-
-<a name="weshnet-protocol-v1-ServicesTokenList-Reply"></a>
-
-### ServicesTokenList.Reply
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| token_id | [string](#string) |  |  |
-| service | [ServiceToken](#weshnet-protocol-v1-ServiceToken) |  |  |
-
-<a name="weshnet-protocol-v1-ServicesTokenList-Request"></a>
-
-### ServicesTokenList.Request
 
 <a name="weshnet-protocol-v1-ShareContact"></a>
 
@@ -1834,12 +1638,7 @@ Progress define a generic object that can be used to display a progress bar for 
 | EventTypeMultiMemberGroupAliasResolverAdded | 301 | EventTypeMultiMemberGroupAliasResolverAdded indicates the payload includes that a member of the group sent their alias proof |
 | EventTypeMultiMemberGroupInitialMemberAnnounced | 302 | EventTypeMultiMemberGroupInitialMemberAnnounced indicates the payload includes that a member has authenticated themselves as the group owner |
 | EventTypeMultiMemberGroupAdminRoleGranted | 303 | EventTypeMultiMemberGroupAdminRoleGranted indicates the payload includes that an admin of the group granted another member as an admin |
-| EventTypeAccountServiceTokenAdded | 401 | EventTypeAccountServiceTokenAdded indicates that a new service provider has been registered for this account |
-| EventTypeAccountServiceTokenRemoved | 402 | EventTypeAccountServiceTokenRemoved indicates that a service provider is not available anymore |
 | EventTypeGroupReplicating | 403 | EventTypeGroupReplicating indicates that the group has been registered for replication on a server |
-| EventTypePushMemberTokenUpdate | 404 | EventTypePushMemberTokenUpdate |
-| EventTypePushDeviceTokenRegistered | 405 | EventTypePushDeviceTokenRegistered |
-| EventTypePushDeviceServerRegistered | 406 | EventTypePushDeviceServerRegistered |
 | EventTypeAccountVerifiedCredentialRegistered | 500 | EventTypeAccountVerifiedCredentialRegistered |
 | EventTypeGroupMetadataPayloadSent | 1001 | EventTypeGroupMetadataPayloadSent indicates the payload includes an app specific event, unlike messages stored on the message store it is encrypted using a static key |
 
@@ -1943,14 +1742,10 @@ Each active Wesh protocol service is considered as a Wesh device and is associat
 | DebugListGroups | [DebugListGroups.Request](#weshnet-protocol-v1-DebugListGroups-Request) | [DebugListGroups.Reply](#weshnet-protocol-v1-DebugListGroups-Reply) stream |  |
 | DebugInspectGroupStore | [DebugInspectGroupStore.Request](#weshnet-protocol-v1-DebugInspectGroupStore-Request) | [DebugInspectGroupStore.Reply](#weshnet-protocol-v1-DebugInspectGroupStore-Reply) stream |  |
 | DebugGroup | [DebugGroup.Request](#weshnet-protocol-v1-DebugGroup-Request) | [DebugGroup.Reply](#weshnet-protocol-v1-DebugGroup-Reply) |  |
-| DebugAuthServiceSetToken | [DebugAuthServiceSetToken.Request](#weshnet-protocol-v1-DebugAuthServiceSetToken-Request) | [DebugAuthServiceSetToken.Reply](#weshnet-protocol-v1-DebugAuthServiceSetToken-Reply) |  |
 | SystemInfo | [SystemInfo.Request](#weshnet-protocol-v1-SystemInfo-Request) | [SystemInfo.Reply](#weshnet-protocol-v1-SystemInfo-Reply) |  |
-| AuthServiceInitFlow | [AuthServiceInitFlow.Request](#weshnet-protocol-v1-AuthServiceInitFlow-Request) | [AuthServiceInitFlow.Reply](#weshnet-protocol-v1-AuthServiceInitFlow-Reply) | AuthServiceInitFlow Initialize an authentication flow |
-| AuthServiceCompleteFlow | [AuthServiceCompleteFlow.Request](#weshnet-protocol-v1-AuthServiceCompleteFlow-Request) | [AuthServiceCompleteFlow.Reply](#weshnet-protocol-v1-AuthServiceCompleteFlow-Reply) | AuthServiceCompleteFlow Completes an authentication flow |
 | CredentialVerificationServiceInitFlow | [CredentialVerificationServiceInitFlow.Request](#weshnet-protocol-v1-CredentialVerificationServiceInitFlow-Request) | [CredentialVerificationServiceInitFlow.Reply](#weshnet-protocol-v1-CredentialVerificationServiceInitFlow-Reply) | CredentialVerificationServiceInitFlow Initialize a credential verification flow |
 | CredentialVerificationServiceCompleteFlow | [CredentialVerificationServiceCompleteFlow.Request](#weshnet-protocol-v1-CredentialVerificationServiceCompleteFlow-Request) | [CredentialVerificationServiceCompleteFlow.Reply](#weshnet-protocol-v1-CredentialVerificationServiceCompleteFlow-Reply) | CredentialVerificationServiceCompleteFlow Completes a credential verification flow |
 | VerifiedCredentialsList | [VerifiedCredentialsList.Request](#weshnet-protocol-v1-VerifiedCredentialsList-Request) | [VerifiedCredentialsList.Reply](#weshnet-protocol-v1-VerifiedCredentialsList-Reply) stream | VerifiedCredentialsList Retrieves the list of verified credentials |
-| ServicesTokenList | [ServicesTokenList.Request](#weshnet-protocol-v1-ServicesTokenList-Request) | [ServicesTokenList.Reply](#weshnet-protocol-v1-ServicesTokenList-Reply) stream | ServicesTokenList Retrieves the list of services tokens |
 | ReplicationServiceRegisterGroup | [ReplicationServiceRegisterGroup.Request](#weshnet-protocol-v1-ReplicationServiceRegisterGroup-Request) | [ReplicationServiceRegisterGroup.Reply](#weshnet-protocol-v1-ReplicationServiceRegisterGroup-Reply) | ReplicationServiceRegisterGroup Asks a replication service to distribute a group contents |
 | PeerList | [PeerList.Request](#weshnet-protocol-v1-PeerList-Request) | [PeerList.Reply](#weshnet-protocol-v1-PeerList-Reply) | PeerList returns a list of P2P peers |
 | OutOfStoreReceive | [OutOfStoreReceive.Request](#weshnet-protocol-v1-OutOfStoreReceive-Request) | [OutOfStoreReceive.Reply](#weshnet-protocol-v1-OutOfStoreReceive-Reply) | OutOfStoreReceive parses a payload received outside a synchronized store |

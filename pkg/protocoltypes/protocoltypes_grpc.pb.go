@@ -50,14 +50,10 @@ const (
 	ProtocolService_DebugListGroups_FullMethodName                           = "/weshnet.protocol.v1.ProtocolService/DebugListGroups"
 	ProtocolService_DebugInspectGroupStore_FullMethodName                    = "/weshnet.protocol.v1.ProtocolService/DebugInspectGroupStore"
 	ProtocolService_DebugGroup_FullMethodName                                = "/weshnet.protocol.v1.ProtocolService/DebugGroup"
-	ProtocolService_DebugAuthServiceSetToken_FullMethodName                  = "/weshnet.protocol.v1.ProtocolService/DebugAuthServiceSetToken"
 	ProtocolService_SystemInfo_FullMethodName                                = "/weshnet.protocol.v1.ProtocolService/SystemInfo"
-	ProtocolService_AuthServiceInitFlow_FullMethodName                       = "/weshnet.protocol.v1.ProtocolService/AuthServiceInitFlow"
-	ProtocolService_AuthServiceCompleteFlow_FullMethodName                   = "/weshnet.protocol.v1.ProtocolService/AuthServiceCompleteFlow"
 	ProtocolService_CredentialVerificationServiceInitFlow_FullMethodName     = "/weshnet.protocol.v1.ProtocolService/CredentialVerificationServiceInitFlow"
 	ProtocolService_CredentialVerificationServiceCompleteFlow_FullMethodName = "/weshnet.protocol.v1.ProtocolService/CredentialVerificationServiceCompleteFlow"
 	ProtocolService_VerifiedCredentialsList_FullMethodName                   = "/weshnet.protocol.v1.ProtocolService/VerifiedCredentialsList"
-	ProtocolService_ServicesTokenList_FullMethodName                         = "/weshnet.protocol.v1.ProtocolService/ServicesTokenList"
 	ProtocolService_ReplicationServiceRegisterGroup_FullMethodName           = "/weshnet.protocol.v1.ProtocolService/ReplicationServiceRegisterGroup"
 	ProtocolService_PeerList_FullMethodName                                  = "/weshnet.protocol.v1.ProtocolService/PeerList"
 	ProtocolService_OutOfStoreReceive_FullMethodName                         = "/weshnet.protocol.v1.ProtocolService/OutOfStoreReceive"
@@ -130,20 +126,13 @@ type ProtocolServiceClient interface {
 	DebugListGroups(ctx context.Context, in *DebugListGroups_Request, opts ...grpc.CallOption) (ProtocolService_DebugListGroupsClient, error)
 	DebugInspectGroupStore(ctx context.Context, in *DebugInspectGroupStore_Request, opts ...grpc.CallOption) (ProtocolService_DebugInspectGroupStoreClient, error)
 	DebugGroup(ctx context.Context, in *DebugGroup_Request, opts ...grpc.CallOption) (*DebugGroup_Reply, error)
-	DebugAuthServiceSetToken(ctx context.Context, in *DebugAuthServiceSetToken_Request, opts ...grpc.CallOption) (*DebugAuthServiceSetToken_Reply, error)
 	SystemInfo(ctx context.Context, in *SystemInfo_Request, opts ...grpc.CallOption) (*SystemInfo_Reply, error)
-	// AuthServiceInitFlow Initialize an authentication flow
-	AuthServiceInitFlow(ctx context.Context, in *AuthServiceInitFlow_Request, opts ...grpc.CallOption) (*AuthServiceInitFlow_Reply, error)
-	// AuthServiceCompleteFlow Completes an authentication flow
-	AuthServiceCompleteFlow(ctx context.Context, in *AuthServiceCompleteFlow_Request, opts ...grpc.CallOption) (*AuthServiceCompleteFlow_Reply, error)
 	// CredentialVerificationServiceInitFlow Initialize a credential verification flow
 	CredentialVerificationServiceInitFlow(ctx context.Context, in *CredentialVerificationServiceInitFlow_Request, opts ...grpc.CallOption) (*CredentialVerificationServiceInitFlow_Reply, error)
 	// CredentialVerificationServiceCompleteFlow Completes a credential verification flow
 	CredentialVerificationServiceCompleteFlow(ctx context.Context, in *CredentialVerificationServiceCompleteFlow_Request, opts ...grpc.CallOption) (*CredentialVerificationServiceCompleteFlow_Reply, error)
 	// VerifiedCredentialsList Retrieves the list of verified credentials
 	VerifiedCredentialsList(ctx context.Context, in *VerifiedCredentialsList_Request, opts ...grpc.CallOption) (ProtocolService_VerifiedCredentialsListClient, error)
-	// ServicesTokenList Retrieves the list of services tokens
-	ServicesTokenList(ctx context.Context, in *ServicesTokenList_Request, opts ...grpc.CallOption) (ProtocolService_ServicesTokenListClient, error)
 	// ReplicationServiceRegisterGroup Asks a replication service to distribute a group contents
 	ReplicationServiceRegisterGroup(ctx context.Context, in *ReplicationServiceRegisterGroup_Request, opts ...grpc.CallOption) (*ReplicationServiceRegisterGroup_Reply, error)
 	// PeerList returns a list of P2P peers
@@ -581,36 +570,9 @@ func (c *protocolServiceClient) DebugGroup(ctx context.Context, in *DebugGroup_R
 	return out, nil
 }
 
-func (c *protocolServiceClient) DebugAuthServiceSetToken(ctx context.Context, in *DebugAuthServiceSetToken_Request, opts ...grpc.CallOption) (*DebugAuthServiceSetToken_Reply, error) {
-	out := new(DebugAuthServiceSetToken_Reply)
-	err := c.cc.Invoke(ctx, ProtocolService_DebugAuthServiceSetToken_FullMethodName, in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
 func (c *protocolServiceClient) SystemInfo(ctx context.Context, in *SystemInfo_Request, opts ...grpc.CallOption) (*SystemInfo_Reply, error) {
 	out := new(SystemInfo_Reply)
 	err := c.cc.Invoke(ctx, ProtocolService_SystemInfo_FullMethodName, in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *protocolServiceClient) AuthServiceInitFlow(ctx context.Context, in *AuthServiceInitFlow_Request, opts ...grpc.CallOption) (*AuthServiceInitFlow_Reply, error) {
-	out := new(AuthServiceInitFlow_Reply)
-	err := c.cc.Invoke(ctx, ProtocolService_AuthServiceInitFlow_FullMethodName, in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *protocolServiceClient) AuthServiceCompleteFlow(ctx context.Context, in *AuthServiceCompleteFlow_Request, opts ...grpc.CallOption) (*AuthServiceCompleteFlow_Reply, error) {
-	out := new(AuthServiceCompleteFlow_Reply)
-	err := c.cc.Invoke(ctx, ProtocolService_AuthServiceCompleteFlow_FullMethodName, in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -661,38 +623,6 @@ type protocolServiceVerifiedCredentialsListClient struct {
 
 func (x *protocolServiceVerifiedCredentialsListClient) Recv() (*VerifiedCredentialsList_Reply, error) {
 	m := new(VerifiedCredentialsList_Reply)
-	if err := x.ClientStream.RecvMsg(m); err != nil {
-		return nil, err
-	}
-	return m, nil
-}
-
-func (c *protocolServiceClient) ServicesTokenList(ctx context.Context, in *ServicesTokenList_Request, opts ...grpc.CallOption) (ProtocolService_ServicesTokenListClient, error) {
-	stream, err := c.cc.NewStream(ctx, &ProtocolService_ServiceDesc.Streams[7], ProtocolService_ServicesTokenList_FullMethodName, opts...)
-	if err != nil {
-		return nil, err
-	}
-	x := &protocolServiceServicesTokenListClient{stream}
-	if err := x.ClientStream.SendMsg(in); err != nil {
-		return nil, err
-	}
-	if err := x.ClientStream.CloseSend(); err != nil {
-		return nil, err
-	}
-	return x, nil
-}
-
-type ProtocolService_ServicesTokenListClient interface {
-	Recv() (*ServicesTokenList_Reply, error)
-	grpc.ClientStream
-}
-
-type protocolServiceServicesTokenListClient struct {
-	grpc.ClientStream
-}
-
-func (x *protocolServiceServicesTokenListClient) Recv() (*ServicesTokenList_Reply, error) {
-	m := new(ServicesTokenList_Reply)
 	if err := x.ClientStream.RecvMsg(m); err != nil {
 		return nil, err
 	}
@@ -809,20 +739,13 @@ type ProtocolServiceServer interface {
 	DebugListGroups(*DebugListGroups_Request, ProtocolService_DebugListGroupsServer) error
 	DebugInspectGroupStore(*DebugInspectGroupStore_Request, ProtocolService_DebugInspectGroupStoreServer) error
 	DebugGroup(context.Context, *DebugGroup_Request) (*DebugGroup_Reply, error)
-	DebugAuthServiceSetToken(context.Context, *DebugAuthServiceSetToken_Request) (*DebugAuthServiceSetToken_Reply, error)
 	SystemInfo(context.Context, *SystemInfo_Request) (*SystemInfo_Reply, error)
-	// AuthServiceInitFlow Initialize an authentication flow
-	AuthServiceInitFlow(context.Context, *AuthServiceInitFlow_Request) (*AuthServiceInitFlow_Reply, error)
-	// AuthServiceCompleteFlow Completes an authentication flow
-	AuthServiceCompleteFlow(context.Context, *AuthServiceCompleteFlow_Request) (*AuthServiceCompleteFlow_Reply, error)
 	// CredentialVerificationServiceInitFlow Initialize a credential verification flow
 	CredentialVerificationServiceInitFlow(context.Context, *CredentialVerificationServiceInitFlow_Request) (*CredentialVerificationServiceInitFlow_Reply, error)
 	// CredentialVerificationServiceCompleteFlow Completes a credential verification flow
 	CredentialVerificationServiceCompleteFlow(context.Context, *CredentialVerificationServiceCompleteFlow_Request) (*CredentialVerificationServiceCompleteFlow_Reply, error)
 	// VerifiedCredentialsList Retrieves the list of verified credentials
 	VerifiedCredentialsList(*VerifiedCredentialsList_Request, ProtocolService_VerifiedCredentialsListServer) error
-	// ServicesTokenList Retrieves the list of services tokens
-	ServicesTokenList(*ServicesTokenList_Request, ProtocolService_ServicesTokenListServer) error
 	// ReplicationServiceRegisterGroup Asks a replication service to distribute a group contents
 	ReplicationServiceRegisterGroup(context.Context, *ReplicationServiceRegisterGroup_Request) (*ReplicationServiceRegisterGroup_Reply, error)
 	// PeerList returns a list of P2P peers
@@ -933,17 +856,8 @@ func (UnimplementedProtocolServiceServer) DebugInspectGroupStore(*DebugInspectGr
 func (UnimplementedProtocolServiceServer) DebugGroup(context.Context, *DebugGroup_Request) (*DebugGroup_Reply, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method DebugGroup not implemented")
 }
-func (UnimplementedProtocolServiceServer) DebugAuthServiceSetToken(context.Context, *DebugAuthServiceSetToken_Request) (*DebugAuthServiceSetToken_Reply, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method DebugAuthServiceSetToken not implemented")
-}
 func (UnimplementedProtocolServiceServer) SystemInfo(context.Context, *SystemInfo_Request) (*SystemInfo_Reply, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method SystemInfo not implemented")
-}
-func (UnimplementedProtocolServiceServer) AuthServiceInitFlow(context.Context, *AuthServiceInitFlow_Request) (*AuthServiceInitFlow_Reply, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method AuthServiceInitFlow not implemented")
-}
-func (UnimplementedProtocolServiceServer) AuthServiceCompleteFlow(context.Context, *AuthServiceCompleteFlow_Request) (*AuthServiceCompleteFlow_Reply, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method AuthServiceCompleteFlow not implemented")
 }
 func (UnimplementedProtocolServiceServer) CredentialVerificationServiceInitFlow(context.Context, *CredentialVerificationServiceInitFlow_Request) (*CredentialVerificationServiceInitFlow_Reply, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method CredentialVerificationServiceInitFlow not implemented")
@@ -953,9 +867,6 @@ func (UnimplementedProtocolServiceServer) CredentialVerificationServiceCompleteF
 }
 func (UnimplementedProtocolServiceServer) VerifiedCredentialsList(*VerifiedCredentialsList_Request, ProtocolService_VerifiedCredentialsListServer) error {
 	return status.Errorf(codes.Unimplemented, "method VerifiedCredentialsList not implemented")
-}
-func (UnimplementedProtocolServiceServer) ServicesTokenList(*ServicesTokenList_Request, ProtocolService_ServicesTokenListServer) error {
-	return status.Errorf(codes.Unimplemented, "method ServicesTokenList not implemented")
 }
 func (UnimplementedProtocolServiceServer) ReplicationServiceRegisterGroup(context.Context, *ReplicationServiceRegisterGroup_Request) (*ReplicationServiceRegisterGroup_Reply, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ReplicationServiceRegisterGroup not implemented")
@@ -1561,24 +1472,6 @@ func _ProtocolService_DebugGroup_Handler(srv interface{}, ctx context.Context, d
 	return interceptor(ctx, in, info, handler)
 }
 
-func _ProtocolService_DebugAuthServiceSetToken_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(DebugAuthServiceSetToken_Request)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(ProtocolServiceServer).DebugAuthServiceSetToken(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: ProtocolService_DebugAuthServiceSetToken_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ProtocolServiceServer).DebugAuthServiceSetToken(ctx, req.(*DebugAuthServiceSetToken_Request))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
 func _ProtocolService_SystemInfo_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(SystemInfo_Request)
 	if err := dec(in); err != nil {
@@ -1593,42 +1486,6 @@ func _ProtocolService_SystemInfo_Handler(srv interface{}, ctx context.Context, d
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(ProtocolServiceServer).SystemInfo(ctx, req.(*SystemInfo_Request))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _ProtocolService_AuthServiceInitFlow_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(AuthServiceInitFlow_Request)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(ProtocolServiceServer).AuthServiceInitFlow(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: ProtocolService_AuthServiceInitFlow_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ProtocolServiceServer).AuthServiceInitFlow(ctx, req.(*AuthServiceInitFlow_Request))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _ProtocolService_AuthServiceCompleteFlow_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(AuthServiceCompleteFlow_Request)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(ProtocolServiceServer).AuthServiceCompleteFlow(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: ProtocolService_AuthServiceCompleteFlow_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ProtocolServiceServer).AuthServiceCompleteFlow(ctx, req.(*AuthServiceCompleteFlow_Request))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -1687,27 +1544,6 @@ type protocolServiceVerifiedCredentialsListServer struct {
 }
 
 func (x *protocolServiceVerifiedCredentialsListServer) Send(m *VerifiedCredentialsList_Reply) error {
-	return x.ServerStream.SendMsg(m)
-}
-
-func _ProtocolService_ServicesTokenList_Handler(srv interface{}, stream grpc.ServerStream) error {
-	m := new(ServicesTokenList_Request)
-	if err := stream.RecvMsg(m); err != nil {
-		return err
-	}
-	return srv.(ProtocolServiceServer).ServicesTokenList(m, &protocolServiceServicesTokenListServer{stream})
-}
-
-type ProtocolService_ServicesTokenListServer interface {
-	Send(*ServicesTokenList_Reply) error
-	grpc.ServerStream
-}
-
-type protocolServiceServicesTokenListServer struct {
-	grpc.ServerStream
-}
-
-func (x *protocolServiceServicesTokenListServer) Send(m *ServicesTokenList_Reply) error {
 	return x.ServerStream.SendMsg(m)
 }
 
@@ -1909,20 +1745,8 @@ var ProtocolService_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _ProtocolService_DebugGroup_Handler,
 		},
 		{
-			MethodName: "DebugAuthServiceSetToken",
-			Handler:    _ProtocolService_DebugAuthServiceSetToken_Handler,
-		},
-		{
 			MethodName: "SystemInfo",
 			Handler:    _ProtocolService_SystemInfo_Handler,
-		},
-		{
-			MethodName: "AuthServiceInitFlow",
-			Handler:    _ProtocolService_AuthServiceInitFlow_Handler,
-		},
-		{
-			MethodName: "AuthServiceCompleteFlow",
-			Handler:    _ProtocolService_AuthServiceCompleteFlow_Handler,
 		},
 		{
 			MethodName: "CredentialVerificationServiceInitFlow",
@@ -1987,11 +1811,6 @@ var ProtocolService_ServiceDesc = grpc.ServiceDesc{
 		{
 			StreamName:    "VerifiedCredentialsList",
 			Handler:       _ProtocolService_VerifiedCredentialsList_Handler,
-			ServerStreams: true,
-		},
-		{
-			StreamName:    "ServicesTokenList",
-			Handler:       _ProtocolService_ServicesTokenList_Handler,
 			ServerStreams: true,
 		},
 	},

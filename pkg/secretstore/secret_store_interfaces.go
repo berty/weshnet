@@ -8,9 +8,7 @@ import (
 	"github.com/libp2p/go-libp2p/core/crypto"
 	"go.uber.org/zap"
 
-	"berty.tech/weshnet/pkg/cryptoutil"
 	"berty.tech/weshnet/pkg/protocoltypes"
-	"berty.tech/weshnet/pkg/pushtypes"
 )
 
 const (
@@ -91,7 +89,7 @@ type SecretStore interface {
 	//
 
 	// SealOutOfStoreMessageEnvelope encrypts a message to be sent outside a synchronized store
-	SealOutOfStoreMessageEnvelope(id cid.Cid, env *protocoltypes.MessageEnvelope, headers *protocoltypes.MessageHeaders, group *protocoltypes.Group) (*pushtypes.OutOfStoreMessageEnvelope, error)
+	SealOutOfStoreMessageEnvelope(id cid.Cid, env *protocoltypes.MessageEnvelope, headers *protocoltypes.MessageHeaders, group *protocoltypes.Group) (*protocoltypes.OutOfStoreMessageEnvelope, error)
 
 	// OpenOutOfStoreMessage opens a message received outside a synchronized store
 	OpenOutOfStoreMessage(ctx context.Context, payload []byte) (outOfStoreMessage *protocoltypes.OutOfStoreMessage, group *protocoltypes.Group, clearPayload []byte, alreadyDecrypted bool, err error)
@@ -124,11 +122,6 @@ type NewSecretStoreOptions struct {
 	// DisableOutOfStoreSupport explicitly disables support of out-of-store
 	// payloads
 	DisableOutOfStoreSupport bool
-
-	// OutOfStorePrivateKey sets the out-of-store key to decrypt payloads
-	// received via a server, alternatively you can use
-	// SecretStore.SetOutOfStoreDevicePrivateKey to set it
-	OutOfStorePrivateKey *[cryptoutil.KeySize]byte
 }
 
 // MemberDevice is the public keys of a device and its member

@@ -5,6 +5,7 @@ import (
 	"encoding/base64"
 	"fmt"
 
+	"github.com/ipfs/go-cid"
 	"go.uber.org/zap"
 
 	"berty.tech/weshnet/pkg/errcode"
@@ -46,6 +47,48 @@ func (s *service) AppMessageSend(ctx context.Context, req *protocoltypes.AppMess
 	}
 
 	return &protocoltypes.AppMessageSend_Reply{CID: op.GetEntry().GetHash().Bytes()}, nil
+}
+
+// OutOfStoreReceive parses a payload received outside a synchronized store
+func (s *service) OutOfStoreReceive(ctx context.Context, request *protocoltypes.OutOfStoreReceive_Request) (*protocoltypes.OutOfStoreReceive_Reply, error) {
+	outOfStoreMessage, group, clearPayload, alreadyDecrypted, err := s.secretStore.OpenOutOfStoreMessage(ctx, request.Payload)
+	if err != nil {
+		return nil, errcode.ErrCryptoDecrypt.Wrap(err)
+	}
+
+	return &protocoltypes.OutOfStoreReceive_Reply{
+		Message:         outOfStoreMessage,
+		Cleartext:       clearPayload,
+		GroupPublicKey:  group.PublicKey,
+		AlreadyReceived: alreadyDecrypted,
+	}, nil
+}
+
+// OutOfStoreSeal creates a payload of a message present in store to be sent outside a synchronized store
+func (s *service) OutOfStoreSeal(ctx context.Context, request *protocoltypes.OutOfStoreSeal_Request) (*protocoltypes.OutOfStoreSeal_Reply, error) {
+	gc, err := s.GetContextGroupForID(request.GroupPublicKey)
+	if err != nil {
+		return nil, err
+	}
+
+	_, c, err := cid.CidFromBytes(request.CID)
+	if err != nil {
+		return nil, errcode.ErrInvalidInput.Wrap(err)
+	}
+
+	sealedMessageEnvelope, err := gc.messageStore.GetOutOfStoreMessageEnvelope(ctx, c)
+	if err != nil {
+		return nil, errcode.ErrInternal.Wrap(err)
+	}
+
+	sealedMessageEnvelopeBytes, err := sealedMessageEnvelope.Marshal()
+	if err != nil {
+		return nil, errcode.ErrSerialization.Wrap(err)
+	}
+
+	return &protocoltypes.OutOfStoreSeal_Reply{
+		Encrypted: sealedMessageEnvelopeBytes,
+	}, nil
 }
 
 func tyberLogGroupContext(ctx context.Context, logger *zap.Logger, gc *GroupContext) {

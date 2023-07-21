@@ -102,7 +102,6 @@ type TestingOpts struct {
 	CoreAPIMock     ipfsutil.CoreAPIMock
 	OrbitDB         *WeshOrbitDB
 	ConnectFunc     ConnectTestingProtocolFunc
-	PushSK          *[32]byte
 }
 
 func NewTestingProtocol(ctx context.Context, t testing.TB, opts *TestingOpts, ds datastore.Batching) (*TestingProtocol, func()) {
@@ -130,9 +129,7 @@ func NewTestingProtocol(ctx context.Context, t testing.TB, opts *TestingOpts, ds
 	secretStore := opts.SecretStore
 	if secretStore == nil {
 		var err error
-		secretStore, err = secretstore.NewInMemSecretStore(&secretstore.NewSecretStoreOptions{
-			OutOfStorePrivateKey: opts.PushSK,
-		})
+		secretStore, err = secretstore.NewInMemSecretStore(&secretstore.NewSecretStoreOptions{})
 		require.NoError(t, err)
 	}
 
@@ -154,15 +151,14 @@ func NewTestingProtocol(ctx context.Context, t testing.TB, opts *TestingOpts, ds
 	}
 
 	serviceOpts := Opts{
-		Host:                 node.MockNode().PeerHost,
-		PubSub:               node.PubSub(),
-		Logger:               opts.Logger,
-		RootDatastore:        ds,
-		IpfsCoreAPI:          node.API(),
-		OrbitDB:              odb,
-		TinderService:        node.Tinder(),
-		OutOfStorePrivateKey: opts.PushSK,
-		SecretStore:          secretStore,
+		Host:          node.MockNode().PeerHost,
+		PubSub:        node.PubSub(),
+		Logger:        opts.Logger,
+		RootDatastore: ds,
+		IpfsCoreAPI:   node.API(),
+		OrbitDB:       odb,
+		TinderService: node.Tinder(),
+		SecretStore:   secretStore,
 	}
 
 	service, cleanupService := TestingService(ctx, t, serviceOpts)
@@ -481,7 +477,6 @@ func dropPeers(t *testing.T, mockedPeers []*mockedPeer) {
 
 type ServiceMethods interface {
 	GetContextGroupForID(id []byte) (*GroupContext, error)
-	GetCurrentDevicePushConfig() (*protocoltypes.PushServiceReceiver, *protocoltypes.PushServer)
 }
 
 func GetRootDatastoreForPath(dir string, key []byte, salt []byte, logger *zap.Logger) (datastore.Batching, error) {

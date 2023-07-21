@@ -24,7 +24,6 @@ import (
 	"berty.tech/go-orbit-db/stores/basestore"
 	"berty.tech/go-orbit-db/stores/operation"
 	"berty.tech/weshnet/pkg/errcode"
-	"berty.tech/weshnet/pkg/logutil"
 	"berty.tech/weshnet/pkg/protocoltypes"
 	"berty.tech/weshnet/pkg/secretstore"
 	"berty.tech/weshnet/pkg/tyber"
@@ -774,44 +773,6 @@ func (m *MetadataStore) SendAppMetadata(ctx context.Context, message []byte) (op
 	}, protocoltypes.EventTypeGroupMetadataPayloadSent)
 }
 
-func (m *MetadataStore) SendAccountServiceTokenAdded(ctx context.Context, token *protocoltypes.ServiceToken) (operation.Operation, error) {
-	if !m.typeChecker(isAccountGroup) {
-		return nil, errcode.ErrGroupInvalidType
-	}
-
-	m.Index().(*metadataStoreIndex).lock.RLock()
-	_, ok := m.Index().(*metadataStoreIndex).serviceTokens[token.TokenID()]
-	m.Index().(*metadataStoreIndex).lock.RUnlock()
-
-	if ok {
-		return nil, errcode.ErrInvalidInput.Wrap(fmt.Errorf("token has already been registered"))
-	}
-
-	return m.attributeSignAndAddEvent(ctx, &protocoltypes.AccountServiceTokenAdded{
-		ServiceToken: token,
-	}, protocoltypes.EventTypeAccountServiceTokenAdded)
-}
-
-func (m *MetadataStore) SendAccountServiceTokenRemoved(ctx context.Context, tokenID string) (operation.Operation, error) {
-	if !m.typeChecker(isAccountGroup) {
-		return nil, errcode.ErrGroupInvalidType
-	}
-
-	m.Index().(*metadataStoreIndex).lock.RLock()
-	val, ok := m.Index().(*metadataStoreIndex).serviceTokens[tokenID]
-	m.Index().(*metadataStoreIndex).lock.RUnlock()
-
-	if !ok {
-		return nil, errcode.ErrInvalidInput.Wrap(fmt.Errorf("token not registered"))
-	} else if val == nil {
-		return nil, errcode.ErrInvalidInput.Wrap(fmt.Errorf("token already removed"))
-	}
-
-	return m.attributeSignAndAddEvent(ctx, &protocoltypes.AccountServiceTokenRemoved{
-		TokenID: tokenID,
-	}, protocoltypes.EventTypeAccountServiceTokenRemoved)
-}
-
 func (m *MetadataStore) SendAccountVerifiedCredentialAdded(ctx context.Context, token *protocoltypes.AccountVerifiedCredentialRegistered) (operation.Operation, error) {
 	if !m.typeChecker(isAccountGroup) {
 		return nil, errcode.ErrGroupInvalidType
@@ -820,10 +781,10 @@ func (m *MetadataStore) SendAccountVerifiedCredentialAdded(ctx context.Context, 
 	return m.attributeSignAndAddEvent(ctx, token, protocoltypes.EventTypeAccountVerifiedCredentialRegistered)
 }
 
-func (m *MetadataStore) SendGroupReplicating(ctx context.Context, t *protocoltypes.ServiceToken, endpoint string) (operation.Operation, error) {
+func (m *MetadataStore) SendGroupReplicating(ctx context.Context, authenticationURL, replicationServer string) (operation.Operation, error) {
 	return m.attributeSignAndAddEvent(ctx, &protocoltypes.GroupReplicating{
-		AuthenticationURL: t.AuthenticationURL,
-		ReplicationServer: endpoint,
+		AuthenticationURL: authenticationURL,
+		ReplicationServer: replicationServer,
 	}, protocoltypes.EventTypeGroupReplicating)
 }
 
@@ -923,22 +884,6 @@ func (m *MetadataStore) checkContactStatus(pk crypto.PubKey, states ...protocolt
 	}
 
 	return false
-}
-
-func (m *MetadataStore) listServiceTokens() []*protocoltypes.ServiceToken {
-	return m.Index().(*metadataStoreIndex).listServiceTokens()
-}
-
-func (m *MetadataStore) getServiceToken(tokenID string) (*protocoltypes.ServiceToken, error) {
-	m.Index().(*metadataStoreIndex).lock.RLock()
-	defer m.Index().(*metadataStoreIndex).lock.RUnlock()
-
-	token, ok := m.Index().(*metadataStoreIndex).serviceTokens[tokenID]
-	if !ok {
-		return nil, errcode.ErrServicesAuthUnknownToken
-	}
-
-	return token, nil
 }
 
 type EventMetadataReceived struct {
@@ -1079,62 +1024,6 @@ func constructorFactoryGroupMetadata(s *WeshOrbitDB, logger *zap.Logger) iface.S
 
 		return store, nil
 	}
-}
-
-func (m *MetadataStore) SendPushToken(ctx context.Context, t *protocoltypes.PushMemberTokenUpdate) (operation.Operation, error) {
-	m.logger.Debug("sending push token to device", logutil.PrivateString("server", t.Server.ServiceAddr))
-	return m.attributeSignAndAddEvent(ctx, &protocoltypes.PushMemberTokenUpdate{
-		Server: t.Server,
-		Token:  t.Token,
-	}, protocoltypes.EventTypePushMemberTokenUpdate)
-}
-
-func (m *MetadataStore) RegisterDevicePushToken(ctx context.Context, token *protocoltypes.PushServiceReceiver) (operation.Operation, error) {
-	m.logger.Debug("register push token")
-	return m.attributeSignAndAddEvent(ctx, &protocoltypes.PushDeviceTokenRegistered{
-		Token: token,
-	}, protocoltypes.EventTypePushDeviceTokenRegistered)
-}
-
-func (m *MetadataStore) RegisterDevicePushServer(ctx context.Context, server *protocoltypes.PushServer) (operation.Operation, error) {
-	return m.attributeSignAndAddEvent(ctx, &protocoltypes.PushDeviceServerRegistered{
-		Server: server,
-	}, protocoltypes.EventTypePushDeviceServerRegistered)
-}
-
-func (m *MetadataStore) getCurrentDevicePushToken() *protocoltypes.PushServiceReceiver {
-	receiver := m.Index().(*metadataStoreIndex).getCurrentDevicePushToken()
-	if receiver == nil {
-		return nil
-	}
-
-	return receiver.Token
-}
-
-func (m *MetadataStore) getCurrentDevicePushServer() *protocoltypes.PushServer {
-	registration := m.Index().(*metadataStoreIndex).getCurrentDevicePushServer()
-	if registration == nil {
-		return nil
-	}
-
-	return registration.Server
-}
-
-func (m *MetadataStore) GetPushTokenForDevice(d crypto.PubKey) (*protocoltypes.PushMemberTokenUpdate, error) {
-	m.Index().(*metadataStoreIndex).lock.RLock()
-	defer m.Index().(*metadataStoreIndex).lock.RUnlock()
-
-	pk, err := d.Raw()
-	if err != nil {
-		return nil, errcode.ErrSerialization.Wrap(err)
-	}
-
-	token, ok := m.Index().(*metadataStoreIndex).membersPushTokens[string(pk)]
-	if !ok {
-		return nil, errcode.ErrInvalidInput.Wrap(fmt.Errorf("token not found"))
-	}
-
-	return token, nil
 }
 
 func (m *MetadataStore) initEmitter() (err error) {

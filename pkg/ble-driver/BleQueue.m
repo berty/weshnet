@@ -1,4 +1,4 @@
-// +build darwin
+// +build darwin,!noproximitytransport
 //
 //  BleQueue.m
 //  BertyBridgeDemo
@@ -13,13 +13,13 @@
 
 - (instancetype __nullable) init:(dispatch_queue_t)queue logger:(Logger *__nonnull)logger {
     self = [super init];
-    
+
     if (self) {
         _tasks = [[NSMutableArray alloc] init];
         _queue = [queue retain];
         _logger = [logger retain];
     }
-    
+
     return self;
 }
 
@@ -45,12 +45,12 @@
 - (void) completedTask:(NSError *__nullable)error {
     @synchronized (self.tasks) {
         TaskDelay *currentTask;
-        
+
         if ([self.tasks count] == 0) {
             [self.logger e:@"BleQueue: completedTask error: no task running"];
             return ;
         }
-        
+
         currentTask = [self.tasks objectAtIndex:0];
         [self.logger d:@"BleQueue: completedTask at index=%d", currentTask.index];
         if (currentTask.callback != nil) {
@@ -58,7 +58,7 @@
                 currentTask.callback(error);
             });
         }
-        
+
         self.isRetrying = FALSE;
         self.taskQueueBusy = FALSE;
         [self.tasks removeObjectAtIndex:0];
@@ -69,20 +69,20 @@
 - (void) nextTask {
     @synchronized (self.tasks) {
         TaskDelay *nextTask;
-        
+
         if (self.taskQueueBusy) {
             [self.logger d:@"BleQueue: nextTask: another task is running"];
             return ;
         }
-        
+
         if ([self.tasks count] == 0 ) {
             [self.logger d:@"BleQueue: nextTask error: no task queued: count=%ld", [self.tasks count]];
             return ;
         }
-        
+
         nextTask = [self.tasks objectAtIndex:0];
         [self.logger d:@"BleQueue: nextTask at index=%d with delay=%ld", nextTask.index, nextTask.delay];
-        
+
         self.taskQueueBusy = TRUE;
         if (!self.isRetrying) {
             self.nbTries = 0;
@@ -95,7 +95,7 @@
 - (void) retryTask {
     @synchronized (self.tasks) {
         TaskDelay *currentTask;
-        
+
         self.taskQueueBusy = FALSE;
 
         if ([self.tasks count] == 0) {
@@ -110,7 +110,7 @@
                 self.isRetrying = TRUE;
             }
         }
-        
+
         [self nextTask];
     }
 }

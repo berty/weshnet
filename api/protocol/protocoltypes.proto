@@ -3,7 +3,6 @@ syntax = "proto3";
 package weshnet.protocol.v1;
 
 import "gogoproto/gogo.proto";
-import "pushtypes/pushtypes.proto";
 
 option go_package = "berty.tech/weshnet/pkg/protocoltypes";
 
@@ -107,15 +106,7 @@ service ProtocolService {
 
   rpc DebugGroup (DebugGroup.Request) returns (DebugGroup.Reply);
 
-  rpc DebugAuthServiceSetToken(DebugAuthServiceSetToken.Request) returns (DebugAuthServiceSetToken.Reply);
-
   rpc SystemInfo (SystemInfo.Request) returns (SystemInfo.Reply);
-
-  // AuthServiceInitFlow Initialize an authentication flow
-  rpc AuthServiceInitFlow (AuthServiceInitFlow.Request) returns (AuthServiceInitFlow.Reply);
-
-  // AuthServiceCompleteFlow Completes an authentication flow
-  rpc AuthServiceCompleteFlow (AuthServiceCompleteFlow.Request) returns (AuthServiceCompleteFlow.Reply);
 
   // CredentialVerificationServiceInitFlow Initialize a credential verification flow
   rpc CredentialVerificationServiceInitFlow (CredentialVerificationServiceInitFlow.Request) returns (CredentialVerificationServiceInitFlow.Reply);
@@ -125,9 +116,6 @@ service ProtocolService {
 
   // VerifiedCredentialsList Retrieves the list of verified credentials
   rpc VerifiedCredentialsList (VerifiedCredentialsList.Request) returns (stream VerifiedCredentialsList.Reply);
-
-  // ServicesTokenList Retrieves the list of services tokens
-  rpc ServicesTokenList (ServicesTokenList.Request) returns (stream ServicesTokenList.Reply);
 
   // ReplicationServiceRegisterGroup Asks a replication service to distribute a group contents
   rpc ReplicationServiceRegisterGroup (ReplicationServiceRegisterGroup.Request) returns (ReplicationServiceRegisterGroup.Reply);
@@ -233,23 +221,8 @@ enum EventType {
   // EventTypeMultiMemberGroupAdminRoleGranted indicates the payload includes that an admin of the group granted another member as an admin
   EventTypeMultiMemberGroupAdminRoleGranted = 303;
 
-  // EventTypeAccountServiceTokenAdded indicates that a new service provider has been registered for this account
-  EventTypeAccountServiceTokenAdded = 401;
-
-  // EventTypeAccountServiceTokenRemoved indicates that a service provider is not available anymore
-  EventTypeAccountServiceTokenRemoved = 402;
-
   // EventTypeGroupReplicating indicates that the group has been registered for replication on a server
   EventTypeGroupReplicating = 403;
-
-  // EventTypePushMemberTokenUpdate
-  EventTypePushMemberTokenUpdate = 404;
-
-  // EventTypePushDeviceTokenRegistered
-  EventTypePushDeviceTokenRegistered = 405;
-
-  // EventTypePushDeviceServerRegistered
-  EventTypePushDeviceServerRegistered = 406;
 
   // EventTypeAccountVerifiedCredentialRegistered
   EventTypeAccountVerifiedCredentialRegistered = 500;
@@ -626,22 +599,6 @@ message AccountContactUnblocked {
   bytes contact_pk = 2 [(gogoproto.customname) = "ContactPK"];
 }
 
-// AccountServiceTokenAdded indicates a token has been added to the account
-message AccountServiceTokenAdded {
-  // device_pk is the device sending the event, signs the message
-  bytes device_pk = 1 [(gogoproto.customname) = "DevicePK"];
-
-  ServiceToken service_token = 2;
-}
-
-// AccountServiceTokenRemoved indicates a token has removed
-message AccountServiceTokenRemoved {
-  // device_pk is the device sending the event, signs the message
-  bytes device_pk = 1 [(gogoproto.customname) = "DevicePK"];
-
-  string token_id = 2 [(gogoproto.customname) = "TokenID"];
-}
-
 message GroupReplicating {
   // device_pk is the device sending the event, signs the message
   bytes device_pk = 1 [(gogoproto.customname) = "DevicePK"];
@@ -691,8 +648,6 @@ message ServiceGetConfiguration {
     SettingState wifi_p2p_enabled = 7; // MultiPeerConnectivity for Darwin and Nearby for Android
     SettingState mdns_enabled = 8;
     SettingState relay_enabled = 9;
-    PushServiceReceiver device_push_token = 10;
-    PushServer device_push_server = 11;
   }
 }
 
@@ -1112,22 +1067,6 @@ message DebugGroup {
   }
 }
 
-message AuthExchangeResponse {
-  string access_token = 1;
-  string scope = 2;
-  string error = 3;
-  string error_description = 4;
-  map<string, string> services = 5;
-}
-
-message DebugAuthServiceSetToken {
-  message Request {
-    AuthExchangeResponse token = 1;
-    string authentication_url = 2 [(gogoproto.customname) = "AuthenticationURL"];
-  }
-  message Reply {}
-}
-
 enum DebugInspectGroupLogType {
   DebugInspectGroupLogTypeUndefined = 0;
   DebugInspectGroupLogTypeMessage = 1;
@@ -1168,26 +1107,6 @@ message ServiceToken {
   int64 expiration = 4;
 }
 
-message AuthServiceCompleteFlow {
-  message Request{
-    string callback_url = 1 [(gogoproto.customname) = "CallbackURL"];
-  }
-  message Reply{
-    string token_id = 1 [(gogoproto.customname) = "TokenID"];
-  }
-}
-
-message AuthServiceInitFlow {
-  message Request {
-    string auth_url = 1 [(gogoproto.customname) = "AuthURL"];
-    repeated string services = 3;
-  }
-  message Reply {
-    string url = 1 [(gogoproto.customname) = "URL"];
-    bool secure_url = 2 [(gogoproto.customname) = "SecureURL"];
-  }
-}
-
 message CredentialVerificationServiceInitFlow {
   message Request {
     string service_url = 1 [(gogoproto.customname) = "ServiceURL"];
@@ -1220,25 +1139,12 @@ message VerifiedCredentialsList {
   }
 }
 
-message ServicesTokenList {
-  message Request{}
-  message Reply{
-    string token_id = 1 [(gogoproto.customname) = "TokenID"];
-    ServiceToken service = 2;
-  }
-}
-
-message ServicesTokenCode {
-  repeated string services = 1;
-  string code_challenge = 2;
-  string token_id = 3 [(gogoproto.customname) = "TokenID"];
-}
-
-
 message ReplicationServiceRegisterGroup {
   message Request{
-    string token_id = 1 [(gogoproto.customname) = "TokenID"];
-    bytes group_pk = 2 [(gogoproto.customname) = "GroupPK"];
+    bytes group_pk = 1 [(gogoproto.customname) = "GroupPK"];
+    string token = 2;
+    string authentication_url = 3 [(gogoproto.customname) = "AuthenticationURL"];
+    string replication_server = 4;
   }
   message Reply{}
 }
@@ -1380,11 +1286,6 @@ message Progress {
   uint64 delay = 6;
 }
 
-message MemberWithDevices {
-  bytes member_pk = 1 [(gogoproto.customname) = "MemberPK"];
-  repeated bytes devices_pks = 2 [(gogoproto.customname) = "DevicePKs"];
-}
-
 message OutOfStoreMessage {
   bytes cid = 1 [(gogoproto.customname) = "CID"];
   bytes device_pk = 2 [(gogoproto.customname) = "DevicePK"];
@@ -1395,63 +1296,10 @@ message OutOfStoreMessage {
   bytes nonce = 7;
 }
 
-message PushServiceReceiver {
-  // token_type is the type of the token used, it allows us to act as a proxy to the appropriate push server
-  push.v1.PushServiceTokenType token_type = 1;
-
-  // bundle_id is the app identifier
-  string bundle_id = 2 [(gogoproto.customname) = "BundleID"];
-
-  // token is the device identifier used
-  bytes token = 3;
-
-  // recipient_public_key is the public key which will be used to encrypt the payload
-  bytes recipient_public_key = 4;
-}
-
-message PushServer {
-  bytes server_key = 1;
-  string service_addr = 2;
-}
-
-message PushDeviceTokenRegistered {
-  PushServiceReceiver token = 1;
-
-  // device_pk is the public key of the device sending the message
-  bytes device_pk = 2 [(gogoproto.customname) = "DevicePK"];
-}
-
-message PushDeviceServerRegistered {
-  PushServer server = 1;
-
-  // device_pk is the public key of the device sending the message
-  bytes device_pk = 2 [(gogoproto.customname) = "DevicePK"];
-}
-
-message AccountVerifiedCredentialRegistered {
-  // device_pk is the public key of the device sending the message
-  bytes device_pk = 1 [(gogoproto.customname) = "DevicePK"];
-
-  bytes signed_identity_public_key = 2;
-
-  string verified_credential = 3;
-
-  int64 registration_date = 4;
-
-  int64 expiration_date = 5;
-
-  string identifier = 6;
-
-  string issuer = 7;
-}
-
-message PushMemberTokenUpdate {
-  PushServer server = 1;
-
-  bytes token = 2;
-
-  // device_pk is the public key of the device sending the message
-  bytes device_pk = 3 [(gogoproto.customname) = "DevicePK"];
+message OutOfStoreMessageEnvelope {
+  bytes nonce = 1;
+  bytes box = 2;
+  bytes group_reference = 3;
 }
 
 message OutOfStoreReceive {
@@ -1474,6 +1322,23 @@ message OutOfStoreSeal {
   message Reply {
     bytes encrypted = 1;
   }
+}
+
+message AccountVerifiedCredentialRegistered {
+  // device_pk is the public key of the device sending the message
+  bytes device_pk = 1 [(gogoproto.customname) = "DevicePK"];
+
+  bytes signed_identity_public_key = 2;
+
+  string verified_credential = 3;
+
+  int64 registration_date = 4;
+
+  int64 expiration_date = 5;
+
+  string identifier = 6;
+
+  string issuer = 7;
 }
 
 message FirstLastCounters {

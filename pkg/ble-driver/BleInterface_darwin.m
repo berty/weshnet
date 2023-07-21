@@ -1,4 +1,4 @@
-// +build darwin
+// +build darwin,!noproximitytransport
 //
 //  BleInterface.m
 //  ble
@@ -70,21 +70,21 @@ void BLEStop(void) {
 
 int BLESendToPeer(char *remotePID, void *payload, int length) {
     int status = 0;
-    
+
     NSString *cPID = [[NSString alloc] initWithUTF8String:remotePID];
     NSData *cPayload = [[NSData alloc] initWithBytes:payload length:length];
-    
+
     BertyDevice *bDevice = [getManager() findPeripheralFromPID:cPID];
     if (bDevice == nil) {
         [getManager().logger e:@"BLESendToPeer error: no device found"];
         return 0;
     }
-    
+
     if (bDevice.peer == nil) {
         [getManager().logger e:@"BLESendToPeer error: peer object not found"];
         return 0;
     }
-    
+
     if (bDevice.useL2cap && bDevice.l2capChannel != nil) {
         status = [bDevice l2capWrite:cPayload];
     } else {
@@ -96,7 +96,7 @@ int BLESendToPeer(char *remotePID, void *payload, int length) {
             [getManager().logger e:@"BLESendToPeer error: device not connected"];
         }
     }
-    
+
     [cPID release];
     [cPayload release];
     return status;

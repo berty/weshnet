@@ -7,7 +7,6 @@ import (
 	mrand "math/rand"
 	"path/filepath"
 	"sync"
-	"sync/atomic"
 	"time"
 	"unsafe"
 
@@ -26,7 +25,6 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"go.uber.org/multierr"
 	"go.uber.org/zap"
-	"google.golang.org/grpc"
 	"moul.io/srand"
 
 	"berty.tech/go-orbit-db/baseorbitdb"
@@ -36,7 +34,6 @@ import (
 	"berty.tech/weshnet/internal/bertyversion"
 	"berty.tech/weshnet/internal/datastoreutil"
 	"berty.tech/weshnet/pkg/bertyvcissuer"
-	"berty.tech/weshnet/pkg/cryptoutil"
 	"berty.tech/weshnet/pkg/errcode"
 	"berty.tech/weshnet/pkg/ipfsutil"
 	ipfs_mobile "berty.tech/weshnet/pkg/ipfsutil/mobile"
@@ -67,12 +64,9 @@ type service struct {
 	accountGroupCtx        *GroupContext
 	openedGroups           map[string]*GroupContext
 	lock                   sync.RWMutex
-	authSession            atomic.Value
 	close                  func() error
 	startedAt              time.Time
 	host                   host.Host
-	pushClients            map[string]*grpc.ClientConn
-	muPushClients          sync.RWMutex
 	grpcInsecure           bool
 	refreshprocess         map[string]context.CancelFunc
 	muRefreshprocess       sync.RWMutex
@@ -88,22 +82,19 @@ type service struct {
 
 // Opts contains optional configuration flags for building a new Client
 type Opts struct {
-	Logger               *zap.Logger
-	IpfsCoreAPI          ipfsutil.ExtendedCoreAPI
-	DatastoreDir         string
-	RootDatastore        ds.Batching
-	AccountCache         ds.Batching
-	OrbitDB              *WeshOrbitDB
-	TinderService        *tinder.Service
-	Host                 host.Host
-	PubSub               *pubsub.PubSub
-	GRPCInsecureMode     bool
-	LocalOnly            bool
-	close                func() error
-	PushKey              *[cryptoutil.KeySize]byte
-	SecretStore          secretstore.SecretStore
-	OutOfStorePrivateKey *[cryptoutil.KeySize]byte
-	PrometheusRegister   prometheus.Registerer
+	Logger             *zap.Logger
+	IpfsCoreAPI        ipfsutil.ExtendedCoreAPI
+	DatastoreDir       string
+	RootDatastore      ds.Batching
+	OrbitDB            *WeshOrbitDB
+	TinderService      *tinder.Service
+	Host               host.Host
+	PubSub             *pubsub.PubSub
+	GRPCInsecureMode   bool
+	LocalOnly          bool
+	close              func() error
+	SecretStore        secretstore.SecretStore
+	PrometheusRegister prometheus.Registerer
 
 	// These are used if OrbitDB is nil.
 	GroupMetadataStoreType string
@@ -149,8 +140,7 @@ func (opts *Opts) applyDefaults(ctx context.Context) error {
 
 	if opts.SecretStore == nil {
 		secretStore, err := secretstore.NewSecretStore(opts.RootDatastore, &secretstore.NewSecretStoreOptions{
-			Logger:               opts.Logger,
-			OutOfStorePrivateKey: opts.OutOfStorePrivateKey,
+			Logger: opts.Logger,
 		})
 		if err != nil {
 			return errcode.ErrInternal.Wrap(err)
@@ -361,7 +351,6 @@ func NewService(opts Opts) (_ Service, err error) {
 			string(accountGroupCtx.Group().PublicKey): accountGroupCtx,
 		},
 		secretStore:            opts.SecretStore,
-		pushClients:            make(map[string]*grpc.ClientConn),
 		grpcInsecure:           opts.GRPCInsecureMode,
 		refreshprocess:         make(map[string]context.CancelFunc),
 		peerStatusManager:      NewConnectednessManager(),

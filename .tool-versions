@@ -2,7 +2,7 @@
 # https://github.com/berty/weshnet/blame/main/.tool-versions
 
 #-----
-# This is simply the most recent version available to date of the lowest 
+# This is simply the most recent version available to date of the lowest
 # major version of Go which is allowed by kubo.
 # There is no contraindication for updating it.
 #-----

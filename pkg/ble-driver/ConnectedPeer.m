@@ -1,4 +1,4 @@
-// +build darwin
+// +build darwin,!noproximitytransport
 //
 //  ConnectedPeer.m
 //  BertyBridgeDemo

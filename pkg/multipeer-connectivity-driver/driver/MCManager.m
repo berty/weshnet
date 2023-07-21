@@ -1,4 +1,4 @@
-// +build darwin
+// +build darwin,!noproximitytransport
 
 #import <MultipeerConnectivity/MultipeerConnectivity.h>
 #import "MCManager.h"
@@ -14,13 +14,13 @@ NSString *BERTY_DRIVER_MC = @"berty-mc";
 - (MCPeerID *)getMCPeerID:(NSString *)appPID {
     NSString *kAppPID = @"berty-peerID";
     NSString *kPIDData = @"berty-PIDData";
-    
+
     NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
     NSString *oldAppPID = [defaults stringForKey:kAppPID];
     MCPeerID *peerID;
     NSData *peerIDData;
     NSError *error;
-     
+
     if ([oldAppPID isEqualToString:appPID]) {
         peerIDData = [defaults dataForKey:kPIDData];
         if ((peerID = [NSKeyedUnarchiver unarchivedObjectOfClass:[MCPeerID class] fromData:peerIDData error:&error])) {
@@ -139,24 +139,24 @@ NSString *BERTY_DRIVER_MC = @"berty-mc";
         break;
     }
 }
- 
+
 - (void)session:(MCSession *)session didReceiveData:(NSData *)data fromPeer:(MCPeerID *)peerID{
     BridgeReceiveFromPeer([peerID displayName], data);
 }
- 
- 
+
+
 - (void)session:(MCSession *)session didStartReceivingResourceWithName:(NSString *)resourceName fromPeer:(MCPeerID *)peerID withProgress:(NSProgress *)progress{
-    
+
 }
- 
- 
+
+
 - (void)session:(MCSession *)session didFinishReceivingResourceWithName:(NSString *)resourceName fromPeer:(MCPeerID *)peerID atURL:(NSURL *)localURL withError:(NSError *)error{
-    
+
 }
- 
- 
+
+
 - (void)session:(MCSession *)session didReceiveStream:(NSInputStream *)stream withName:(NSString *)streamName fromPeer:(MCPeerID *)peerID{
-    
+
 }
 
 /*
