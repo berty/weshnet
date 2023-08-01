@@ -101,7 +101,7 @@ type Opts struct {
 	GroupMessageStoreType  string
 }
 
-func (opts *Opts) applyPushDefaults() error {
+func (opts *Opts) applyPushDefaults() {
 	if opts.Logger == nil {
 		opts.Logger = zap.NewNop()
 	}
@@ -109,13 +109,9 @@ func (opts *Opts) applyPushDefaults() error {
 	if opts.PrometheusRegister == nil {
 		opts.PrometheusRegister = prometheus.DefaultRegisterer
 	}
-
-	opts.applyDefaultsGetDatastore()
-
-	return nil
 }
 
-func (opts *Opts) applyDefaultsGetDatastore() {
+func (opts *Opts) applyDefaultsGetDatastore() error {
 	if opts.RootDatastore == nil {
 		if opts.DatastoreDir == "" || opts.DatastoreDir == InMemoryDirectory {
 			opts.RootDatastore = ds_sync.MutexWrap(ds.NewMapDatastore())
@@ -123,6 +119,8 @@ func (opts *Opts) applyDefaultsGetDatastore() {
 			opts.RootDatastore = nil
 		}
 	}
+
+	return nil
 }
 
 func (opts *Opts) applyDefaults(ctx context.Context) error {
@@ -132,11 +130,11 @@ func (opts *Opts) applyDefaults(ctx context.Context) error {
 
 	rng := mrand.New(mrand.NewSource(srand.MustSecure())) // nolint:gosec // we need to use math/rand here, but it is seeded from crypto/rand
 
-	opts.applyDefaultsGetDatastore()
-
-	if err := opts.applyPushDefaults(); err != nil {
+	if err := opts.applyDefaultsGetDatastore(); err != nil {
 		return err
 	}
+
+	opts.applyPushDefaults()
 
 	if opts.SecretStore == nil {
 		secretStore, err := secretstore.NewSecretStore(opts.RootDatastore, &secretstore.NewSecretStoreOptions{
