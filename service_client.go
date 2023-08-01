@@ -7,9 +7,6 @@ import (
 	"os"
 	"time"
 
-	"github.com/dgraph-io/badger/v2/options"
-	"github.com/ipfs/go-datastore"
-	badger "github.com/ipfs/go-ds-badger2"
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
 
@@ -31,6 +28,10 @@ type ServiceClient interface {
 	io.Closer
 }
 
+// NewServiceClient initializes a new ServiceClient using the opts.
+// If opts.RootDatastore is nil and opts.DatastoreDir is "" or InMemoryDirectory, then set
+// opts.RootDatastore to an in-memory data store. Otherwise, if opts.RootDatastore is nil then set
+// opts.RootDatastore to a persistent data store at opts.DatastoreDir .
 func NewServiceClient(opts Opts) (ServiceClient, error) {
 	var err error
 
@@ -85,13 +86,7 @@ func NewInMemoryServiceClient() (ServiceClient, error) {
 func NewPersistentServiceClient(path string) (ServiceClient, error) {
 	var opts Opts
 
-	bopts := badger.DefaultOptions
-	bopts.ValueLogLoadingMode = options.FileIO
-
-	ds, err := badger.NewDatastore(path, &bopts)
-	if err != nil {
-		return nil, fmt.Errorf("unable to init badger datastore: %w", err)
-	}
+	opts.DatastoreDir = path
 
 	repo, err := ipfsutil.LoadRepoFromPath(path)
 	if err != nil {
@@ -109,8 +104,6 @@ func NewPersistentServiceClient(path string) (ServiceClient, error) {
 		return nil, err
 	}
 
-	opts.RootDatastore = ds
-
 	var cleanupLogger func()
 	if opts.Logger, cleanupLogger, err = setupDefaultLogger(); err != nil {
 		return nil, fmt.Errorf("uanble to setup logger: %w", err)
@@ -123,7 +116,6 @@ func NewPersistentServiceClient(path string) (ServiceClient, error) {
 
 	return &persistentServiceClient{
 		ServiceClient: cl,
-		ds:            ds,
 		cleanup:       cleanupLogger,
 	}, nil
 }
@@ -140,17 +132,11 @@ type serviceClient struct {
 
 type persistentServiceClient struct {
 	ServiceClient
-	ds      datastore.Batching
 	cleanup func()
 }
 
 func (p *persistentServiceClient) Close() error {
 	err := p.ServiceClient.Close()
-
-	if dserr := p.ds.Close(); err == nil && dserr != nil {
-		// only return ds error if no error have been catch earlier
-		err = fmt.Errorf("unable to close datastore: %w", dserr)
-	}
 
 	if p.cleanup != nil {
 		p.cleanup()

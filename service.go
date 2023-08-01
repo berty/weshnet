@@ -11,8 +11,10 @@ import (
 	"unsafe"
 
 	pubsub_fix "github.com/berty/go-libp2p-pubsub"
+	"github.com/dgraph-io/badger/v2/options"
 	ds "github.com/ipfs/go-datastore"
 	ds_sync "github.com/ipfs/go-datastore/sync"
+	badger "github.com/ipfs/go-ds-badger2"
 	ipfs_interface "github.com/ipfs/interface-go-ipfs-core"
 	pubsub "github.com/libp2p/go-libp2p-pubsub"
 	"github.com/libp2p/go-libp2p/core/crypto"
@@ -101,7 +103,7 @@ type Opts struct {
 	GroupMessageStoreType  string
 }
 
-func (opts *Opts) applyPushDefaults() error {
+func (opts *Opts) applyPushDefaults() {
 	if opts.Logger == nil {
 		opts.Logger = zap.NewNop()
 	}
@@ -109,20 +111,39 @@ func (opts *Opts) applyPushDefaults() error {
 	if opts.PrometheusRegister == nil {
 		opts.PrometheusRegister = prometheus.DefaultRegisterer
 	}
-
-	opts.applyDefaultsGetDatastore()
-
-	return nil
 }
 
-func (opts *Opts) applyDefaultsGetDatastore() {
+func (opts *Opts) applyDefaultsGetDatastore() error {
 	if opts.RootDatastore == nil {
 		if opts.DatastoreDir == "" || opts.DatastoreDir == InMemoryDirectory {
 			opts.RootDatastore = ds_sync.MutexWrap(ds.NewMapDatastore())
 		} else {
-			opts.RootDatastore = nil
+			bopts := badger.DefaultOptions
+			bopts.ValueLogLoadingMode = options.FileIO
+
+			ds, err := badger.NewDatastore(opts.DatastoreDir, &bopts)
+			if err != nil {
+				return fmt.Errorf("unable to init badger datastore: %w", err)
+			}
+			opts.RootDatastore = ds
+
+			oldClose := opts.close
+			opts.close = func() error {
+				var err error
+				if oldClose != nil {
+					err = oldClose()
+				}
+
+				if dserr := ds.Close(); dserr != nil {
+					err = multierr.Append(err, fmt.Errorf("unable to close datastore: %w", dserr))
+				}
+
+				return err
+			}
 		}
 	}
+
+	return nil
 }
 
 func (opts *Opts) applyDefaults(ctx context.Context) error {
@@ -132,11 +153,11 @@ func (opts *Opts) applyDefaults(ctx context.Context) error {
 
 	rng := mrand.New(mrand.NewSource(srand.MustSecure())) // nolint:gosec // we need to use math/rand here, but it is seeded from crypto/rand
 
-	opts.applyDefaultsGetDatastore()
-
-	if err := opts.applyPushDefaults(); err != nil {
+	if err := opts.applyDefaultsGetDatastore(); err != nil {
 		return err
 	}
+
+	opts.applyPushDefaults()
 
 	if opts.SecretStore == nil {
 		secretStore, err := secretstore.NewSecretStore(opts.RootDatastore, &secretstore.NewSecretStoreOptions{
@@ -287,7 +308,10 @@ func (opts *Opts) applyDefaults(ctx context.Context) error {
 	return nil
 }
 
-// NewService initializes a new Service
+// NewService initializes a new Service using the opts.
+// If opts.RootDatastore is nil and opts.DatastoreDir is "" or InMemoryDirectory, then set
+// opts.RootDatastore to an in-memory data store. Otherwise, if opts.RootDatastore is nil then set
+// opts.RootDatastore to a persistent data store at opts.DatastoreDir .
 func NewService(opts Opts) (_ Service, err error) {
 	ctx, cancel := context.WithCancel(context.Background())
 
