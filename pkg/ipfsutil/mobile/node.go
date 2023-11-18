@@ -68,7 +68,7 @@ func (im *IpfsMobile) Close() error {
 }
 
 func (im *IpfsMobile) ServeCoreHTTP(l net.Listener, opts ...ipfs_corehttp.ServeOption) error {
-	gatewayOpt := ipfs_corehttp.GatewayOption(false, ipfs_corehttp.WebUIPaths...)
+	gatewayOpt := ipfs_corehttp.GatewayOption(ipfs_corehttp.WebUIPaths...)
 	opts = append(opts,
 		ipfs_corehttp.WebUIOption,
 		gatewayOpt,
@@ -79,9 +79,11 @@ func (im *IpfsMobile) ServeCoreHTTP(l net.Listener, opts ...ipfs_corehttp.ServeO
 }
 
 func (im *IpfsMobile) ServeGateway(l net.Listener, writable bool, opts ...ipfs_corehttp.ServeOption) error {
+	// TODO: do we need to pass writable another way?
+
 	opts = append(opts,
 		ipfs_corehttp.HostnameOption(),
-		ipfs_corehttp.GatewayOption(writable, "/ipfs", "/ipns"),
+		ipfs_corehttp.GatewayOption("/ipfs", "/ipns"),
 		ipfs_corehttp.VersionOption(),
 		ipfs_corehttp.CheckVersionOption(),
 		ipfs_corehttp.CommandsROOption(im.commandCtx),

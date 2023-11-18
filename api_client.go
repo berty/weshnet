@@ -91,7 +91,7 @@ func (s *service) ServiceGetConfiguration(ctx context.Context, req *protocoltype
 		AccountPK:      member,
 		DevicePK:       device,
 		AccountGroupPK: accountGroup.Group().PublicKey,
-		PeerID:         key.ID().Pretty(),
+		PeerID:         key.ID().String(),
 		Listeners:      listeners,
 	}, nil
 }

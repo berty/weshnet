@@ -4,17 +4,13 @@ import (
 	"context"
 	"fmt"
 
-	ds "github.com/ipfs/go-datastore"
 	ipfs_config "github.com/ipfs/kubo/config"
 	ipfs_p2p "github.com/ipfs/kubo/core/node/libp2p"
 	p2p "github.com/libp2p/go-libp2p"
 	dht "github.com/libp2p/go-libp2p-kad-dht"
 	p2p_dht "github.com/libp2p/go-libp2p-kad-dht"
 	"github.com/libp2p/go-libp2p-kad-dht/dual"
-	p2p_record "github.com/libp2p/go-libp2p-record"
 	host "github.com/libp2p/go-libp2p/core/host"
-	p2p_host "github.com/libp2p/go-libp2p/core/host"
-	p2p_peer "github.com/libp2p/go-libp2p/core/peer"
 	p2p_routing "github.com/libp2p/go-libp2p/core/routing"
 
 	ipfs_mobile "berty.tech/weshnet/pkg/ipfsutil/mobile"
@@ -117,27 +113,19 @@ func NewIPFSMobile(ctx context.Context, repo *ipfs_mobile.RepoMobile, opts *Mobi
 }
 
 func CustomRoutingOption(mode p2p_dht.ModeOpt, net DHTNetworkMode, opts ...p2p_dht.Option) func(
-	ctx context.Context,
-	host p2p_host.Host,
-	dstore ds.Batching,
-	validator p2p_record.Validator,
-	bootstrapPeers ...p2p_peer.AddrInfo,
+	args ipfs_p2p.RoutingOptionArgs,
 ) (p2p_routing.Routing, error) {
 	return func(
-		ctx context.Context,
-		host p2p_host.Host,
-		dstore ds.Batching,
-		validator p2p_record.Validator,
-		bootstrapPeers ...p2p_peer.AddrInfo,
+		args ipfs_p2p.RoutingOptionArgs,
 	) (p2p_routing.Routing, error) {
 		opts = append(opts,
 			p2p_dht.Mode(mode),
-			p2p_dht.Datastore(dstore),
-			p2p_dht.Validator(validator),
-			p2p_dht.BootstrapPeers(bootstrapPeers...),
+			p2p_dht.Datastore(args.Datastore),
+			p2p_dht.Validator(args.Validator),
+			p2p_dht.BootstrapPeers(args.BootstrapPeers...),
 		)
 
-		return newDualDHT(ctx, host, net, opts...)
+		return newDualDHT(args.Ctx, args.Host, net, opts...)
 	}
 }
 

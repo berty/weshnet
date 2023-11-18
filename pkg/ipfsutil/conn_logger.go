@@ -69,7 +69,7 @@ func (cl *connLogger) Connected(net network.Network, c network.Conn) {
 		<-time.After(10 * time.Millisecond)
 		if tags := cl.getPeerTags(c.RemotePeer()); tags != nil {
 			cl.logger.Info("Connected",
-				logutil.PrivateString("peer", c.RemotePeer().Pretty()),
+				logutil.PrivateString("peer", c.RemotePeer().String()),
 				logutil.PrivateString("to", c.LocalMultiaddr().String()),
 				logutil.PrivateString("from", c.RemoteMultiaddr().String()),
 				logutil.PrivateStrings("tags", tags),
@@ -81,7 +81,7 @@ func (cl *connLogger) Connected(net network.Network, c network.Conn) {
 func (cl *connLogger) Disconnected(n network.Network, c network.Conn) {
 	if tags := cl.getPeerTags(c.RemotePeer()); tags != nil {
 		cl.logger.Info("Disconnected",
-			logutil.PrivateString("peer", c.RemotePeer().Pretty()),
+			logutil.PrivateString("peer", c.RemotePeer().String()),
 			logutil.PrivateString("to", c.LocalMultiaddr().String()),
 			logutil.PrivateString("from", c.RemoteMultiaddr().String()),
 			logutil.PrivateStrings("tags", tags),
@@ -92,7 +92,7 @@ func (cl *connLogger) Disconnected(n network.Network, c network.Conn) {
 func (cl *connLogger) OpenedStream(n network.Network, s network.Stream) {
 	if tags := cl.getPeerTags(s.Conn().RemotePeer()); tags != nil {
 		cl.logger.Debug("Stream opened",
-			logutil.PrivateString("peer", s.Conn().RemotePeer().Pretty()),
+			logutil.PrivateString("peer", s.Conn().RemotePeer().String()),
 			logutil.PrivateString("to", s.Conn().LocalMultiaddr().String()),
 			logutil.PrivateString("from", s.Conn().RemoteMultiaddr().String()),
 			logutil.PrivateString("protocol", string(s.Protocol())),
@@ -104,7 +104,7 @@ func (cl *connLogger) OpenedStream(n network.Network, s network.Stream) {
 func (cl *connLogger) ClosedStream(n network.Network, s network.Stream) {
 	if tags := cl.getPeerTags(s.Conn().RemotePeer()); tags != nil {
 		cl.logger.Debug("Stream closed",
-			logutil.PrivateString("peer", s.Conn().RemotePeer().Pretty()),
+			logutil.PrivateString("peer", s.Conn().RemotePeer().String()),
 			logutil.PrivateString("to", s.Conn().LocalMultiaddr().String()),
 			logutil.PrivateString("from", s.Conn().RemoteMultiaddr().String()),
 			logutil.PrivateString("protocol", string(s.Protocol())),

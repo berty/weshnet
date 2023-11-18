@@ -172,7 +172,7 @@ func (s *service) craftPeerConnectedMessage(peer peer.ID) (*protocoltypes.GroupD
 	}
 
 	connected := protocoltypes.GroupDeviceStatus_Reply_PeerConnected{
-		PeerID:   peer.Pretty(),
+		PeerID:   peer.String(),
 		DevicePK: devicePKRaw,
 	}
 
@@ -207,12 +207,12 @@ CONN_LOOP:
 
 func (s *service) craftDeviceDisconnectedMessage(peer peer.ID) *protocoltypes.GroupDeviceStatus_Reply_PeerDisconnected {
 	return &protocoltypes.GroupDeviceStatus_Reply_PeerDisconnected{
-		PeerID: peer.Pretty(),
+		PeerID: peer.String(),
 	}
 }
 
 func (s *service) craftDeviceReconnectedMessage(peer peer.ID) *protocoltypes.GroupDeviceStatus_Reply_PeerReconnecting {
 	return &protocoltypes.GroupDeviceStatus_Reply_PeerReconnecting{
-		PeerID: peer.Pretty(),
+		PeerID: peer.String(),
 	}
 }

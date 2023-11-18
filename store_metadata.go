@@ -9,7 +9,7 @@ import (
 	"strings"
 
 	"github.com/gogo/protobuf/proto"
-	coreapi "github.com/ipfs/interface-go-ipfs-core"
+	coreapi "github.com/ipfs/boxo/coreiface"
 	"github.com/libp2p/go-libp2p/core/crypto"
 	"github.com/libp2p/go-libp2p/core/event"
 	"github.com/libp2p/go-libp2p/p2p/host/eventbus"

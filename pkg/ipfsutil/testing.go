@@ -92,7 +92,7 @@ func TestingRepo(t testing.TB, ctx context.Context, datastore ds.Datastore) ipfs
 
 	c.Bootstrap = []string{}
 	c.Addresses.Swarm = []string{"/ip6/::/tcp/0"}
-	c.Identity.PeerID = pid.Pretty()
+	c.Identity.PeerID = pid.String()
 	c.Identity.PrivKey = base64.StdEncoding.EncodeToString(privkeyb)
 	c.Swarm.ResourceMgr.Enabled = ipfs_cfg.False
 

@@ -238,7 +238,7 @@ func (s *service) PeerList(ctx context.Context, request *protocoltypes.PeerList_
 	if api == nil {
 		return nil, errcode.TODO.Wrap(fmt.Errorf("IPFS Core API is not available"))
 	}
-	swarmPeers, err := api.Swarm().Peers(ctx) // https://pkg.go.dev/github.com/ipfs/interface-go-ipfs-core#ConnectionInfo
+	swarmPeers, err := api.Swarm().Peers(ctx) // https://pkg.go.dev/github.com/ipfs/boxo/coreiface#ConnectionInfo
 	if err != nil {
 		return nil, errcode.TODO.Wrap(err)
 	}
@@ -248,7 +248,7 @@ func (s *service) PeerList(ctx context.Context, request *protocoltypes.PeerList_
 	// each peer in the swarm should be visible
 	for _, swarmPeer := range swarmPeers {
 		peers[swarmPeer.ID()] = &protocoltypes.PeerList_Peer{
-			ID:     swarmPeer.ID().Pretty(),
+			ID:     swarmPeer.ID().String(),
 			Errors: []string{},
 			Routes: []*protocoltypes.PeerList_Route{},
 		}
@@ -270,7 +270,7 @@ func (s *service) PeerList(ctx context.Context, request *protocoltypes.PeerList_
 		peer, ok := peers[swarmPeer.ID()]
 		if !ok {
 			peer = &protocoltypes.PeerList_Peer{
-				ID:     swarmPeer.ID().Pretty(),
+				ID:     swarmPeer.ID().String(),
 				Errors: []string{},
 				Routes: []*protocoltypes.PeerList_Route{},
 			}

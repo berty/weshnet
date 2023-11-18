@@ -9,9 +9,9 @@ import (
 	"io"
 	"strings"
 
+	ipfs_interface "github.com/ipfs/boxo/coreiface"
 	"github.com/ipfs/go-cid"
 	cbornode "github.com/ipfs/go-ipld-cbor"
-	ipfs_interface "github.com/ipfs/interface-go-ipfs-core"
 	mh "github.com/multiformats/go-multihash"
 	"go.uber.org/multierr"
 	"go.uber.org/zap"

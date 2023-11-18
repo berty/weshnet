@@ -87,7 +87,7 @@ func ParseAndResolveMaddrs(ctx context.Context, logger *zap.Logger, addrs []stri
 			}
 			logger.Debug("rdvp peer resolved addrs",
 				logutil.PrivateString("input", addr),
-				// logutil.PrivateString("ID", rdvpeer.ID.Pretty()),
+				// logutil.PrivateString("ID", rdvpeer.ID.String()),
 				logutil.PrivateStrings("addrs", addrStrings),
 			)
 			outPeersUnmatched[j] = rdvpeer

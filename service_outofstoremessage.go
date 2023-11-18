@@ -6,9 +6,9 @@ import (
 	"io"
 	"time"
 
+	ipfs_interface "github.com/ipfs/boxo/coreiface"
 	ds "github.com/ipfs/go-datastore"
 	ds_sync "github.com/ipfs/go-datastore/sync"
-	ipfs_interface "github.com/ipfs/interface-go-ipfs-core"
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
 
