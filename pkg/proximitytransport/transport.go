@@ -107,7 +107,7 @@ func (t *proximityTransport) Dial(ctx context.Context, remoteMa ma.Multiaddr, re
 	// remoteAddr is supposed to be equal to remotePID since with proximity transports:
 	// multiaddr = /<protocol>/<peerID>
 	remoteAddr, err := remoteMa.ValueForProtocol(t.driver.ProtocolCode())
-	if err != nil || remoteAddr != remotePID.Pretty() {
+	if err != nil || remoteAddr != remotePID.String() {
 		return nil, errors.Wrap(err, "error: proximityTransport.Dial: wrong multiaddr")
 	}
 
@@ -141,7 +141,7 @@ func (t *proximityTransport) CanDial(remoteMa ma.Multiaddr) bool {
 func (t *proximityTransport) Listen(localMa ma.Multiaddr) (tpt.Listener, error) {
 	// localAddr is supposed to be equal to the localPID
 	// or to DefaultAddr since multiaddr == /<protocol>/<peerID>
-	localPID := t.host.ID().Pretty()
+	localPID := t.host.ID().String()
 	localAddr, err := localMa.ValueForProtocol(t.driver.ProtocolCode())
 	if err != nil || (localMa.String() != t.driver.DefaultAddr() && localAddr != localPID) {
 		return nil, errors.Wrap(err, "error: proximityTransport.Listen: wrong multiaddr")

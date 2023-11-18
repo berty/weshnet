@@ -7,8 +7,8 @@ import (
 	"fmt"
 	"sync"
 
+	coreapi "github.com/ipfs/boxo/coreiface"
 	"github.com/ipfs/go-cid"
-	coreapi "github.com/ipfs/interface-go-ipfs-core"
 	"github.com/libp2p/go-libp2p/core/crypto"
 	"github.com/libp2p/go-libp2p/core/event"
 	"github.com/libp2p/go-libp2p/p2p/host/eventbus"

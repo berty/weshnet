@@ -4,8 +4,8 @@ import (
 	"context"
 	"sync"
 
-	ipfs_interface "github.com/ipfs/interface-go-ipfs-core"
-	ipfs_iopts "github.com/ipfs/interface-go-ipfs-core/options"
+	ipfs_interface "github.com/ipfs/boxo/coreiface"
+	ipfs_iopts "github.com/ipfs/boxo/coreiface/options"
 	p2p_pubsub "github.com/libp2p/go-libp2p-pubsub"
 	p2p_peer "github.com/libp2p/go-libp2p/core/peer"
 	"go.uber.org/zap"

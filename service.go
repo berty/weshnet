@@ -12,10 +12,10 @@ import (
 
 	pubsub_fix "github.com/berty/go-libp2p-pubsub"
 	"github.com/dgraph-io/badger/v2/options"
+	ipfs_interface "github.com/ipfs/boxo/coreiface"
 	ds "github.com/ipfs/go-datastore"
 	ds_sync "github.com/ipfs/go-datastore/sync"
 	badger "github.com/ipfs/go-ds-badger2"
-	ipfs_interface "github.com/ipfs/interface-go-ipfs-core"
 	pubsub "github.com/libp2p/go-libp2p-pubsub"
 	"github.com/libp2p/go-libp2p/core/crypto"
 	"github.com/libp2p/go-libp2p/core/event"

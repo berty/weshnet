@@ -1,7 +1,7 @@
 package ipfsutil
 
 import (
-	ipfs_interface "github.com/ipfs/interface-go-ipfs-core"
+	ipfs_interface "github.com/ipfs/boxo/coreiface"
 )
 
 type pubsubCoreAPIAdapter struct {

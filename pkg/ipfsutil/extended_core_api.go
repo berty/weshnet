@@ -1,7 +1,7 @@
 package ipfsutil
 
 import (
-	ipfs_interface "github.com/ipfs/interface-go-ipfs-core"
+	ipfs_interface "github.com/ipfs/boxo/coreiface"
 	ipfs_core "github.com/ipfs/kubo/core"
 	ipfs_coreapi "github.com/ipfs/kubo/core/coreapi"
 	"github.com/libp2p/go-libp2p/core/connmgr"

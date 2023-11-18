@@ -101,7 +101,7 @@ func (s *service) RefreshContactRequest(ctx context.Context, req *protocoltypes.
 		}
 
 		res.PeersFound = append(res.PeersFound, &protocoltypes.RefreshContactRequest_Peer{
-			ID:    p.ID.Pretty(),
+			ID:    p.ID.String(),
 			Addrs: addrs,
 		})
 	}

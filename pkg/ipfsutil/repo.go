@@ -141,7 +141,7 @@ func ResetRepoIdentity(c *ipfs_cfg.Config) error {
 	}
 
 	// Identity
-	c.Identity.PeerID = pid.Pretty()
+	c.Identity.PeerID = pid.String()
 	c.Identity.PrivKey = base64.StdEncoding.EncodeToString(privkeyb)
 
 	return nil
