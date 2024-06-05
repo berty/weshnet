@@ -198,7 +198,11 @@ func setupDefaultLogger() (logger *zap.Logger, cleanup func(), err error) {
 			logfilter = defaultLoggingFiltersValue
 		}
 
-		s := logutil.NewStdStream(logfilter, "color", os.Stderr.Name())
+		l, err := zap.NewDevelopment()
+		if err != nil {
+			panic(err)
+		}
+		s := logutil.NewCustomStream(logfilter, l)
 		return logutil.NewLogger(s)
 	}
 

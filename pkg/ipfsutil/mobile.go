@@ -16,6 +16,7 @@ import (
 	p2p_host "github.com/libp2p/go-libp2p/core/host"
 	p2p_peer "github.com/libp2p/go-libp2p/core/peer"
 	p2p_routing "github.com/libp2p/go-libp2p/core/routing"
+	"github.com/pkg/errors"
 
 	ipfs_mobile "berty.tech/weshnet/pkg/ipfsutil/mobile"
 )
@@ -88,13 +89,28 @@ func NewIPFSMobile(ctx context.Context, repo *ipfs_mobile.RepoMobile, opts *Mobi
 		return nil, fmt.Errorf("unable p2p option: cannot be nil")
 	}
 
+	relayAddrs := []string{
+		"/dnsaddr/bootstrap.libp2p.io/p2p/QmNnooDu7bfjPFoTZYxMNLWUQJyrVwtbZg5gBMjTezGAJN",
+		"/dnsaddr/bootstrap.libp2p.io/p2p/QmQCU2EcMqAqQPR2i9bChDtGNJchTbq5TbXJJ16u19uLTa",
+		"/dnsaddr/bootstrap.libp2p.io/p2p/QmbLHAnMoJPWSCR5Zhtx6BHJX9KiKNN6tpvbUcqanj75Nb",
+		"/dnsaddr/bootstrap.libp2p.io/p2p/QmcZf59bWwK5XFi76CZX8cbJ4BhTzzA3gU1ZjYZcYW3dwt",
+	}
+
+	relayPeerInfo := make([]p2p_peer.AddrInfo, 0, len(relayAddrs))
+	for _, addr := range relayAddrs {
+		info, err := p2p_peer.AddrInfoFromString(addr)
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to parse relay addr info")
+		}
+		relayPeerInfo = append(relayPeerInfo, *info)
+	}
 	// configure host
 	hostconfig := &ipfs_mobile.HostConfig{
 		// called after host init
 		ConfigFunc: opts.HostConfigFunc,
 
 		// p2p options
-		Options: p2popts,
+		Options: append(p2popts, p2p.EnableAutoRelayWithStaticRelays(relayPeerInfo)),
 	}
 
 	// configure routing
