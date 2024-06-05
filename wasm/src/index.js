@@ -57,38 +57,47 @@ document.addEventListener('DOMContentLoaded', async () => {
 
 	await weshnet_initService(helia)
 
-	const conf = weshnet_serviceGetConfiguration()
+	console.log("weshnet initialized")
+
+	const conf = await weshnet_serviceGetConfiguration()
 	console.log("weshnet conf:", conf)
 
 	weshnet_groupMetadataList(conf.AccountGroupPK, (res) => {
 		console.log("recv account metadata:", res)
 	})
+
+	console.log("subscribed on account group metadata")
+
 	weshnet_groupMessageList(conf.AccountGroupPK, (res) => {
 		console.log("recv account message:", res)
 	})
 
-	const refRes = weshnet_contactRequestReference()
+	console.log("subscribed on account group messages")
+
+	const refRes = await weshnet_contactRequestReference()
 	console.log("base64-url PublicRendezvousSeed:", refRes)
 
-	const mmGroupPK = weshnet_multiMemberGroupCreate()
+	const mmGroupPK = await weshnet_multiMemberGroupCreate()
 	weshnet_groupMetadataList(mmGroupPK, (res) => {
 		console.log("recv multiMember metadata:", res)
 	})
 	weshnet_groupMessageList(mmGroupPK, (res) => {
 		console.log("recv multiMember message:", res)
 	})
-	const mmInvit = weshnet_multiMemberGroupInvitationCreate(mmGroupPK)
+	const mmInvit = await weshnet_multiMemberGroupInvitationCreate(mmGroupPK)
 	console.log("multiMember group invit:", mmInvit)
 
-	setInterval(() => {
-		const peers = weshnet_peerList()
+	/*
+	setInterval(async () => {
+		const peers = await weshnet_peerList()
 		console.log("peers", peers)
 	}, 5000)
+	*/
 
-	function joinGroup() {
+	globalThis.joinGroup = async () =>  {
 		const input = document.getElementById("mmGroupPK")
-		const groupPK = weshnet_multiMemberGroupJoin(input.value)
-		weshnet_activateGroup(groupPK)
+		const groupPK = await weshnet_multiMemberGroupJoin(input.value)
+		await weshnet_activateGroup(groupPK)
 		weshnet_groupMetadataList(groupPK, (res) => {
 			console.log("recv external multiMember metadata:", res)
 		})
@@ -96,6 +105,8 @@ document.addEventListener('DOMContentLoaded', async () => {
 			console.log("recv external multiMember message:", res)
 		})
 	}
+
+	console.log("routine done")
 })
 
 function ms2TimeString (a) {

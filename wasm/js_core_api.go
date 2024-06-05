@@ -41,7 +41,7 @@ func (jca *coreAPIFromJS) Block() ipfs_interface.BlockAPI {
 
 // Dag returns an implementation of Dag API
 func (jca *coreAPIFromJS) Dag() ipfs_interface.APIDagService {
-	panic("not implemented")
+	return &dagAPIFromJS{helia: jca.helia}
 }
 
 // Name returns an implementation of Name API
@@ -51,7 +51,7 @@ func (jca *coreAPIFromJS) Name() ipfs_interface.NameAPI {
 
 // Key returns an implementation of Key API
 func (jca *coreAPIFromJS) Key() ipfs_interface.KeyAPI {
-	panic("not implemented")
+	return &keyAPIFromJS{helia: jca.helia}
 }
 
 // Pin returns an implementation of Pin API
@@ -71,7 +71,7 @@ func (jca *coreAPIFromJS) Dht() ipfs_interface.DhtAPI {
 
 // Swarm returns an implementation of Swarm API
 func (jca *coreAPIFromJS) Swarm() ipfs_interface.SwarmAPI {
-	panic("not implemented")
+	return &swarmAPIFromJS{helia: jca.helia}
 }
 
 // PubSub returns an implementation of PubSub API
@@ -173,7 +173,12 @@ func (jca *coreAPIFromJS) RemoveStreamHandler(pid protocol.ID) {
 // to create one. If ProtocolID is "", writes no header.
 // (Threadsafe)
 func (jca *coreAPIFromJS) NewStream(ctx context.Context, p peer.ID, pids ...protocol.ID) (network.Stream, error) {
-	panic("not implemented")
+	jsConn, err := await(jca.helia.Get("libp2p").Call("dialProtocol", p.String(), jsArrayTransform(pids, func(pid protocol.ID) string { return string(pid) })))
+	if err != nil {
+		return nil, err
+	}
+	conn := connFromJS{conn: jsConn}
+	return conn.NewStream(ctx)
 }
 
 // Close shuts down the host, its Network, and services.

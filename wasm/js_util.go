@@ -3,9 +3,17 @@
 package main
 
 import (
-	"errors"
 	"syscall/js"
+
+	"errors"
+
+	"github.com/libp2p/go-libp2p/core/peer"
+	ma "github.com/multiformats/go-multiaddr"
 )
+
+func consoleLog(args ...any) {
+	js.Global().Get("console").Call("log", args...)
+}
 
 func awaitRaw(awaitable js.Value) ([]js.Value, []js.Value) {
 	then := make(chan []js.Value)
@@ -60,7 +68,8 @@ func promisify(cb func() ([]any, error)) js.Value {
 
 			// reject if error
 			if err != nil {
-				reject.Invoke(err)
+				jsErr := js.Global().Get("Error").New(err.Error())
+				reject.Invoke(jsErr)
 			}
 
 			// Resolve the Promise, passing anything back to JavaScript
@@ -75,4 +84,35 @@ func promisify(cb func() ([]any, error)) js.Value {
 	// Create and return the Promise object
 	promiseConstructor := js.Global().Get("Promise")
 	return promiseConstructor.New(handler)
+}
+
+func heliaListenAddresses(helia js.Value) ([]ma.Multiaddr, error) {
+	jsmaddrs := helia.Get("libp2p").Call("getMultiaddrs")
+	l := jsmaddrs.Length()
+	ret := make([]ma.Multiaddr, l)
+	for i := 0; i < l; i++ {
+		jsmaddr := jsmaddrs.Index(i)
+		maddrStr := jsmaddr.Call("toString").String()
+		maddr, err := ma.NewMultiaddr(maddrStr)
+		if err != nil {
+			return nil, err
+		}
+		ret[i] = maddr
+	}
+	return ret, nil
+}
+
+func heliaConnectedPeers(helia js.Value) ([]peer.ID, error) {
+	peers := helia.Get("libp2p").Call("getPeers")
+	ids := make([]peer.ID, peers.Length())
+	for i := 0; i < peers.Length(); i++ {
+		p := peers.Index(i)
+		rawId := p.Call("toString").String()
+		id, err := peer.Decode(rawId)
+		if err != nil {
+			return nil, err
+		}
+		ids[i] = id
+	}
+	return ids, nil
 }

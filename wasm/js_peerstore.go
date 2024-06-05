@@ -206,5 +206,16 @@ func (jps *peerStoreFromJS) PeerInfo(_ peer.ID) peer.AddrInfo {
 
 // Peers returns all of the peer IDs stored across all inner stores.
 func (jps *peerStoreFromJS) Peers() peer.IDSlice {
-	panic("not implemented") // TODO: Implement
+	peers := jps.helia.Get("libp2p").Get("peerStore").Call("all")
+	ids := make([]peer.ID, peers.Length())
+	for i := 0; i < peers.Length(); i++ {
+		p := peers.Index(i)
+		rawId := p.Call("toString").String()
+		id, err := peer.Decode(rawId)
+		if err != nil {
+			panic(err)
+		}
+		ids[i] = id
+	}
+	return ids
 }

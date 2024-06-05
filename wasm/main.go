@@ -55,17 +55,19 @@ func initService(this js.Value, args []js.Value) any {
 }
 
 func serviceGetConfiguration(this js.Value, args []js.Value) any {
-	res, err := svc.ServiceGetConfiguration(context.Background(), &protocoltypes.ServiceGetConfiguration_Request{})
-	if err != nil {
-		panic(err)
-	}
-	return map[string]any{
-		"AccountPK":      bytesToString(res.AccountPK),
-		"DevicePK":       bytesToString(res.DevicePK),
-		"AccountGroupPK": bytesToString(res.AccountGroupPK),
-		"PeerID":         res.PeerID,
-		"Listeners":      jsArray(res.Listeners),
-	}
+	return promisify(func() ([]any, error) {
+		res, err := svc.ServiceGetConfiguration(context.Background(), &protocoltypes.ServiceGetConfiguration_Request{})
+		if err != nil {
+			return nil, err
+		}
+		return []any{map[string]any{
+			"AccountPK":      bytesToString(res.AccountPK),
+			"DevicePK":       bytesToString(res.DevicePK),
+			"AccountGroupPK": bytesToString(res.AccountGroupPK),
+			"PeerID":         res.PeerID,
+			"Listeners":      jsArray(res.Listeners),
+		}}, nil
+	})
 }
 
 func groupMessageList(this js.Value, args []js.Value) any {
@@ -142,97 +144,109 @@ func groupMetadataList(this js.Value, args []js.Value) any {
 }
 
 func contactRequestReference(this js.Value, args []js.Value) any {
-	assertInitialized()
+	return promisify(func() ([]any, error) {
+		assertInitialized()
 
-	res, err := svc.ContactRequestEnable(context.Background(), &protocoltypes.ContactRequestEnable_Request{})
-	if err != nil {
-		panic(err)
-	}
-
-	ret := res.PublicRendezvousSeed
-	if len(ret) == 0 {
-		res, err := svc.ContactRequestResetReference(context.Background(), &protocoltypes.ContactRequestResetReference_Request{})
+		res, err := svc.ContactRequestEnable(context.Background(), &protocoltypes.ContactRequestEnable_Request{})
 		if err != nil {
-			panic(err)
+			return nil, err
 		}
-		ret = res.PublicRendezvousSeed
-	}
 
-	return js.ValueOf(bytesToString(ret))
+		ret := res.PublicRendezvousSeed
+		if len(ret) == 0 {
+			res, err := svc.ContactRequestResetReference(context.Background(), &protocoltypes.ContactRequestResetReference_Request{})
+			if err != nil {
+				return nil, err
+			}
+			ret = res.PublicRendezvousSeed
+		}
+
+		return []any{js.ValueOf(bytesToString(ret))}, nil
+	})
 }
 
 func multiMemberGroupCreate(this js.Value, args []js.Value) any {
-	res, err := svc.MultiMemberGroupCreate(context.Background(), &protocoltypes.MultiMemberGroupCreate_Request{})
-	if err != nil {
-		panic(err)
-	}
-	return bytesToString(res.GroupPK)
+	return promisify(func() ([]any, error) {
+		res, err := svc.MultiMemberGroupCreate(context.Background(), &protocoltypes.MultiMemberGroupCreate_Request{})
+		if err != nil {
+			return nil, err
+		}
+		return []any{bytesToString(res.GroupPK)}, nil
+	})
 }
 
 func multiMemberGroupInvitationCreate(this js.Value, args []js.Value) any {
-	if len(args) != 1 {
-		panic(errors.New("expected 1 arg"))
-	}
-	if args[0].Type() != js.TypeString {
-		panic(errors.New("expected first arg to be a string"))
-	}
-	groupPK := mustStringToBytes(args[0].String())
-	res, err := svc.MultiMemberGroupInvitationCreate(context.Background(), &protocoltypes.MultiMemberGroupInvitationCreate_Request{
-		GroupPK: groupPK,
+	return promisify(func() ([]any, error) {
+		if len(args) != 1 {
+			return nil, errors.New("expected 1 arg")
+		}
+		if args[0].Type() != js.TypeString {
+			return nil, errors.New("expected first arg to be a string")
+		}
+		groupPK := mustStringToBytes(args[0].String())
+		res, err := svc.MultiMemberGroupInvitationCreate(context.Background(), &protocoltypes.MultiMemberGroupInvitationCreate_Request{
+			GroupPK: groupPK,
+		})
+		if err != nil {
+			return nil, err
+		}
+		invit, err := res.Group.Marshal()
+		if err != nil {
+			return nil, err
+		}
+		return []any{bytesToString(invit)}, nil
 	})
-	if err != nil {
-		panic(err)
-	}
-	invit, err := res.Group.Marshal()
-	if err != nil {
-		panic(err)
-	}
-	return bytesToString(invit)
 }
 
 func multiMemberGroupJoin(this js.Value, args []js.Value) any {
-	if len(args) != 1 {
-		panic(errors.New("expected 1 arg"))
-	}
-	if args[0].Type() != js.TypeString {
-		panic(errors.New("expected first arg to be a string"))
-	}
-	invit := mustStringToBytes(args[0].String())
-	group := &protocoltypes.Group{}
-	err := group.Unmarshal(invit)
-	if err != nil {
-		panic(err)
-	}
-	_, err = svc.MultiMemberGroupJoin(context.Background(), &protocoltypes.MultiMemberGroupJoin_Request{
-		Group: group,
+	return promisify(func() ([]any, error) {
+		if len(args) != 1 {
+			return nil, errors.New("expected 1 arg")
+		}
+		if args[0].Type() != js.TypeString {
+			return nil, errors.New("expected first arg to be a string")
+		}
+		invit := mustStringToBytes(args[0].String())
+		group := &protocoltypes.Group{}
+		err := group.Unmarshal(invit)
+		if err != nil {
+			panic(err)
+		}
+		_, err = svc.MultiMemberGroupJoin(context.Background(), &protocoltypes.MultiMemberGroupJoin_Request{
+			Group: group,
+		})
+		if err != nil {
+			return nil, err
+		}
+		return []any{bytesToString(group.PublicKey)}, nil
 	})
-	if err != nil {
-		panic(err)
-	}
-	return bytesToString(group.PublicKey)
 }
 
 func activateGroup(this js.Value, args []js.Value) any {
-	if len(args) != 1 {
-		panic(errors.New("expected 1 arg"))
-	}
-	if args[0].Type() != js.TypeString {
-		panic(errors.New("expected first arg to be a string"))
-	}
-	groupPK := mustStringToBytes(args[0].String())
-	_, err := svc.ActivateGroup(context.Background(), &protocoltypes.ActivateGroup_Request{GroupPK: groupPK})
-	if err != nil {
-		panic(err)
-	}
-	return nil
+	return promisify(func() ([]any, error) {
+		if len(args) != 1 {
+			return nil, errors.New("expected 1 arg")
+		}
+		if args[0].Type() != js.TypeString {
+			return nil, errors.New("expected first arg to be a string")
+		}
+		groupPK := mustStringToBytes(args[0].String())
+		_, err := svc.ActivateGroup(context.Background(), &protocoltypes.ActivateGroup_Request{GroupPK: groupPK})
+		if err != nil {
+			return nil, err
+		}
+		return nil, nil
+	})
 }
 
 func peerList(this js.Value, args []js.Value) any {
-	res, err := svc.PeerList(context.Background(), &protocoltypes.PeerList_Request{})
-	if err != nil {
-		panic(err)
-	}
-	return jsArrayTransform(res.Peers, jsPeer)
+	return promisify(func() ([]any, error) {
+		res, err := svc.PeerList(context.Background(), &protocoltypes.PeerList_Request{})
+		if err != nil {
+			return nil, err
+		}
+		return []any{jsArrayTransform(res.Peers, jsPeer)}, nil
+	})
 }
 
 func jsPeer(p *protocoltypes.PeerList_Peer) map[string]any {

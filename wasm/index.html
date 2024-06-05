@@ -31,6 +31,8 @@
     <div>
       <button class="e2e-startHelia" onclick="window.helia.start()">Start Helia</button>
       <button class="e2e-stopHelia" onclick="window.helia.stop()">Stop Helia</button>
+      <input type="text" id="mmGroupPK" />
+      <button type="button" onclick="joinGroup()">Join</button>
     </div>
     <h1 id="status">Node status: <span id="statusValue">Not Started</span></h1>
     <div id="nodeInfo">
@@ -112,6 +114,7 @@
   <script src="https://cdn.jsdelivr.net/npm/blockstore-core@^4.0.0/dist/index.min.js" defer></script>
   <script src="https://cdn.jsdelivr.net/npm/datastore-core@^9.0.0/dist/index.min.js" defer></script>
   <script src="https://cdn.jsdelivr.net/npm/@libp2p/kad-dht@^12.0.0/dist/index.min.js" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/multiformats@^13.1.1/dist/index.min.js" defer></script>
   <script src="wasm_exec.js"></script>
   <script src="./src/index.js" type="module" defer></script>
   <script nomodule>

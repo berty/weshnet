@@ -47,8 +47,8 @@ type eventBusFromJS struct {
 //	  }
 //	}
 func (jeb *eventBusFromJS) Subscribe(eventType interface{}, opts ...event.SubscriptionOpt) (event.Subscription, error) {
-	fmt.Println("FIXME: ignoring sub to", eventType, opts)
-	return nil, nil
+	fmt.Println("FIXME: mocked sub to", eventType, opts)
+	return newEventSubFromJS(), nil
 }
 
 // Emitter creates a new event emitter.
@@ -70,5 +70,30 @@ func (jeb *eventBusFromJS) Emitter(eventType interface{}, opts ...event.EmitterO
 // The caller is guaranteed that this function will only return value types;
 // no pointer types will be returned.
 func (jeb *eventBusFromJS) GetAllEventTypes() []reflect.Type {
+	panic("not implemented") // TODO: Implement
+}
+
+type eventSubFromJS struct {
+	ch chan interface{}
+}
+
+var _ event.Subscription = (*eventSubFromJS)(nil)
+
+func newEventSubFromJS() *eventSubFromJS {
+	return &eventSubFromJS{ch: make(chan interface{})}
+}
+
+func (jes *eventSubFromJS) Close() error {
+	close(jes.ch)
+	return nil
+}
+
+// Out returns the channel from which to consume events.
+func (jes *eventSubFromJS) Out() <-chan interface{} {
+	return jes.ch
+}
+
+// Name returns the name for the subscription
+func (jes *eventSubFromJS) Name() string {
 	panic("not implemented") // TODO: Implement
 }
