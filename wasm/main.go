@@ -31,16 +31,27 @@ func main() {
 }
 
 func initService(this js.Value, args []js.Value) any {
-	if svc == nil {
+	return promisify(func() ([]any, error) {
+		if svc != nil {
+			return nil, errors.New("weshnet already initialized")
+		}
+		if len(args) != 1 {
+			return nil, errors.New("expected 1 arg")
+		}
+		helia := args[0]
+		ipfsCore := &coreAPIFromJS{helia: helia}
 		os.Setenv("WESHNET_LOG_FILTER", "*")
 		//os.Setenv("IPFS_LOGGING", "error")
 		var err error
-		svc, err = weshnet.NewInMemoryServiceClient()
+		svc, err = weshnet.NewServiceClient(weshnet.Opts{
+			DatastoreDir: weshnet.InMemoryDirectory,
+			IpfsCoreAPI:  ipfsCore,
+		})
 		if err != nil {
-			panic(err)
+			return nil, err
 		}
-	}
-	return nil
+		return nil, nil
+	})
 }
 
 func serviceGetConfiguration(this js.Value, args []js.Value) any {
