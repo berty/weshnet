@@ -3,6 +3,7 @@
 package main
 
 import (
+	"fmt"
 	"syscall/js"
 
 	"errors"
@@ -63,6 +64,18 @@ func promisify(cb func() ([]any, error)) js.Value {
 		// Now that we have a way to return the response to JS, spawn a goroutine
 		// This way, we don't block the event loop and avoid a deadlock
 		go func() {
+			defer func() {
+				if r := recover(); r != nil {
+					err, ok := r.(error)
+					if ok {
+						jsErr := js.Global().Get("Error").New(err.Error())
+						reject.Invoke(jsErr)
+					} else {
+						reject.Invoke()
+					}
+				}
+			}()
+
 			// work
 			ret, err := cb()
 
@@ -80,13 +93,17 @@ func promisify(cb func() ([]any, error)) js.Value {
 		// The handler of a Promise doesn't return any value
 		return nil
 	})
+	defer handler.Release()
 
 	// Create and return the Promise object
 	promiseConstructor := js.Global().Get("Promise")
 	return promiseConstructor.New(handler)
 }
 
-func heliaListenAddresses(helia js.Value) ([]ma.Multiaddr, error) {
+func heliaListenAddresses(helia js.Value) (fa []ma.Multiaddr, fb error) {
+	defer func() {
+		fmt.Println("listen addresses return", fa, fb)
+	}()
 	jsmaddrs := helia.Get("libp2p").Call("getMultiaddrs")
 	l := jsmaddrs.Length()
 	ret := make([]ma.Multiaddr, l)

@@ -11,6 +11,22 @@ document.addEventListener('DOMContentLoaded', async () => {
   const helia = window.helia = await instantiateHeliaNode()
   window.heliaFs = await HeliaUnixfs.unixfs(helia)
 
+	window.wrapAsyncGenerator = async (it, cb, end) => {
+		let outErr
+		try {
+			for await (const elem of it) {
+				//console.log('got async gen elem', elem)
+				cb(elem)
+			}
+		} catch (err) {
+			outErr = err
+		} finally {
+			//console.log("async generator finishing", outErr)
+			end(outErr)
+			//console.log("async generator done")
+		}
+	}
+
   helia.libp2p.addEventListener('peer:discovery', (evt) => {
     window.discoveredPeers.set(evt.detail.id.toString(), evt.detail)
     addToLog(`Discovered peer ${evt.detail.id.toString()}`)
@@ -84,6 +100,8 @@ document.addEventListener('DOMContentLoaded', async () => {
 	weshnet_groupMessageList(mmGroupPK, (res) => {
 		console.log("recv multiMember message:", res)
 	})
+	weshnet_appMetadataSend(mmGroupPK, "abonde")
+
 	const mmInvit = await weshnet_multiMemberGroupInvitationCreate(mmGroupPK)
 	console.log("multiMember group invit:", mmInvit)
 
@@ -104,6 +122,8 @@ document.addEventListener('DOMContentLoaded', async () => {
 		weshnet_groupMessageList(groupPK, (res) => {
 			console.log("recv external multiMember message:", res)
 		})
+
+		weshnet_appMetadataSend(groupPk, "abonde")
 	}
 
 	console.log("routine done")

@@ -47,7 +47,16 @@ type eventBusFromJS struct {
 //	  }
 //	}
 func (jeb *eventBusFromJS) Subscribe(eventType interface{}, opts ...event.SubscriptionOpt) (event.Subscription, error) {
-	fmt.Println("FIXME: mocked sub to", eventType, opts)
+	switch casted := eventType.(type) {
+	case []interface{}:
+		for _, elem := range casted {
+			reflected := reflect.TypeOf(elem)
+			fmt.Println("FIXME: mocked sub to", reflected, elem, opts)
+		}
+	default:
+		reflected := reflect.TypeOf(eventType)
+		fmt.Println("FIXME: mocked sub to", reflected, eventType, opts)
+	}
 	return newEventSubFromJS(), nil
 }
 
@@ -80,7 +89,7 @@ type eventSubFromJS struct {
 var _ event.Subscription = (*eventSubFromJS)(nil)
 
 func newEventSubFromJS() *eventSubFromJS {
-	return &eventSubFromJS{ch: make(chan interface{})}
+	return &eventSubFromJS{ch: make(chan interface{}, 42)}
 }
 
 func (jes *eventSubFromJS) Close() error {

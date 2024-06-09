@@ -27,6 +27,8 @@ func main() {
 	js.Global().Set("weshnet_multiMemberGroupJoin", js.FuncOf(multiMemberGroupJoin))
 	js.Global().Set("weshnet_activateGroup", js.FuncOf(activateGroup))
 	js.Global().Set("weshnet_peerList", js.FuncOf(peerList))
+	js.Global().Set("weshnet_appMessageSend", js.FuncOf(appMessageSend))
+	js.Global().Set("weshnet_appMetadataSend", js.FuncOf(appMetadataSend))
 	<-c
 }
 
@@ -41,7 +43,7 @@ func initService(this js.Value, args []js.Value) any {
 		helia := args[0]
 		ipfsCore := &coreAPIFromJS{helia: helia}
 		os.Setenv("WESHNET_LOG_FILTER", "*")
-		//os.Setenv("IPFS_LOGGING", "error")
+		os.Setenv("IPFS_LOGGING", "debug")
 		var err error
 		svc, err = weshnet.NewServiceClient(weshnet.Opts{
 			DatastoreDir: weshnet.InMemoryDirectory,
@@ -71,26 +73,25 @@ func serviceGetConfiguration(this js.Value, args []js.Value) any {
 }
 
 func groupMessageList(this js.Value, args []js.Value) any {
-	assertInitialized()
+	return promisify(func() ([]any, error) {
+		assertInitialized()
 
-	if len(args) != 2 {
-		panic(errors.New("expected 2 args"))
-	}
-	if args[0].Type() != js.TypeString {
-		panic(errors.New("expected first arg to be a string"))
-	}
-	if args[1].Type() != js.TypeFunction {
-		panic(errors.New("expected second arg to be a function"))
-	}
+		if len(args) != 2 {
+			return nil, errors.New("expected 2 args")
+		}
+		if args[0].Type() != js.TypeString {
+			return nil, errors.New("expected first arg to be a string")
+		}
+		if args[1].Type() != js.TypeFunction {
+			return nil, errors.New("expected second arg to be a function")
+		}
 
-	stream, err := svc.GroupMessageList(context.Background(), &protocoltypes.GroupMessageList_Request{
-		GroupPK: mustStringToBytes(args[0].String()),
-	})
-	if err != nil {
-		panic(err)
-	}
-
-	go func() {
+		stream, err := svc.GroupMessageList(context.Background(), &protocoltypes.GroupMessageList_Request{
+			GroupPK: mustStringToBytes(args[0].String()),
+		})
+		if err != nil {
+			return nil, err
+		}
 		for {
 			msg, err := stream.Recv()
 			if err != nil {
@@ -101,36 +102,34 @@ func groupMessageList(this js.Value, args []js.Value) any {
 				"Message":      bytesToString(msg.Message),
 			})
 		}
-	}()
-
-	return nil
+	})
 }
 
 func groupMetadataList(this js.Value, args []js.Value) any {
-	assertInitialized()
+	return promisify(func() ([]any, error) {
+		assertInitialized()
 
-	if len(args) != 2 {
-		panic(errors.New("expected 2 args"))
-	}
-	if args[0].Type() != js.TypeString {
-		panic(errors.New("expected first arg to be a string"))
-	}
-	if args[1].Type() != js.TypeFunction {
-		panic(errors.New("expected second arg to be a function"))
-	}
+		if len(args) != 2 {
+			return nil, errors.New("expected 2 args")
+		}
+		if args[0].Type() != js.TypeString {
+			return nil, errors.New("expected first arg to be a string")
+		}
+		if args[1].Type() != js.TypeFunction {
+			return nil, errors.New("expected second arg to be a function")
+		}
 
-	stream, err := svc.GroupMetadataList(context.Background(), &protocoltypes.GroupMetadataList_Request{
-		GroupPK: mustStringToBytes(args[0].String()),
-	})
-	if err != nil {
-		panic(err)
-	}
+		stream, err := svc.GroupMetadataList(context.Background(), &protocoltypes.GroupMetadataList_Request{
+			GroupPK: mustStringToBytes(args[0].String()),
+		})
+		if err != nil {
+			return nil, err
+		}
 
-	go func() {
 		for {
 			msg, err := stream.Recv()
 			if err != nil {
-				panic(err)
+				return nil, err
 			}
 			args[1].Invoke(map[string]any{
 				"EventContext": jsEventContext(msg.EventContext),
@@ -138,9 +137,7 @@ func groupMetadataList(this js.Value, args []js.Value) any {
 				"Event":        bytesToString(msg.Event),
 			})
 		}
-	}()
-
-	return nil
+	})
 }
 
 func contactRequestReference(this js.Value, args []js.Value) any {
@@ -246,6 +243,54 @@ func peerList(this js.Value, args []js.Value) any {
 			return nil, err
 		}
 		return []any{jsArrayTransform(res.Peers, jsPeer)}, nil
+	})
+}
+
+func appMetadataSend(this js.Value, args []js.Value) any {
+	return promisify(func() ([]any, error) {
+		if len(args) != 2 {
+			return nil, errors.New("expected 2 args")
+		}
+		if args[0].Type() != js.TypeString {
+			return nil, errors.New("expected groupPk arg to be a string")
+		}
+		if args[1].Type() != js.TypeString {
+			return nil, errors.New("expected payload arg to be a string")
+		}
+		groupPK := mustStringToBytes(args[0].String())
+		payload := mustStringToBytes(args[1].String())
+		res, err := svc.AppMetadataSend(context.Background(), &protocoltypes.AppMetadataSend_Request{
+			GroupPK: groupPK,
+			Payload: payload,
+		})
+		if err != nil {
+			return nil, err
+		}
+		return []any{bytesToString(res.CID)}, nil
+	})
+}
+
+func appMessageSend(this js.Value, args []js.Value) any {
+	return promisify(func() ([]any, error) {
+		if len(args) != 2 {
+			return nil, errors.New("expected 2 args")
+		}
+		if args[0].Type() != js.TypeString {
+			return nil, errors.New("expected groupPk arg to be a string")
+		}
+		if args[1].Type() != js.TypeString {
+			return nil, errors.New("expected payload arg to be a string")
+		}
+		groupPK := mustStringToBytes(args[0].String())
+		payload := mustStringToBytes(args[1].String())
+		res, err := svc.AppMessageSend(context.Background(), &protocoltypes.AppMessageSend_Request{
+			GroupPK: groupPK,
+			Payload: payload,
+		})
+		if err != nil {
+			return nil, err
+		}
+		return []any{bytesToString(res.CID)}, nil
 	})
 }
 

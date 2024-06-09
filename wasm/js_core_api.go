@@ -4,6 +4,7 @@ package main
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"syscall/js"
 
@@ -149,8 +150,19 @@ func (jca *coreAPIFromJS) Connect(ctx context.Context, pi peer.AddrInfo) error {
 //
 // (Threadsafe)
 func (jca *coreAPIFromJS) SetStreamHandler(pid protocol.ID, handler network.StreamHandler) {
-	fmt.Println("FIXME: ignoring handler for", pid)
-	_, err := await(jca.helia.Get("libp2p").Call("handle", string(pid), js.Undefined()))
+	_, err := await(jca.helia.Get("libp2p").Call("handle", string(pid), js.FuncOf(func(this js.Value, args []js.Value) any {
+		return promisify(func() ([]any, error) {
+			if len(args) == 0 {
+				return nil, errors.New("empty stream arg")
+			}
+			handler(newStreamFromJS(
+				args[0].Get("stream"),
+				args[0].Get("connection"),
+				"handler "+string(pid),
+			))
+			return nil, nil
+		})
+	})))
 	if err != nil {
 		panic(err)
 	}
@@ -168,17 +180,29 @@ func (jca *coreAPIFromJS) RemoveStreamHandler(pid protocol.ID) {
 	panic("not implemented")
 }
 
+func sliceMap[I any, O any](slice []I, transform func(I) O) []O {
+	ret := make([]O, len(slice))
+	for i, in := range slice {
+		ret[i] = transform(in)
+	}
+	return ret
+}
+
 // NewStream opens a new stream to given peer p, and writes a p2p/protocol
 // header with given ProtocolID. If there is no connection to p, attempts
 // to create one. If ProtocolID is "", writes no header.
 // (Threadsafe)
 func (jca *coreAPIFromJS) NewStream(ctx context.Context, p peer.ID, pids ...protocol.ID) (network.Stream, error) {
-	jsConn, err := await(jca.helia.Get("libp2p").Call("dialProtocol", p.String(), jsArrayTransform(pids, func(pid protocol.ID) string { return string(pid) })))
+	fmt.Println("dialing", pids)
+	conn, err := await(jca.helia.Get("libp2p").Call("dial", p.String()))
 	if err != nil {
 		return nil, err
 	}
-	conn := connFromJS{conn: jsConn}
-	return conn.NewStream(ctx)
+	strm, err := await(conn.Call("newStream", jsArrayTransform(pids, func(pid protocol.ID) string { return string(pid) })))
+	if err != nil {
+		return nil, err
+	}
+	return &streamFromJS{s: strm, conn: conn, hint: "new stream " + p.String() + " " + fmt.Sprint(pids)}, nil
 }
 
 // Close shuts down the host, its Network, and services.

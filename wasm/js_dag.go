@@ -33,6 +33,7 @@ func (jdag *dagAPIFromJS) Add(ctx context.Context, data ipld.Node) error {
 		    return cid
 	*/
 	cid := data.Cid()
+	fmt.Println("dag add", cid)
 	bs := data.RawData()
 	dst := js.Global().Get("Uint8Array").New(len(bs))
 	n := js.CopyBytesToJS(dst, bs)
@@ -41,6 +42,7 @@ func (jdag *dagAPIFromJS) Add(ctx context.Context, data ipld.Node) error {
 	}
 	jsCID := js.Global().Get("Multiformats").Get("CID").Call("parse", cid.String())
 	_, err := await(jdag.helia.Get("blockstore").Call("put", jsCID, dst))
+	fmt.Println("dag added", cid)
 	return err
 }
 
@@ -56,6 +58,7 @@ func (jdag *dagAPIFromJS) AddMany(_ context.Context, _ []ipld.Node) error {
 // implementation, this may involve fetching the Node from a remote
 // machine; consider setting a deadline in the context.
 func (jdag *dagAPIFromJS) Get(ctx context.Context, cid cid.Cid) (ipld.Node, error) {
+	fmt.Println("dag get", cid)
 	fmt.Println("FIXME: ignored input context in dag.Get")
 	jsCID := js.Global().Get("Multiformats").Get("CID").Call("parse", cid.String())
 	jsNode, err := await(jdag.helia.Get("blockstore").Call("get", jsCID))
@@ -68,7 +71,12 @@ func (jdag *dagAPIFromJS) Get(ctx context.Context, cid cid.Cid) (ipld.Node, erro
 	if err != nil {
 		return nil, err
 	}
-	return ipld.Decode(blocks)
+	node, err := ipld.Decode(blocks)
+	if err != nil {
+		return nil, err
+	}
+	fmt.Println("dag got", cid, len(bs), "bytes")
+	return node, nil
 }
 
 // GetMany returns a channel of NodeOptions given a set of CIDs.
