@@ -10,6 +10,7 @@ import (
 	"syscall/js"
 
 	"berty.tech/weshnet"
+	"berty.tech/weshnet/pkg/ipfsutil/wasm"
 	"berty.tech/weshnet/pkg/protocoltypes"
 )
 
@@ -33,7 +34,7 @@ func main() {
 }
 
 func initService(this js.Value, args []js.Value) any {
-	return promisify(func() ([]any, error) {
+	return wasm.Promisify(func() ([]any, error) {
 		if svc != nil {
 			return nil, errors.New("weshnet already initialized")
 		}
@@ -41,10 +42,12 @@ func initService(this js.Value, args []js.Value) any {
 			return nil, errors.New("expected 1 arg")
 		}
 		helia := args[0]
-		ipfsCore := &coreAPIFromJS{helia: helia}
+		ipfsCore, err := wasm.NewCoreAPIFromJS(helia)
+		if err != nil {
+			return nil, err
+		}
 		os.Setenv("WESHNET_LOG_FILTER", "*")
 		os.Setenv("IPFS_LOGGING", "debug")
-		var err error
 		svc, err = weshnet.NewServiceClient(weshnet.Opts{
 			DatastoreDir: weshnet.InMemoryDirectory,
 			IpfsCoreAPI:  ipfsCore,
@@ -57,7 +60,7 @@ func initService(this js.Value, args []js.Value) any {
 }
 
 func serviceGetConfiguration(this js.Value, args []js.Value) any {
-	return promisify(func() ([]any, error) {
+	return wasm.Promisify(func() ([]any, error) {
 		res, err := svc.ServiceGetConfiguration(context.Background(), &protocoltypes.ServiceGetConfiguration_Request{})
 		if err != nil {
 			return nil, err
@@ -67,13 +70,13 @@ func serviceGetConfiguration(this js.Value, args []js.Value) any {
 			"DevicePK":       bytesToString(res.DevicePK),
 			"AccountGroupPK": bytesToString(res.AccountGroupPK),
 			"PeerID":         res.PeerID,
-			"Listeners":      jsArray(res.Listeners),
+			"Listeners":      wasm.JSArray(res.Listeners),
 		}}, nil
 	})
 }
 
 func groupMessageList(this js.Value, args []js.Value) any {
-	return promisify(func() ([]any, error) {
+	return wasm.Promisify(func() ([]any, error) {
 		assertInitialized()
 
 		if len(args) != 2 {
@@ -106,7 +109,7 @@ func groupMessageList(this js.Value, args []js.Value) any {
 }
 
 func groupMetadataList(this js.Value, args []js.Value) any {
-	return promisify(func() ([]any, error) {
+	return wasm.Promisify(func() ([]any, error) {
 		assertInitialized()
 
 		if len(args) != 2 {
@@ -141,7 +144,7 @@ func groupMetadataList(this js.Value, args []js.Value) any {
 }
 
 func contactRequestReference(this js.Value, args []js.Value) any {
-	return promisify(func() ([]any, error) {
+	return wasm.Promisify(func() ([]any, error) {
 		assertInitialized()
 
 		res, err := svc.ContactRequestEnable(context.Background(), &protocoltypes.ContactRequestEnable_Request{})
@@ -163,7 +166,7 @@ func contactRequestReference(this js.Value, args []js.Value) any {
 }
 
 func multiMemberGroupCreate(this js.Value, args []js.Value) any {
-	return promisify(func() ([]any, error) {
+	return wasm.Promisify(func() ([]any, error) {
 		res, err := svc.MultiMemberGroupCreate(context.Background(), &protocoltypes.MultiMemberGroupCreate_Request{})
 		if err != nil {
 			return nil, err
@@ -173,7 +176,7 @@ func multiMemberGroupCreate(this js.Value, args []js.Value) any {
 }
 
 func multiMemberGroupInvitationCreate(this js.Value, args []js.Value) any {
-	return promisify(func() ([]any, error) {
+	return wasm.Promisify(func() ([]any, error) {
 		if len(args) != 1 {
 			return nil, errors.New("expected 1 arg")
 		}
@@ -196,7 +199,7 @@ func multiMemberGroupInvitationCreate(this js.Value, args []js.Value) any {
 }
 
 func multiMemberGroupJoin(this js.Value, args []js.Value) any {
-	return promisify(func() ([]any, error) {
+	return wasm.Promisify(func() ([]any, error) {
 		if len(args) != 1 {
 			return nil, errors.New("expected 1 arg")
 		}
@@ -220,7 +223,7 @@ func multiMemberGroupJoin(this js.Value, args []js.Value) any {
 }
 
 func activateGroup(this js.Value, args []js.Value) any {
-	return promisify(func() ([]any, error) {
+	return wasm.Promisify(func() ([]any, error) {
 		if len(args) != 1 {
 			return nil, errors.New("expected 1 arg")
 		}
@@ -237,17 +240,17 @@ func activateGroup(this js.Value, args []js.Value) any {
 }
 
 func peerList(this js.Value, args []js.Value) any {
-	return promisify(func() ([]any, error) {
+	return wasm.Promisify(func() ([]any, error) {
 		res, err := svc.PeerList(context.Background(), &protocoltypes.PeerList_Request{})
 		if err != nil {
 			return nil, err
 		}
-		return []any{jsArrayTransform(res.Peers, jsPeer)}, nil
+		return []any{wasm.JSArrayTransform(res.Peers, jsPeer)}, nil
 	})
 }
 
 func appMetadataSend(this js.Value, args []js.Value) any {
-	return promisify(func() ([]any, error) {
+	return wasm.Promisify(func() ([]any, error) {
 		if len(args) != 2 {
 			return nil, errors.New("expected 2 args")
 		}
@@ -271,7 +274,7 @@ func appMetadataSend(this js.Value, args []js.Value) any {
 }
 
 func appMessageSend(this js.Value, args []js.Value) any {
-	return promisify(func() ([]any, error) {
+	return wasm.Promisify(func() ([]any, error) {
 		if len(args) != 2 {
 			return nil, errors.New("expected 2 args")
 		}
@@ -297,9 +300,9 @@ func appMessageSend(this js.Value, args []js.Value) any {
 func jsPeer(p *protocoltypes.PeerList_Peer) map[string]any {
 	return map[string]any{
 		"ID":         p.ID,
-		"Routes":     jsArrayTransform(p.Routes, jsPeerRoute),
-		"Errors":     jsArray(p.Errors),
-		"Features":   jsArrayTransform(p.Features, jsPeerFeature),
+		"Routes":     wasm.JSArrayTransform(p.Routes, jsPeerRoute),
+		"Errors":     wasm.JSArray(p.Errors),
+		"Features":   wasm.JSArrayTransform(p.Features, jsPeerFeature),
 		"MinLatency": p.MinLatency,
 		"IsActive":   p.IsActive,
 		"Direction":  p.Direction.String(),
@@ -316,7 +319,7 @@ func jsPeerRoute(r *protocoltypes.PeerList_Route) map[string]any {
 		"Address":   r.Address,
 		"Direction": r.Direction.String(),
 		"Latency":   r.Latency,
-		"Streams":   jsArrayTransform(r.Streams, jsPeerStream),
+		"Streams":   wasm.JSArrayTransform(r.Streams, jsPeerStream),
 	}
 }
 
@@ -329,7 +332,7 @@ func jsPeerStream(s *protocoltypes.PeerList_Stream) map[string]any {
 func jsEventContext(eventContext *protocoltypes.EventContext) map[string]any {
 	return map[string]any{
 		"ID":         bytesToString(eventContext.ID),
-		"ParentsIDs": jsArrayTransform(eventContext.ParentIDs, bytesToString),
+		"ParentsIDs": wasm.JSArrayTransform(eventContext.ParentIDs, bytesToString),
 		"GroupPK":    bytesToString(eventContext.GroupPK),
 	}
 }
@@ -358,20 +361,4 @@ func assertInitialized() {
 	if svc == nil {
 		panic("weshnet is not initialized, call `weshnet_initService` first")
 	}
-}
-
-func jsArray[V any](in []V) []any {
-	out := make([]any, 0, len(in))
-	for _, elem := range in {
-		out = append(out, elem)
-	}
-	return out
-}
-
-func jsArrayTransform[I any, O any](in []I, transform func(I) O) []any {
-	out := make([]any, 0, len(in))
-	for _, elem := range in {
-		out = append(out, transform(elem))
-	}
-	return out
 }

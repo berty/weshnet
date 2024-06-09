@@ -1,23 +1,13 @@
+//go:build !js
+
 package ipfsutil
 
 import (
 	ipfs_interface "github.com/ipfs/interface-go-ipfs-core"
 	ipfs_core "github.com/ipfs/kubo/core"
 	ipfs_coreapi "github.com/ipfs/kubo/core/coreapi"
-	"github.com/libp2p/go-libp2p/core/connmgr"
 	ipfs_host "github.com/libp2p/go-libp2p/core/host"
 )
-
-type ConnMgr interface {
-	connmgr.ConnManager
-}
-
-type ExtendedCoreAPI interface {
-	ipfs_interface.CoreAPI
-	ipfs_host.Host
-
-	ConnMgr() ConnMgr
-}
 
 type extendedCoreAPI struct {
 	ipfs_interface.CoreAPI

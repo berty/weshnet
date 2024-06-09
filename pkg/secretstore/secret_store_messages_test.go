@@ -1,3 +1,5 @@
+//go:build !js
+
 package secretstore_test
 
 import (
