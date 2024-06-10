@@ -5,30 +5,14 @@ const discoveredPeerCountEl = document.getElementById('discoveredPeerCount')
 const connectedPeerCountEl = document.getElementById('connectedPeerCount')
 const connectedPeersListEl = document.getElementById('connectedPeersList')
 const logEl = document.getElementById('runningLog')
+const chatEl = document.getElementById('chatLog')
 const nodeIdEl = document.getElementById('nodeId')
+
+const seenIds = new Set()
 
 document.addEventListener('DOMContentLoaded', async () => {
   const helia = window.helia = await instantiateHeliaNode()
   window.heliaFs = await HeliaUnixfs.unixfs(helia)
-
-	window.wrapAsyncGenerator = async (it, cb, end) => {
-		let outErr
-		try {
-			for await (const elem of it) {
-				console.log('got async gen elem', elem)
-				 cb(elem)
-			}
-		} catch (err) {
-			outErr = err
-		} finally {
-			console.log("async generator finishing", outErr)
-			 end(outErr)
-			console.log("async generator done")
-		}
-	}
-	window.createAsyncIterable = (it) => {
-		return {[Symbol.asyncIterator]: () => it}
-	}
 
   helia.libp2p.addEventListener('peer:discovery', (evt) => {
     window.discoveredPeers.set(evt.detail.id.toString(), evt.detail)
@@ -96,14 +80,24 @@ document.addEventListener('DOMContentLoaded', async () => {
 	const refRes = await weshnet_contactRequestReference()
 	console.log("base64-url PublicRendezvousSeed:", refRes)
 
-	const mmGroupPK = await weshnet_multiMemberGroupCreate()
-	weshnet_groupMetadataList(mmGroupPK, (res) => {
+	const metadataHandler = (res) => {
+		const id = res.EventContext.ID
+		if (seenIds.has(id)) {
+			console.log('ignored already seen msg', id)
+			return
+		}
 		console.log("recv multiMember metadata:", res)
-	})
+		if (res.Metadata.EventType === "EventTypeGroupMetadataPayloadSent") {
+			const msg = res.Metadata.PayloadJSON.Message
+			addToChat(msg)
+		}
+	}
+
+	const mmGroupPK = await weshnet_multiMemberGroupCreate()
+	weshnet_groupMetadataList(mmGroupPK, metadataHandler)
 	weshnet_groupMessageList(mmGroupPK, (res) => {
 		console.log("recv multiMember message:", res)
 	})
-	weshnet_appMetadataSend(mmGroupPK, "abonde")
 
 	const mmInvit = await weshnet_multiMemberGroupInvitationCreate(mmGroupPK)
 	console.log("multiMember group invit:", mmInvit)
@@ -115,18 +109,21 @@ document.addEventListener('DOMContentLoaded', async () => {
 	}, 5000)
 	*/
 
+	let groupPK
+
 	globalThis.joinGroup = async () =>  {
 		const input = document.getElementById("mmGroupPK")
-		const groupPK = await weshnet_multiMemberGroupJoin(input.value)
+		groupPK = await weshnet_multiMemberGroupJoin(input.value)
 		await weshnet_activateGroup(groupPK)
-		weshnet_groupMetadataList(groupPK, (res) => {
-			console.log("recv external multiMember metadata:", res)
-		})
+		weshnet_groupMetadataList(groupPK, metadataHandler)
 		weshnet_groupMessageList(groupPK, (res) => {
 			console.log("recv external multiMember message:", res)
 		})
+	}
 
-		weshnet_appMetadataSend(groupPK, "abonde")
+	globalThis.sendChatMsg = async () =>  {
+		const input = document.getElementById("chatInput")
+		weshnet_appMetadataSend(mmGroupPK, input.value)
 	}
 
 	console.log("routine done")
@@ -152,6 +149,11 @@ const getLogLineEl = (msg) => {
 }
 const addToLog = (msg) => {
   logEl.appendChild(getLogLineEl(msg))
+}
+
+const addToChat = (msg) => {
+	console.log('adding to chat', msg)
+  chatEl.appendChild(getLogLineEl(msg))
 }
 
 let heliaInstance = null

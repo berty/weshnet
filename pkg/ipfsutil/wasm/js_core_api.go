@@ -5,6 +5,7 @@ package wasm
 import (
 	"context"
 	"fmt"
+	"sync"
 	"syscall/js"
 
 	"berty.tech/weshnet/pkg/ipfsutil"
@@ -23,7 +24,9 @@ import (
 )
 
 type coreAPIFromJS struct {
-	helia js.Value
+	helia         js.Value
+	nextHandlerID int
+	handlerMutex  sync.Mutex
 }
 
 var _ ipfsutil.ExtendedCoreAPI = (*coreAPIFromJS)(nil)
@@ -49,7 +52,7 @@ func (jca *coreAPIFromJS) Block() ipfs_interface.BlockAPI {
 
 // Dag returns an implementation of Dag API
 func (jca *coreAPIFromJS) Dag() ipfs_interface.APIDagService {
-	return &dagAPIFromJS{helia: jca.helia}
+	return newDagFromJS(jca.helia)
 }
 
 // Name returns an implementation of Name API
@@ -159,13 +162,17 @@ func (jca *coreAPIFromJS) Connect(ctx context.Context, pi peer.AddrInfo) error {
 func (jca *coreAPIFromJS) SetStreamHandler(pid protocol.ID, handler network.StreamHandler) {
 	_, err := await(jca.helia.Get("libp2p").Call("handle", string(pid), js.FuncOf(func(this js.Value, args []js.Value) any {
 		return Promisify(func() ([]any, error) {
+			jca.handlerMutex.Lock()
+			defer jca.handlerMutex.Unlock()
+			id := jca.nextHandlerID
+			jca.nextHandlerID += 1
 			if len(args) == 0 {
 				return nil, errors.New("empty stream arg")
 			}
 			handler(newStreamFromJS(
 				args[0].Get("stream"),
 				args[0].Get("connection"),
-				"handler "+string(pid),
+				fmt.Sprintf("handler %s (%d)", string(pid), id),
 			))
 			return nil, nil
 		})

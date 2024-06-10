@@ -4,46 +4,76 @@ package wasm
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"syscall/js"
 
+	blocks "github.com/ipfs/go-block-format"
+	"github.com/ipfs/go-blockservice"
 	"github.com/ipfs/go-cid"
+	blockstore "github.com/ipfs/go-ipfs-blockstore"
+	exchange "github.com/ipfs/go-ipfs-exchange-interface"
 	ipld "github.com/ipfs/go-ipld-format"
-	"github.com/ipfs/go-libipfs/blocks"
+	"github.com/ipfs/go-merkledag"
 	iface "github.com/ipfs/interface-go-ipfs-core"
+	_ "github.com/ipld/go-ipld-prime/codec/cbor"
+	"github.com/pkg/errors"
 )
 
 type dagAPIFromJS struct {
-	helia js.Value
+	ipld.DAGService
 }
 
 var _ iface.APIDagService = (*dagAPIFromJS)(nil)
 
+func newDagFromJS(helia js.Value) iface.APIDagService {
+	svc := merkledag.NewDAGService(&blocksvcFromJS{helia: helia})
+	return &dagAPIFromJS{
+		DAGService: svc,
+	}
+}
+
+/*
+
 // Add adds a node to this DAG.
 func (jdag *dagAPIFromJS) Add(ctx context.Context, data ipld.Node) error {
 	fmt.Println("FIXME: ignored input context in dag.Add")
-	/*
-			const buf = codec.encode(obj)
-		    const hash = await (options.hasher ?? sha256).digest(buf)
-		    const cid = CID.createV1(codec.code, hash)
 
-		    await this.components.blockstore.put(cid, buf, options)
+	addType := reflect.TypeOf(data)
+	fmt.Println("dag add", addType)
 
-		    return cid
-	*/
-	cid := data.Cid()
-	fmt.Println("dag add", cid)
-	bs := data.RawData()
+	var (
+		bs  []byte
+		cid cid.Cid
+		err error
+	)
+	switch node := data.(type) {
+	case *cbornode.Node:
+		bs, err = node.MarshalJSON()
+		if err != nil {
+			return fmt.Errorf("failed to marshal cbor: %w", err)
+		}
+		cid = node.Cid()
+	case *dag.ProtoNode:
+		bs, err = node.Marshal()
+		if err != nil {
+			return fmt.Errorf("failed to marshal proto: %w", err)
+		}
+	default:
+		return fmt.Errorf("unknown ipld type %s", addType)
+	}
+
 	dst := js.Global().Get("Uint8Array").New(len(bs))
 	n := js.CopyBytesToJS(dst, bs)
 	if n != len(bs) {
 		return errors.New("failed to copy bytes")
 	}
 	jsCID := js.Global().Get("Multiformats").Get("CID").Call("parse", cid.String())
-	_, err := await(jdag.helia.Get("blockstore").Call("put", jsCID, dst))
-	fmt.Println("dag added", cid)
-	return err
+	_, err = await(jdag.helia.Get("blockstore").Call("put", jsCID, dst))
+	if err != nil {
+		return fmt.Errorf("failed to put in blockstore: %w", err)
+	}
+	fmt.Println("dag added", addType, cid)
+	return nil
 }
 
 // AddMany adds many nodes to this DAG.
@@ -98,7 +128,89 @@ func (jdag *dagAPIFromJS) RemoveMany(context.Context, []cid.Cid) error {
 	panic("not implemented") // TODO: Implement
 }
 
+*/
+
 // Pinning returns special NodeAdder which recursively pins added nodes
 func (jdag *dagAPIFromJS) Pinning() ipld.NodeAdder {
-	panic("not implemented") // TODO: Implement
+	panic("dag Pinning not implemented") // TODO: Implement
+}
+
+type blocksvcFromJS struct {
+	helia js.Value
+}
+
+var _ blockservice.BlockService = (*blocksvcFromJS)(nil)
+
+func (jbsvc *blocksvcFromJS) Close() error {
+	panic("blocksvc Close not implemented") // TODO: Implement
+}
+
+// GetBlock gets the requested block.
+func (jbsvc *blocksvcFromJS) GetBlock(ctx context.Context, cid cid.Cid) (blocks.Block, error) {
+	fmt.Println("FIXME: ignored input context in blockstore.GetBlock")
+	fmt.Println("block get", cid)
+	jsCID := js.Global().Get("Multiformats").Get("CID").Call("parse", cid.String())
+	jsNode, err := await(jbsvc.helia.Get("blockstore").Call("get", jsCID))
+	if err != nil {
+		return nil, fmt.Errorf("failed to get block from js: %w", err)
+	}
+	bs := make([]byte, jsNode.Get("length").Int())
+	js.CopyBytesToGo(bs, jsNode)
+	block, err := blocks.NewBlockWithCid(bs, cid)
+	if err != nil {
+		return nil, fmt.Errorf("failed to instantiate block: %w", err)
+	}
+	fmt.Println("block got", cid)
+	return block, nil
+}
+
+// GetBlocks does a batch request for the given cids, returning blocks as
+// they are found, in no particular order.
+//
+// It may not be able to find all requested blocks (or the context may
+// be canceled). In that case, it will close the channel early. It is up
+// to the consumer to detect this situation and keep track which blocks
+// it has received and which it hasn't.
+func (jbsvc *blocksvcFromJS) GetBlocks(ctx context.Context, ks []cid.Cid) <-chan blocks.Block {
+	panic("blocksvc GetBlocks not implemented") // TODO: Implement
+}
+
+// Blockstore returns a reference to the underlying blockstore
+func (jbsvc *blocksvcFromJS) Blockstore() blockstore.Blockstore {
+	panic("blocksvc Blockstore not implemented") // TODO: Implement
+}
+
+// Exchange returns a reference to the underlying exchange (usually bitswap)
+func (jbsvc *blocksvcFromJS) Exchange() exchange.Interface {
+	panic("blocksvc Exchange not implemented") // TODO: Implement
+}
+
+// AddBlock puts a given block to the underlying datastore
+func (jbsvc *blocksvcFromJS) AddBlock(ctx context.Context, o blocks.Block) error {
+	fmt.Println("FIXME: ignored input context in blockstore.AddBlock")
+	id := o.Cid()
+	fmt.Println("block add", id)
+	bs := o.RawData()
+	dst := js.Global().Get("Uint8Array").New(len(bs))
+	n := js.CopyBytesToJS(dst, bs)
+	if n != len(bs) {
+		return errors.New("failed to copy bytes")
+	}
+	jsCID := js.Global().Get("Multiformats").Get("CID").Call("parse", id.String())
+	if _, err := await(jbsvc.helia.Get("blockstore").Call("put", jsCID, dst)); err != nil {
+		return fmt.Errorf("failed to put in blockstore: %w", err)
+	}
+	fmt.Println("block added", id)
+	return nil
+}
+
+// AddBlocks adds a slice of blocks at the same time using batching
+// capabilities of the underlying datastore whenever possible.
+func (jbsvc *blocksvcFromJS) AddBlocks(ctx context.Context, bs []blocks.Block) error {
+	panic("blocksvc AddBlocks not implemented") // TODO: Implement
+}
+
+// DeleteBlock deletes the given block from the blockservice.
+func (jbsvc *blocksvcFromJS) DeleteBlock(ctx context.Context, o cid.Cid) error {
+	panic("blocksvc DeleteBlock not implemented") // TODO: Implement
 }

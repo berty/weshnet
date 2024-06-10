@@ -39,6 +39,11 @@
       <h3>ID: <span id="nodeId">unknown</span></h3>
       <h3>Discovered Peers: <span id="discoveredPeerCount">0</span></h3>
       <h3>Connected Peers: <span id="connectedPeerCount">0</span></h3>
+      <h3>Chat:</h3>
+      <input type="text" id="chatInput" />
+      <button type="button" onclick="sendChatMsg()">Send</button>
+      <article id="chatLog"></article>
+      <h3>Connected Peers:</h3>
       <ul id="connectedPeersList"></ul>
     </div>
 
@@ -99,6 +104,9 @@
   </body>
   <style>
     #runningLog span {
+      display: block;
+    }
+    #chatLog span {
       display: block;
     }
   </style>

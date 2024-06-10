@@ -6,12 +6,14 @@ import (
 	"context"
 	"encoding/base64"
 	"errors"
+	"fmt"
 	"os"
 	"syscall/js"
 
 	"berty.tech/weshnet"
 	"berty.tech/weshnet/pkg/ipfsutil/wasm"
 	"berty.tech/weshnet/pkg/protocoltypes"
+	"github.com/gogo/protobuf/proto"
 )
 
 var svc weshnet.ServiceClient
@@ -102,7 +104,7 @@ func groupMessageList(this js.Value, args []js.Value) any {
 			}
 			args[1].Invoke(map[string]any{
 				"EventContext": jsEventContext(msg.EventContext),
-				"Message":      bytesToString(msg.Message),
+				"Message":      bytesToJS(msg.Message),
 			})
 		}
 	})
@@ -137,7 +139,7 @@ func groupMetadataList(this js.Value, args []js.Value) any {
 			args[1].Invoke(map[string]any{
 				"EventContext": jsEventContext(msg.EventContext),
 				"Metadata":     jsGroupMetadata(msg.Metadata),
-				"Event":        bytesToString(msg.Event),
+				"Event":        bytesToJS(msg.Event),
 			})
 		}
 	})
@@ -261,7 +263,7 @@ func appMetadataSend(this js.Value, args []js.Value) any {
 			return nil, errors.New("expected payload arg to be a string")
 		}
 		groupPK := mustStringToBytes(args[0].String())
-		payload := mustStringToBytes(args[1].String())
+		payload := []byte(args[1].String())
 		res, err := svc.AppMetadataSend(context.Background(), &protocoltypes.AppMetadataSend_Request{
 			GroupPK: groupPK,
 			Payload: payload,
@@ -285,7 +287,7 @@ func appMessageSend(this js.Value, args []js.Value) any {
 			return nil, errors.New("expected payload arg to be a string")
 		}
 		groupPK := mustStringToBytes(args[0].String())
-		payload := mustStringToBytes(args[1].String())
+		payload := []byte(args[1].String())
 		res, err := svc.AppMessageSend(context.Background(), &protocoltypes.AppMessageSend_Request{
 			GroupPK: groupPK,
 			Payload: payload,
@@ -338,15 +340,35 @@ func jsEventContext(eventContext *protocoltypes.EventContext) map[string]any {
 }
 
 func jsGroupMetadata(gm *protocoltypes.GroupMetadata) map[string]any {
+	var payloadJSON any
+	switch gm.EventType {
+	case protocoltypes.EventTypeGroupMetadataPayloadSent:
+		payload := protocoltypes.GroupMetadataPayloadSent{}
+		if err := proto.Unmarshal(gm.Payload, &payload); err == nil {
+			payloadJSON = map[string]any{
+				"DevicePK": bytesToString(payload.DevicePK),
+				"Message":  string(payload.Message),
+			}
+		} else {
+			fmt.Println("failed to unmarshal payload", err)
+		}
+	}
 	return map[string]any{
-		"EventType": gm.EventType.String(),
-		"Payload":   bytesToString(gm.Payload),
-		"Sig":       bytesToString(gm.Sig),
+		"EventType":   gm.EventType.String(),
+		"Payload":     bytesToString(gm.Payload),
+		"PayloadJSON": payloadJSON,
+		"Sig":         bytesToString(gm.Sig),
 	}
 }
 
 func bytesToString(bs []byte) string {
 	return base64.RawURLEncoding.EncodeToString(bs)
+}
+
+func bytesToJS(bs []byte) js.Value {
+	jsbs := js.Global().Get("Uint8Array").New(len(bs))
+	js.CopyBytesToJS(jsbs, bs)
+	return jsbs
 }
 
 func mustStringToBytes(s string) []byte {

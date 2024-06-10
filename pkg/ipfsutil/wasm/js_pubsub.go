@@ -4,6 +4,7 @@ package wasm
 
 import (
 	"context"
+	"encoding/base64"
 	"errors"
 	"fmt"
 	"syscall/js"
@@ -48,8 +49,17 @@ func (jps *pubSubFromJS) Peers(ctx context.Context, opts ...options.PubSubPeersO
 }
 
 // Publish a message to a given pubsub topic
-func (jps *pubSubFromJS) Publish(_ context.Context, _ string, _ []byte) error {
-	panic("Publish not implemented") // TODO: Implement
+func (jps *pubSubFromJS) Publish(_ context.Context, topic string, data []byte) error {
+	pubsub := jps.helia.Get("libp2p").Get("services").Get("pubsub")
+	if pubsub.Type() != js.TypeObject {
+		return errors.New("pubsub is not an object")
+	}
+
+	jsbs := js.Global().Get("Uint8Array").New(len(data))
+	js.CopyBytesToJS(jsbs, data)
+
+	_, err := await(pubsub.Call("publish", topic, jsbs))
+	return err
 }
 
 // Subscribe to messages on a given topic
@@ -109,15 +119,25 @@ func (jmsg *msgFromJS) From() peer.ID {
 
 // Data returns the message body
 func (jmsg *msgFromJS) Data() []byte {
-	panic("not implemented") // TODO: Implement
+	jsbs := jmsg.msg.Get("detail").Get("msg").Get("data")
+	bs := make([]byte, jsbs.Get("length").Int())
+	_ = js.CopyBytesToGo(bs, jsbs)
+	return bs
 }
 
 // Seq returns message identifier
 func (jmsg *msgFromJS) Seq() []byte {
-	panic("not implemented") // TODO: Implement
+	msgIdStr := jmsg.msg.Get("detail").Get("msgId").String()
+	fmt.Println("pubsub msg id", msgIdStr)
+	msgId, err := base64.StdEncoding.DecodeString(msgIdStr)
+	if err != nil {
+		panic(err)
+	}
+	return msgId
 }
 
 // Topics returns list of topics this message was set to
 func (jmsg *msgFromJS) Topics() []string {
-	panic("not implemented") // TODO: Implement
+	topic := jmsg.msg.Get("detail").Get("msg").Get("topic").String()
+	return []string{topic}
 }
