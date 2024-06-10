@@ -1,3 +1,5 @@
+//go:build !js
+
 package weshnet
 
 import (
@@ -152,7 +154,6 @@ func NewTestingProtocol(ctx context.Context, t testing.TB, opts *TestingOpts, ds
 
 	serviceOpts := Opts{
 		Host:          node.MockNode().PeerHost,
-		PubSub:        node.PubSub(),
 		Logger:        opts.Logger,
 		RootDatastore: ds,
 		IpfsCoreAPI:   node.API(),

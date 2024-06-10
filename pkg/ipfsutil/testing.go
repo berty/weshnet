@@ -1,3 +1,5 @@
+//go:build !js
+
 package ipfsutil
 
 import (
@@ -143,6 +145,7 @@ func TestingCoreAPIUsingMockNet(ctx context.Context, t testing.TB, opts *Testing
 			"pubsub": false,
 		},
 	})
+	require.NoError(t, err)
 	t.Cleanup(func() { mnode.Close() })
 	h := mnode.PeerHost()
 

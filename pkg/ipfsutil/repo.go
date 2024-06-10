@@ -1,3 +1,5 @@
+//go:build !js
+
 package ipfsutil
 
 import (
@@ -84,10 +86,11 @@ func LoadRepoFromPath(path string) (ipfs_repo.Repo, error) {
 }
 
 var DefaultSwarmListeners = []string{
-	"/ip4/0.0.0.0/udp/0/quic",
-	"/ip6/::/udp/0/quic",
-	// "/ip4/0.0.0.0/tcp/0",
-	// "/ip6/::/tcp/0",
+	//"/ip4/0.0.0.0/udp/0/quic",
+	//"/ip6/::/udp/0/quic",
+	//"/ip4/0.0.0.0/tcp/0",
+	//"/ip6/::/tcp/0",
+	//"/ip4/0.0.0.0/tcp/0/http/p2p-webrtc-direct",
 }
 
 func CreateBaseConfig() (*ipfs_cfg.Config, error) {

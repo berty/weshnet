@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <title>IPFS in the Browser via Helia</title>
+    <link rel="icon favicon" href="https://unpkg.com/@helia/css@1.0.1/logos/favicon.ico" />
+    <link href="https://cdn.jsdelivr.net/npm/prismjs/themes/prism.css" rel="stylesheet" />
+  </head>
+  <body>
+    <h1>IPFS in the Browser via Helia</h1>
+    <p>
+      This page creates an IPFS Helia node in your browser and sets a few other useful components into the
+      global Javascript namespace:
+      <ul>
+        <li><b><em style="background-color:#d7d6d6">helia</em></b> - A helia instance. You can access the <a href="https://www.npmjs.com/package/libp2p" target="_blank">libp2p</a> instance used by helia with <b><em style="background-color:#d7d6d6">helia.libp2p</em></b></li>
+        <li><b><em style="background-color:#d7d6d6">heliaFs</em></b> - A <a href="https://www.npmjs.com/package/@helia/unixfs" target="_blank">@helia/unixFS</a> instance</li>
+        <li><b><em style="background-color:#d7d6d6">discoveredPeers</em></b> - A <b><em style="background-color:#d7d6d6">Map&lt;peerIdString, peerDiscoveryEventDetail&gt;</em></b> that is filled as we discover peers</li>
+      </ul>
+      Open the console to play around with them.
+    </p>
+    <p>
+      Note that opening two tabs of this page in the same browser won't work
+      well, because they will share node configuration. You'll end up trying to
+      run two instances of the same node, with the same private key and
+      identity, which is a Bad Idea.
+    </p>
+    <hr />
+    <div>
+      <button class="e2e-startHelia" onclick="window.helia.start()">Start Helia</button>
+      <button class="e2e-stopHelia" onclick="window.helia.stop()">Stop Helia</button>
+      <input type="text" id="mmGroupPK" />
+      <button type="button" onclick="joinGroup()">Join</button>
+    </div>
+    <h1 id="status">Node status: <span id="statusValue">Not Started</span></h1>
+    <div id="nodeInfo">
+      <h3>ID: <span id="nodeId">unknown</span></h3>
+      <h3>Discovered Peers: <span id="discoveredPeerCount">0</span></h3>
+      <h3>Connected Peers: <span id="connectedPeerCount">0</span></h3>
+      <h3>Chat:</h3>
+      <input type="text" id="chatInput" />
+      <button type="button" onclick="sendChatMsg()">Send</button>
+      <article id="chatLog"></article>
+      <h3>Connected Peers:</h3>
+      <ul id="connectedPeersList"></ul>
+    </div>
+
+    <hr />
+
+    <h2>Some suggestions</h2>
+
+    <p>Try adding a new file:</p>
+
+    <pre><code class="language-javascript">
+      async function addFile () {
+        const textEncoder = new TextEncoder()
+        const cid = await heliaFs.addFile({content: textEncoder.encode('Hello world!')})
+        console.log('successfully stored', cid.toString())
+      }
+      await addFile()
+    </code></pre>
+
+    <p>
+      You can cat that same file. If you used the exact same string as above
+      ('Hello world!') you should have an hash like this:
+      'bafkreigaknpexyvxt76zgkitavbwx6ejgfheup5oybpm77f3pxzrvwpfdi'
+    </p>
+
+    <pre><code class="language-javascript">
+      async function catFile () {
+        const textDecoder = new TextDecoder()
+        for await (const data of heliaFs.cat('bafkreigaknpexyvxt76zgkitavbwx6ejgfheup5oybpm77f3pxzrvwpfdi')) {
+          console.log(textDecoder.decode(data))
+        }
+      }
+      await catFile()
+    </code></pre>
+
+    <p>
+      Display the multiaddrs of the peers you've discovered:
+    </p>
+    <pre><code class="language-javascript">
+      for (const [peerIdString, peer] of discoveredPeers.entries()) {
+        console.log(`${peerIdString}: ${peer.multiaddrs.toString()}`)
+      }
+    </code></pre>
+
+    <p>
+      Provide the CIDs you create (once you're connected to a peer)
+    </p>
+    <pre><code class="language-javascript">
+      const textEncoder = new TextEncoder()
+      const cid = await heliaFs.addFile({content: textEncoder.encode('Hello world!')})
+      for await (const event of helia.libp2p.dht.provide(cid)) {
+        console.log(event)
+      }
+    </code></pre>
+
+    <hr />
+    <h2>Event Log:</h2>
+    <article id="runningLog"></article>
+  </body>
+  <style>
+    #runningLog span {
+      display: block;
+    }
+    #chatLog span {
+      display: block;
+    }
+  </style>
+  <script src="https://cdn.jsdelivr.net/npm/prismjs/components/prism-core.min.js" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/prismjs/plugins/autoloader/prism-autoloader.min.js" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/helia@^4.2.3/dist/index.min.js" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/@helia/unixfs@^2.0.0/dist/index.min.js" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/libp2p@^1.0.0/dist/index.min.js" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/@chainsafe/libp2p-yamux@^6.0.0/dist/index.min.js" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/@chainsafe/libp2p-noise@^15.0.0/dist/index.min.js" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/@libp2p/websockets@^8.0.0/dist/index.min.js" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/@libp2p/bootstrap@^10.0.0/dist/index.min.js" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/blockstore-core@^4.0.0/dist/index.min.js" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/datastore-core@^9.0.0/dist/index.min.js" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/@libp2p/kad-dht@^12.0.0/dist/index.min.js" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/multiformats@^13.1.1/dist/index.min.js" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/@libp2p/peer-id@^4.1.2/dist/index.min.js" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/@chainsafe/libp2p-gossipsub@^13.0.0/dist/index.min.js" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/it-byte-stream@^1.0.12/dist/index.min.js" defer></script>
+  <script src="wasm_exec.js"></script>
+  <script src="./src/index.js" type="module" defer></script>
+  <script nomodule>
+    alert('Your browser does not support importing ESM modules')
+  </script>
+</html>
