@@ -67,12 +67,14 @@ func Promisify(cb func() ([]any, error)) js.Value {
 			defer func() {
 				if r := recover(); r != nil {
 					err, ok := r.(error)
+					var errStr string
 					if ok {
-						jsErr := js.Global().Get("Error").New(err.Error())
-						reject.Invoke(jsErr)
+						errStr = err.Error()
 					} else {
-						reject.Invoke()
+						errStr = fmt.Sprintf("%v", r)
 					}
+					jsErr := js.Global().Get("Error").New(errStr)
+					reject.Invoke(jsErr)
 				}
 			}()
 
@@ -119,19 +121,26 @@ func heliaListenAddresses(helia js.Value) (fa []ma.Multiaddr, fb error) {
 	return ret, nil
 }
 
-func heliaConnectedPeers(helia js.Value) ([]peer.ID, error) {
-	peers := helia.Get("libp2p").Call("getPeers")
+func peersFromJS(peers js.Value) ([]peer.ID, error) {
 	ids := make([]peer.ID, peers.Length())
 	for i := 0; i < peers.Length(); i++ {
 		p := peers.Index(i)
-		rawId := p.Call("toString").String()
-		id, err := peer.Decode(rawId)
+		id, err := peerFromJS(p)
 		if err != nil {
 			return nil, err
 		}
 		ids[i] = id
 	}
 	return ids, nil
+}
+
+func peerFromJS(p js.Value) (peer.ID, error) {
+	rawId := p.Call("toString").String()
+	return peer.Decode(rawId)
+}
+
+func jsPeerID(p peer.ID) js.Value {
+	return js.Global().Get("Libp2PPeerId").Call("peerIdFromString", p.String())
 }
 
 func JSArray[V any](in []V) []any {

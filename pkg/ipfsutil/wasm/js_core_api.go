@@ -4,7 +4,6 @@ package wasm
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"syscall/js"
 
@@ -20,6 +19,7 @@ import (
 	"github.com/libp2p/go-libp2p/core/peerstore"
 	"github.com/libp2p/go-libp2p/core/protocol"
 	"github.com/multiformats/go-multiaddr"
+	"github.com/pkg/errors"
 )
 
 type coreAPIFromJS struct {
@@ -29,7 +29,7 @@ type coreAPIFromJS struct {
 var _ ipfsutil.ExtendedCoreAPI = (*coreAPIFromJS)(nil)
 
 func NewCoreAPIFromJS(helia js.Value) (ipfsutil.ExtendedCoreAPI, error) {
-	if helia.Type() != js.TypeObject && helia.Get("libp2p").Type() != js.TypeObject {
+	if helia.Type() != js.TypeObject || helia.Get("libp2p").Type() != js.TypeObject {
 		return nil, errors.New("argument does not look like an helia object")
 	}
 	return &coreAPIFromJS{helia: helia}, nil
@@ -84,7 +84,7 @@ func (jca *coreAPIFromJS) Swarm() ipfs_interface.SwarmAPI {
 
 // PubSub returns an implementation of PubSub API
 func (jca *coreAPIFromJS) PubSub() ipfs_interface.PubSubAPI {
-	panic("not implemented")
+	return &pubSubFromJS{helia: jca.helia}
 }
 
 // Routing returns an implementation of Routing API
@@ -201,15 +201,15 @@ func sliceMap[I any, O any](slice []I, transform func(I) O) []O {
 // (Threadsafe)
 func (jca *coreAPIFromJS) NewStream(ctx context.Context, p peer.ID, pids ...protocol.ID) (network.Stream, error) {
 	fmt.Println("dialing", pids)
-	conn, err := await(jca.helia.Get("libp2p").Call("dial", p.String()))
+	conn, err := await(jca.helia.Get("libp2p").Call("dial", jsPeerID(p)))
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "failed to dial peer")
 	}
 	strm, err := await(conn.Call("newStream", JSArrayTransform(pids, func(pid protocol.ID) string { return string(pid) })))
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "failed to open stream")
 	}
-	return &streamFromJS{s: strm, conn: conn, hint: "new stream " + p.String() + " " + fmt.Sprint(pids)}, nil
+	return newStreamFromJS(strm, conn, "new stream "+p.String()+" "+fmt.Sprint(pids)), nil
 }
 
 // Close shuts down the host, its Network, and services.
@@ -231,5 +231,5 @@ func (jca *coreAPIFromJS) EventBus() event.Bus {
 // CONNMGR
 
 func (jca *coreAPIFromJS) ConnMgr() ipfsutil.ConnMgr {
-	panic("not implemented")
+	return &weshConnMgrFromJS{}
 }

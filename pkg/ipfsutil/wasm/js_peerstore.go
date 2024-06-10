@@ -4,6 +4,7 @@ package wasm
 
 import (
 	"context"
+	"errors"
 	"syscall/js"
 	"time"
 
@@ -92,6 +93,9 @@ func (jps *peerStoreFromJS) AddPubKey(_ peer.ID, _ ic.PubKey) error {
 // https://discuss.libp2p.io/t/what-is-the-purpose-of-having-map-peer-id-privatekey-in-peerstore/74.
 func (jps *peerStoreFromJS) PrivKey(id peer.ID) ic.PrivKey {
 	keychain := jps.helia.Get("libp2p").Get("services").Get("keychain")
+	if keychain.Type() != js.TypeObject {
+		panic(errors.New("keychain is not an object"))
+	}
 	key, err := await(keychain.Call("findKeyById", id.String()))
 	if err != nil {
 		panic(err)

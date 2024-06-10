@@ -4,6 +4,7 @@ package wasm
 
 import (
 	"context"
+	"errors"
 	"syscall/js"
 
 	iface "github.com/ipfs/interface-go-ipfs-core"
@@ -38,6 +39,9 @@ func (kapi *keyAPIFromJS) List(ctx context.Context) ([]iface.Key, error) {
 // Self returns the 'main' node key
 func (kapi *keyAPIFromJS) Self(ctx context.Context) (iface.Key, error) {
 	keychain := kapi.helia.Get("libp2p").Get("services").Get("keychain")
+	if keychain.Type() != js.TypeObject {
+		return nil, errors.New("keychain is not an object")
+	}
 	key, err := await(keychain.Call("findKeyByName", "self"))
 	if err != nil {
 		return nil, err

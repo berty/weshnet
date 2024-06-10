@@ -79,7 +79,7 @@ type Opts struct {
 	OrbitDB            *WeshOrbitDB
 	TinderService      *tinder.Service
 	Host               host.Host
-	PubSub             *pubsub.PubSub
+	OrbitDBPubSub      *pubsub.PubSub
 	GRPCInsecureMode   bool
 	LocalOnly          bool
 	close              func() error

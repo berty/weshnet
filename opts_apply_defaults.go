@@ -113,7 +113,7 @@ func (opts *Opts) applyDefaults(ctx context.Context) error {
 		}
 	}
 
-	if opts.PubSub == nil {
+	if opts.OrbitDBPubSub == nil {
 		var err error
 
 		popts := []pubsub_fix.Option{
@@ -144,7 +144,7 @@ func (opts *Opts) applyDefaults(ctx context.Context) error {
 		// @NOTE(gfanton): we need to force cast here until our fix is push
 		// upstream on the original go-libp2p-pubsub
 		// see: https://github.com/gfanton/go-libp2p-pubsub/commit/8f4fd394f8dfcb3a5eb724a03f9e4e1e33194cbd
-		opts.PubSub = (*pubsub.PubSub)(unsafe.Pointer(ps))
+		opts.OrbitDBPubSub = (*pubsub.PubSub)(unsafe.Pointer(ps))
 	}
 
 	if opts.OrbitDB == nil {
@@ -153,7 +153,7 @@ func (opts *Opts) applyDefaults(ctx context.Context) error {
 			orbitDirectory = filepath.Join(opts.DatastoreDir, NamespaceOrbitDBDirectory)
 		}
 
-		pubsub := pubsubraw.NewPubSub(opts.PubSub, opts.Host.ID(), opts.Logger, nil)
+		pubsub := pubsubraw.NewPubSub(opts.OrbitDBPubSub, opts.Host.ID(), opts.Logger, nil)
 		odbOpts := &NewOrbitDBOptions{
 			NewOrbitDBOptions: baseorbitdb.NewOrbitDBOptions{
 				Directory: &orbitDirectory,

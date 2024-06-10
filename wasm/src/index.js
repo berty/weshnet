@@ -15,16 +15,19 @@ document.addEventListener('DOMContentLoaded', async () => {
 		let outErr
 		try {
 			for await (const elem of it) {
-				//console.log('got async gen elem', elem)
-				cb(elem)
+				console.log('got async gen elem', elem)
+				 cb(elem)
 			}
 		} catch (err) {
 			outErr = err
 		} finally {
-			//console.log("async generator finishing", outErr)
-			end(outErr)
-			//console.log("async generator done")
+			console.log("async generator finishing", outErr)
+			 end(outErr)
+			console.log("async generator done")
 		}
+	}
+	window.createAsyncIterable = (it) => {
+		return {[Symbol.asyncIterator]: () => it}
 	}
 
   helia.libp2p.addEventListener('peer:discovery', (evt) => {
@@ -123,7 +126,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 			console.log("recv external multiMember message:", res)
 		})
 
-		weshnet_appMetadataSend(groupPk, "abonde")
+		weshnet_appMetadataSend(groupPK, "abonde")
 	}
 
 	console.log("routine done")
@@ -163,10 +166,21 @@ const instantiateHeliaNode = async () => {
     return heliaInstance
   }
 
-  heliaInstance = await Helia.createHelia(/*{
-    datastore,
-    blockstore
-  }*/)
+	const lp2pdef = Helia.libp2pDefaults()
+
+	const lp2p = {
+		...lp2pdef,
+		services: {
+			...lp2pdef.services,
+			pubsub: ChainsafeLibp2PGossipsub.gossipsub()
+		}
+	}
+
+  heliaInstance = await Helia.createHelia({
+		libp2p: lp2p,
+    //datastore,
+    //blockstore
+  })
   addToLog('Created Helia instance')
 
   return heliaInstance

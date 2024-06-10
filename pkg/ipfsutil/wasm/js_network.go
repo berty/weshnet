@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"sync"
 	"syscall/js"
 	"time"
 
@@ -57,7 +58,8 @@ func (jn *networkFromJS) Connectedness(p peer.ID) network.Connectedness {
 
 // Peers returns the peers connected
 func (jn *networkFromJS) Peers() []peer.ID {
-	ret, err := heliaConnectedPeers(jn.helia)
+	peers := jn.helia.Get("libp2p").Call("getPeers")
+	ret, err := peersFromJS(peers)
 	if err != nil {
 		panic(err)
 	}
@@ -184,26 +186,50 @@ func (jc *connFromJS) NewStream(ctx context.Context) (network.Stream, error) {
 type streamFromJS struct {
 	s          js.Value
 	conn       js.Value
-	sourceChan chan js.Value
+	reader     chan js.Value
+	writer     chan js.Value
+	mutex      sync.Mutex
 	readBuf    []byte
 	readClosed bool
 	hint       string
 }
 
-func newStreamFromJS(s js.Value, conn js.Value, hint string) *streamFromJS {
+func newAsyncIterator() (js.Value, chan js.Value) {
 	ch := make(chan js.Value)
-	jstrm := &streamFromJS{s: s, conn: conn, sourceChan: ch, hint: hint}
+	return js.ValueOf(map[string]any{
+		"next": js.FuncOf(func(this js.Value, args []js.Value) any {
+			return Promisify(func() ([]any, error) {
+				nxtVal, ok := <-ch
+				if !ok {
+					fmt.Println("writer closed")
+				}
+				return []any{map[string]any{
+					"done":  !ok,
+					"value": nxtVal,
+				}}, nil
+			})
+		}),
+	}), ch
+}
+
+func newAsyncIterable() (js.Value, chan js.Value) {
+	iterator, ch := newAsyncIterator()
+	iterable := js.Global().Get("createAsyncIterable").Invoke(iterator)
+	return iterable, ch
+}
+
+func newStreamFromJS(s js.Value, conn js.Value, hint string) *streamFromJS {
+	iterator, writer := newAsyncIterable()
+	s.Call("sink", iterator)
+	reader := make(chan js.Value)
+	jstrm := &streamFromJS{s: s, conn: conn, writer: writer, reader: reader, hint: hint}
 	recv := js.FuncOf(func(this js.Value, args []js.Value) any {
-		fmt.Println("wrapper cb")
-		ch <- args[0]
+		fmt.Println("stream recv cb")
+		reader <- args[0]
 		return nil
 	})
 	end := js.FuncOf(func(this js.Value, args []js.Value) any {
-		fmt.Println("stream en cb")
-		if !jstrm.readClosed {
-			close(jstrm.sourceChan)
-			jstrm.readClosed = true
-		}
+		fmt.Println("stream end cb", args)
 		return nil
 	})
 	js.Global().Get("wrapAsyncGenerator").Invoke(s.Get("source"), recv, end)
@@ -218,10 +244,10 @@ func (jstrm *streamFromJS) Read(p []byte) (n int, err error) {
 		defer cancel()
 	*/
 	ctx := context.TODO()
-	//fmt.Println("FIXME: using hacked-in stream.Read for", len(p), "bytes on", jstrm.hint)
+	fmt.Println("FIXME: using hacked-in stream.Read for", len(p), "bytes on", jstrm.hint)
 	offset := 0
 	for offset < len(p) {
-		//fmt.Println("offset", offset)
+		fmt.Println("offset", offset)
 		if len(jstrm.readBuf) != 0 {
 			tn := copy(p[offset:], jstrm.readBuf)
 			jstrm.readBuf = jstrm.readBuf[tn:]
@@ -229,21 +255,21 @@ func (jstrm *streamFromJS) Read(p []byte) (n int, err error) {
 			continue
 		}
 		select {
-		case jsbs := <-jstrm.sourceChan:
-			//fmt.Println("got elem from chan in select")
-			if jsbs.IsUndefined() {
-				//fmt.Println("stream end after chan")
+		case jsbs, ok := <-jstrm.reader:
+			fmt.Println("got elem from chan in select")
+			if !ok {
+				fmt.Println("stream end after chan")
 				return offset, io.EOF
 			}
 			inLen := jsbs.Get("length").Int()
-			//fmt.Println("received", inLen, "bytes")
+			fmt.Println("received", inLen, "bytes")
 			lbuf := make([]byte, inLen)
 			_ = js.CopyBytesToGo(lbuf, jsbs.Call("subarray"))
 			tn := copy(p[offset:], lbuf)
-			//fmt.Println("copied", tn, "bytes")
+			fmt.Println("copied", tn, "bytes")
 			offset += tn
 			if tn < inLen {
-				//fmt.Println("saved", inLen-tn, "bytes")
+				fmt.Println("saved", inLen-tn, "bytes")
 				jstrm.readBuf = append(jstrm.readBuf, lbuf[tn:]...)
 			}
 		case <-ctx.Done():
@@ -257,19 +283,25 @@ func (jstrm *streamFromJS) Read(p []byte) (n int, err error) {
 	return len(p), nil
 }
 
-func (jstrm *streamFromJS) Write(p []byte) (n int, err error) {
-	fmt.Println("called stream write")
-	panic("not implemented") // TODO: Implement
+func (jstrm *streamFromJS) Write(bs []byte) (n int, err error) {
+	fmt.Println("called stream write for", len(bs), "bytes on", jstrm.hint)
+	jsbs := js.Global().Get("Uint8Array").New(len(bs))
+	js.CopyBytesToJS(jsbs, bs)
+	jsbsarr := js.Global().Get("Array").New(jsbs)
+	jstrm.writer <- jsbsarr
+	fmt.Println("wrote", len(bs), "bytes on", jstrm.hint)
+	return len(bs), nil
 }
 
 func (jstrm *streamFromJS) Close() error {
 	fmt.Println("called stream close")
-	if !jstrm.readClosed {
-		close(jstrm.sourceChan)
-		jstrm.readClosed = true
-	}
-	_, err := await(jstrm.s.Call("close"))
-	return err
+	close(jstrm.writer)
+	/*
+		if _, err := await(jstrm.s.Call("close")); err != nil {
+			return err
+		}
+	*/
+	return nil
 }
 
 // CloseWrite closes the stream for writing but leaves it open for
@@ -295,8 +327,10 @@ func (jstrm *streamFromJS) CloseWrite() error {
 // Reset.
 func (jstrm *streamFromJS) CloseRead() error {
 	fmt.Println("called stream close read")
+	jstrm.mutex.Lock()
+	defer jstrm.mutex.Unlock()
 	if !jstrm.readClosed {
-		close(jstrm.sourceChan)
+		close(jstrm.reader)
 		jstrm.readClosed = true
 	}
 	_, err := await(jstrm.s.Call("closeRead"))
