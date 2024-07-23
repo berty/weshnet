@@ -189,7 +189,7 @@ func runClient(ctx context.Context, gOpts *globalOpts, cOpts *clientOpts) error 
 		return fmt.Errorf("client host creation failed: %v", err)
 	}
 
-	log.Println("Local peerID:", h.ID().Pretty())
+	log.Println("Local peerID:", h.ID().String())
 
 	peerid, err := addDestToPeerstore(h, cOpts.dest)
 	if err != nil {

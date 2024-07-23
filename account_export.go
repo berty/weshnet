@@ -11,7 +11,7 @@ import (
 
 	"github.com/ipfs/go-cid"
 	cbornode "github.com/ipfs/go-ipld-cbor"
-	ipfs_interface "github.com/ipfs/interface-go-ipfs-core"
+	coreiface "github.com/ipfs/kubo/core/coreiface"
 	mh "github.com/multiformats/go-multihash"
 	"go.uber.org/multierr"
 	"go.uber.org/zap"
@@ -372,7 +372,7 @@ func (state *restoreAccountState) restoreKeys(odb *WeshOrbitDB) RestoreAccountHa
 	}
 }
 
-func restoreOrbitDBEntry(ctx context.Context, coreAPI ipfs_interface.CoreAPI) RestoreAccountHandler {
+func restoreOrbitDBEntry(ctx context.Context, coreAPI coreiface.CoreAPI) RestoreAccountHandler {
 	return RestoreAccountHandler{
 		Handler: func(header *tar.Header, reader *tar.Reader) (bool, error) {
 			if !strings.HasPrefix(header.Name, exportOrbitDBEntriesPrefix) {
@@ -420,7 +420,7 @@ func restoreOrbitDBHeads(ctx context.Context, odb *WeshOrbitDB) RestoreAccountHa
 	}
 }
 
-func RestoreAccountExport(ctx context.Context, reader io.Reader, coreAPI ipfs_interface.CoreAPI, odb *WeshOrbitDB, logger *zap.Logger, handlers ...RestoreAccountHandler) error {
+func RestoreAccountExport(ctx context.Context, reader io.Reader, coreAPI coreiface.CoreAPI, odb *WeshOrbitDB, logger *zap.Logger, handlers ...RestoreAccountHandler) error {
 	tr := tar.NewReader(reader)
 	state := restoreAccountState{
 		keys: map[string][]byte{},

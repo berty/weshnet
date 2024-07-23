@@ -20,7 +20,6 @@ import (
 	p2p_ci "github.com/libp2p/go-libp2p/core/crypto"
 	host "github.com/libp2p/go-libp2p/core/host"
 	p2pnetwork "github.com/libp2p/go-libp2p/core/network"
-	"github.com/libp2p/go-libp2p/core/peer"
 	p2p_peer "github.com/libp2p/go-libp2p/core/peer"
 	"github.com/libp2p/go-libp2p/core/peerstore"
 	"github.com/libp2p/go-libp2p/core/protocol"
@@ -92,7 +91,7 @@ func TestingRepo(t testing.TB, ctx context.Context, datastore ds.Datastore) ipfs
 
 	c.Bootstrap = []string{}
 	c.Addresses.Swarm = []string{"/ip6/::/tcp/0"}
-	c.Identity.PeerID = pid.Pretty()
+	c.Identity.PeerID = pid.String()
 	c.Identity.PrivKey = base64.StdEncoding.EncodeToString(privkeyb)
 	c.Swarm.ResourceMgr.Enabled = ipfs_cfg.False
 
@@ -261,7 +260,7 @@ func (m *coreAPIMock) Close() {
 }
 
 func MockHostOption(mn p2p_mocknet.Mocknet) ipfs_p2p.HostOption {
-	return func(id peer.ID, ps peerstore.Peerstore, _ ...libp2p.Option) (host.Host, error) {
+	return func(id p2p_peer.ID, ps peerstore.Peerstore, _ ...libp2p.Option) (host.Host, error) {
 		return mn.AddPeerWithPeerstore(id, ps)
 	}
 }

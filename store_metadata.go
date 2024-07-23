@@ -9,7 +9,7 @@ import (
 	"strings"
 
 	"github.com/gogo/protobuf/proto"
-	coreapi "github.com/ipfs/interface-go-ipfs-core"
+	coreiface "github.com/ipfs/kubo/core/coreiface"
 	"github.com/libp2p/go-libp2p/core/crypto"
 	"github.com/libp2p/go-libp2p/core/event"
 	"github.com/libp2p/go-libp2p/p2p/host/eventbus"
@@ -892,7 +892,7 @@ type EventMetadataReceived struct {
 }
 
 func constructorFactoryGroupMetadata(s *WeshOrbitDB, logger *zap.Logger) iface.StoreConstructor {
-	return func(ipfs coreapi.CoreAPI, identity *identityprovider.Identity, addr address.Address, options *iface.NewStoreOptions) (iface.Store, error) {
+	return func(ipfs coreiface.CoreAPI, identity *identityprovider.Identity, addr address.Address, options *iface.NewStoreOptions) (iface.Store, error) {
 		g, err := s.getGroupFromOptions(options)
 		if err != nil {
 			return nil, errcode.ErrInvalidInput.Wrap(err)

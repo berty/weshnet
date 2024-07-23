@@ -48,7 +48,7 @@ func newListener(ctx context.Context, localMa ma.Multiaddr, t *proximityTranspor
 	// Starts the native driver.
 	// If it failed, don't return a error because no other transport
 	// on the libp2p node will be created.
-	t.driver.Start(t.host.ID().Pretty())
+	t.driver.Start(t.host.ID().String())
 
 	return listener
 }

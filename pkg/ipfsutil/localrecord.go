@@ -4,8 +4,8 @@ import (
 	"context"
 	"os"
 
-	ipfs_interface "github.com/ipfs/interface-go-ipfs-core"
 	ipfs_core "github.com/ipfs/kubo/core"
+	coreiface "github.com/ipfs/kubo/core/coreiface"
 	"github.com/libp2p/go-libp2p/core/host"
 	"github.com/libp2p/go-libp2p/core/network"
 	"github.com/libp2p/go-libp2p/core/protocol"
@@ -23,7 +23,7 @@ type LocalRecord struct {
 }
 
 // OptionLocalRecord is given to CoreAPIOption.Options when the ipfs node setup
-func OptionLocalRecord(node *ipfs_core.IpfsNode, api ipfs_interface.CoreAPI) error {
+func OptionLocalRecord(node *ipfs_core.IpfsNode, api coreiface.CoreAPI) error {
 	lr := &LocalRecord{
 		host: node.PeerHost,
 	}
