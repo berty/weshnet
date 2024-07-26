@@ -2,20 +2,14 @@ syntax = "proto3";
 
 package weshnet.account.v1;
 
-import "gogoproto/gogo.proto";
-
 option go_package = "berty.tech/weshnet/pkg/verifiablecredstypes";
-
-option (gogoproto.marshaler_all) = true;
-option (gogoproto.unmarshaler_all) = true;
-option (gogoproto.sizer_all) = true;
 
 // StateChallenge serialized and signed state used when requesting a challenge
 message StateChallenge {
   bytes timestamp = 1;
   bytes nonce = 2;
   string berty_link = 3;
-  string redirect_uri = 4 [(gogoproto.customname) = "RedirectURI"];
+  string redirect_uri = 4;
   string state = 5;
 }
 
@@ -26,7 +20,7 @@ message StateCode {
   CodeStrategy code_strategy = 3;
   string identifier = 4;
   string code = 5;
-  string redirect_uri = 6 [(gogoproto.customname) = "RedirectURI"];
+  string redirect_uri = 6;
   string state = 7;
 }
 

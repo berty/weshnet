@@ -28,13 +28,11 @@ require (
 	github.com/ipfs/go-ipfs-keystore v0.1.0
 	github.com/ipfs/go-ipld-cbor v0.1.0
 	github.com/ipfs/go-log/v2 v2.5.1
-	github.com/ipfs/interface-go-ipfs-core v0.11.1
 	github.com/ipfs/kubo v0.29.0
 	github.com/juju/fslock v0.0.0-20160525022230-4d5c94c67b4b
 	github.com/libp2p/go-libp2p v0.34.1
 	github.com/libp2p/go-libp2p-kad-dht v0.25.2
 	github.com/libp2p/go-libp2p-pubsub v0.11.1-0.20240711152552-e508d8643ddb
-	github.com/libp2p/go-libp2p-record v0.2.0
 	github.com/libp2p/go-libp2p-testing v0.12.0
 	github.com/mdomke/git-semver/v5 v5.0.0
 	github.com/multiformats/go-multiaddr v0.12.4
@@ -46,6 +44,7 @@ require (
 	github.com/pkg/errors v0.9.1
 	github.com/prometheus/client_golang v1.19.1
 	github.com/pseudomuto/protoc-gen-doc v1.5.1
+	github.com/srikrsna/protoc-gen-gotag v1.0.1
 	github.com/stretchr/testify v1.9.0
 	go.uber.org/goleak v1.3.0
 	go.uber.org/multierr v1.11.0
@@ -107,6 +106,7 @@ require (
 	github.com/envoyproxy/protoc-gen-validate v1.0.4 // indirect
 	github.com/facebookgo/atomicfile v0.0.0-20151019160806-2de1f203e7d5 // indirect
 	github.com/fatih/color v1.13.0 // indirect
+	github.com/fatih/structtag v1.2.0 // indirect
 	github.com/felixge/httpsnoop v1.0.4 // indirect
 	github.com/flynn/noise v1.1.0 // indirect
 	github.com/francoispqt/gojay v1.2.13 // indirect
@@ -170,7 +170,6 @@ require (
 	github.com/ipfs/go-log v1.0.5 // indirect
 	github.com/ipfs/go-merkledag v0.11.0 // indirect
 	github.com/ipfs/go-metrics-interface v0.0.1 // indirect
-	github.com/ipfs/go-path v0.3.1 // indirect
 	github.com/ipfs/go-peertaskqueue v0.8.1 // indirect
 	github.com/ipfs/go-unixfsnode v1.9.0 // indirect
 	github.com/ipfs/go-verifcid v0.0.3 // indirect
@@ -194,6 +193,7 @@ require (
 	github.com/libp2p/go-libp2p-http v0.5.0 // indirect
 	github.com/libp2p/go-libp2p-kbucket v0.6.3 // indirect
 	github.com/libp2p/go-libp2p-pubsub-router v0.6.0 // indirect
+	github.com/libp2p/go-libp2p-record v0.2.0 // indirect
 	github.com/libp2p/go-libp2p-routing-helpers v0.7.3 // indirect
 	github.com/libp2p/go-libp2p-xor v0.1.0 // indirect
 	github.com/libp2p/go-msgio v0.3.0 // indirect
@@ -202,6 +202,7 @@ require (
 	github.com/libp2p/go-reuseport v0.4.0 // indirect
 	github.com/libp2p/go-yamux/v4 v4.0.1 // indirect
 	github.com/libp2p/zeroconf/v2 v2.2.0 // indirect
+	github.com/lyft/protoc-gen-star/v2 v2.0.3 // indirect
 	github.com/marten-seemann/tcp v0.0.0-20210406111302-dfbc87cc63fd // indirect
 	github.com/maruel/circular v0.0.0-20200815005550-36e533b830e9 // indirect
 	github.com/mattn/go-colorable v0.1.12 // indirect
@@ -262,6 +263,7 @@ require (
 	github.com/rs/cors v1.10.1 // indirect
 	github.com/samber/lo v1.39.0 // indirect
 	github.com/spaolacci/murmur3 v1.1.0 // indirect
+	github.com/spf13/afero v1.10.0 // indirect
 	github.com/spf13/cobra v1.6.1 // indirect
 	github.com/spf13/pflag v1.0.5 // indirect
 	github.com/square/go-jose/v3 v3.0.0-20200630053402-0a67ce9b0693 // indirect

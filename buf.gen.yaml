@@ -1,12 +1,13 @@
 version: v1
 plugins:
-  - plugin: gogo
-    out: ./../..
-  - plugin: go-grpc
-    out: ./
-    opt: module=berty.tech/weshnet
-  - plugin: grpc-gateway
-    out: ./
-    opt:
-      - module=berty.tech/weshnet
-      - generate_unbound_methods=true
+    - name: go
+      out: ./
+      opt: module=berty.tech/weshnet
+    - plugin: go-grpc
+      out: ./
+      opt: module=berty.tech/weshnet
+    - plugin: grpc-gateway
+      out: ./
+      opt:
+          - module=berty.tech/weshnet
+          - generate_unbound_methods=true

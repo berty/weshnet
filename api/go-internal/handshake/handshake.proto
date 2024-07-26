@@ -4,12 +4,6 @@ package handshake;
 
 option go_package = "berty.tech/weshnet/internal/handshake";
 
-import "gogoproto/gogo.proto";
-
-option (gogoproto.marshaler_all) = true;
-option (gogoproto.unmarshaler_all) = true;
-option (gogoproto.sizer_all) = true;
-
 message BoxEnvelope {
   bytes box = 1;
 }

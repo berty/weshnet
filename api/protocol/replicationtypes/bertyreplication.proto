@@ -2,17 +2,10 @@ syntax = "proto3";
 
 package weshnet.replication.v1;
 
-import "gogoproto/gogo.proto";
 import "protocoltypes.proto";
+import "tagger/tagger.proto";
 
 option go_package = "berty.tech/weshnet/pkg/replicationtypes";
-
-option (gogoproto.marshaler_all) = true;
-option (gogoproto.unmarshaler_all) = true;
-option (gogoproto.sizer_all) = true;
-option (gogoproto.goproto_unkeyed_all) = false;
-option (gogoproto.goproto_unrecognized_all) = false;
-option (gogoproto.goproto_sizecache_all) = false;
 
 // ReplicationService
 service ReplicationService {
@@ -25,7 +18,7 @@ service ReplicationService {
 }
 
 message ReplicatedGroup {
-  string public_key = 1 [(gogoproto.moretags) = "gorm:\"primaryKey\""];
+  string public_key = 1 [(tagger.tags) = "gorm:\"primaryKey\""];
   string sign_pub = 2;
   string link_key = 3;
   int64 created_at = 100;
@@ -37,10 +30,10 @@ message ReplicatedGroup {
 }
 
 message ReplicatedGroupToken {
-  string replicated_group_public_key = 1 [(gogoproto.moretags) = "gorm:\"index;primaryKey;autoIncrement:false\""];
+  string replicated_group_public_key = 1 [(tagger.tags) = "gorm:\"index;primaryKey;autoIncrement:false\""];
   ReplicatedGroup replicated_group = 2;
-  string token_issuer = 3 [(gogoproto.moretags) = "gorm:\"primaryKey;autoIncrement:false\""];
-  string token_id = 4 [(gogoproto.moretags) = "gorm:\"primaryKey;autoIncrement:false\"", (gogoproto.customname) = "TokenID"];
+  string token_issuer = 3 [(tagger.tags) = "gorm:\"primaryKey;autoIncrement:false\""];
+  string token_id = 4 [(tagger.tags) = "gorm:\"primaryKey;autoIncrement:false\""];
   int64 created_at = 5;
 }
 
@@ -49,7 +42,7 @@ message ReplicationServiceReplicateGroup {
     weshnet.protocol.v1.Group group = 1;
   }
   message Reply {
-    bool ok = 1 [(gogoproto.customname) = "OK"];
+    bool ok = 1;
   }
 }
 

@@ -154,7 +154,7 @@ $(gen_sum): $(gen_src)
 		--workdir="/go/src/berty.tech/weshnet" \
 		--entrypoint="sh" \
 		--rm \
-		bertytech/buf:2 \
+		bertytech/buf:3 \
 		-xec 'make generate_local'; \
 	  $(MAKE) tidy \
 	)
@@ -166,6 +166,8 @@ generate_local:
 	$(call check-program, shasum buf)
 	buf generate api/go-internal;
 	buf generate api/protocol;
+	buf generate --template buf.gen.tag.yaml api/go-internal;
+	buf generate --template buf.gen.tag.yaml api/protocol;
 	$(MAKE) go.fmt
 	shasum $(gen_src) | sort -k 2 > $(gen_sum).tmp
 	mv $(gen_sum).tmp $(gen_sum)

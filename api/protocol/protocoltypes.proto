@@ -2,14 +2,7 @@ syntax = "proto3";
 
 package weshnet.protocol.v1;
 
-import "gogoproto/gogo.proto";
-
 option go_package = "berty.tech/weshnet/pkg/protocoltypes";
-
-option (gogoproto.goproto_enum_prefix_all) = false;
-option (gogoproto.marshaler_all) = true;
-option (gogoproto.unmarshaler_all) = true;
-option (gogoproto.sizer_all) = true;
 
 // ProtocolService is the top-level API to manage the Wesh protocol service.
 // Each active Wesh protocol service is considered as a Wesh device and is associated with a Wesh user.
@@ -42,7 +35,7 @@ service ProtocolService {
   rpc ContactRequestDiscard (ContactRequestDiscard.Request) returns (ContactRequestDiscard.Reply);
 
   // ShareContact uses ContactRequestReference to get the contact information for the current account and
-  // returns the Protobuf encoding of a shareable contact which you can further encode and share. If needed, this 
+  // returns the Protobuf encoding of a shareable contact which you can further encode and share. If needed, this
   // will reset the contact request reference and enable contact requests. To decode the result, see DecodeContact.
   rpc ShareContact (ShareContact.Request) returns (ShareContact.Reply);
 
@@ -278,10 +271,10 @@ message GroupHeadsExport {
   bytes sign_pub = 2;
 
   // metadata_heads_cids are the heads of the metadata store that should be restored from an export
-  repeated bytes metadata_heads_cids = 3 [(gogoproto.customname) = "MetadataHeadsCIDs"];
+  repeated bytes metadata_heads_cids = 3;
 
   // messages_heads_cids are the heads of the metadata store that should be restored from an export
-  repeated bytes messages_heads_cids = 4 [(gogoproto.customname) = "MessagesHeadsCIDs"];
+  repeated bytes messages_heads_cids = 4;
 
   // link_key
   bytes link_key = 5;
@@ -310,7 +303,7 @@ message GroupEnvelope {
   // event is encrypted using a symmetric key shared among group members
   bytes event = 2;
 
-  reserved 3; // repeated bytes encrypted_attachment_cids = 3  [(gogoproto.customname) = "EncryptedAttachmentCIDs"];
+  reserved 3; // repeated bytes encrypted_attachment_cids = 3 ;
 }
 
 // MessageHeaders is used in MessageEnvelope and only readable by invited group members
@@ -319,7 +312,7 @@ message MessageHeaders {
   uint64 counter = 1;
 
   // device_pk is the public key of the device sending the message
-  bytes device_pk = 2 [(gogoproto.customname) = "DevicePK"];
+  bytes device_pk = 2;
 
   // sig is the signature of the encrypted message using the device's private key
   bytes sig = 3;
@@ -354,7 +347,7 @@ message MessageEnvelope {
   bytes nonce = 3;
 
   // encrypted_attachment_cids is a list of attachment CIDs encrypted specifically for replication services
-  reserved 4; // repeated bytes encrypted_attachment_cids = 4 [(gogoproto.customname) = "EncryptedAttachmentCIDs"];
+  reserved 4; // repeated bytes encrypted_attachment_cids = 4;
 }
 
 // ***************************************************************************
@@ -364,22 +357,22 @@ message MessageEnvelope {
 // EventContext adds context (its id, its parents and its attachments) to an event
 message EventContext {
   // id is the CID of the underlying OrbitDB event
-  bytes id = 1 [(gogoproto.customname) = "ID"];
+  bytes id = 1;
 
   // id are the the CIDs of the underlying parents of the OrbitDB event
-  repeated bytes parent_ids = 2 [(gogoproto.customname) = "ParentIDs"];
+  repeated bytes parent_ids = 2;
 
   // group_pk receiving the event
-  bytes group_pk = 3[(gogoproto.customname) = "GroupPK"];
+  bytes group_pk = 3;
 
   // attachment_cids is a list of attachment that can be retrieved
-  reserved 4; // repeated bytes attachment_cids = 4 [(gogoproto.customname) = "AttachmentCIDs"];
+  reserved 4; // repeated bytes attachment_cids = 4;
 }
 
 // GroupMetadataPayloadSent is an app defined message, accessible to future group members
 message GroupMetadataPayloadSent {
   // device_pk is the device sending the event, signs the message
-  bytes device_pk = 1 [(gogoproto.customname) = "DevicePK"];
+  bytes device_pk = 1;
 
   // message is the payload
   bytes message = 2;
@@ -388,20 +381,20 @@ message GroupMetadataPayloadSent {
 // ContactAliasKeyAdded is an event type where ones shares their alias public key
 message ContactAliasKeyAdded {
   // device_pk is the device sending the event, signs the message
-  bytes device_pk = 1 [(gogoproto.customname) = "DevicePK"];
+  bytes device_pk = 1;
 
   // alias_pk is the alias key which will be used to verify a contact identity
-  bytes alias_pk = 2 [(gogoproto.customname) = "AliasPK"];
+  bytes alias_pk = 2;
 }
 
 // GroupMemberDeviceAdded is an event which indicates to a group a new device (and eventually a new member) is joining it
 // When added on AccountGroup, this event should be followed by appropriate GroupMemberDeviceAdded and GroupDeviceChainKeyAdded events
 message GroupMemberDeviceAdded {
   // member_pk is the member sending the event
-  bytes member_pk = 1 [(gogoproto.customname) = "MemberPK"];
+  bytes member_pk = 1;
 
   // device_pk is the device sending the event, signs the message
-  bytes device_pk = 2 [(gogoproto.customname) = "DevicePK"];
+  bytes device_pk = 2;
 
   // member_sig is used to prove the ownership of the member pk
   bytes member_sig = 3; // TODO: signature of what ??? ensure it can't be replayed
@@ -419,10 +412,10 @@ message DeviceChainKey {
 // GroupDeviceChainKeyAdded is an event which indicates to a group member a device chain key
 message GroupDeviceChainKeyAdded {
   // device_pk is the device sending the event, signs the message
-  bytes device_pk = 1 [(gogoproto.customname) = "DevicePK"];
+  bytes device_pk = 1;
 
   // dest_member_pk is the member who should receive the secret
-  bytes dest_member_pk = 2 [(gogoproto.customname) = "DestMemberPK"];
+  bytes dest_member_pk = 2;
 
   // payload is the serialization of Payload encrypted for the specified member
   bytes payload = 3;
@@ -431,7 +424,7 @@ message GroupDeviceChainKeyAdded {
 // MultiMemberGroupAliasResolverAdded indicates that a group member want to disclose their presence in the group to their contacts
 message MultiMemberGroupAliasResolverAdded {
   // device_pk is the device sending the event, signs the message
-  bytes device_pk = 1 [(gogoproto.customname) = "DevicePK"];
+  bytes device_pk = 1;
 
   // alias_resolver allows contact of an account to resolve the real identity behind an alias (Multi-Member Group Member)
   // Generated by both contacts and account independently using: hmac(aliasPK, GroupID)
@@ -445,22 +438,22 @@ message MultiMemberGroupAliasResolverAdded {
 // MultiMemberGroupAdminRoleGranted indicates that a group admin allows another group member to act as an admin
 message MultiMemberGroupAdminRoleGranted {
   // device_pk is the device sending the event, signs the message, must be the device of an admin of the group
-  bytes device_pk = 1 [(gogoproto.customname) = "DevicePK"];
+  bytes device_pk = 1;
 
   // grantee_member_pk is the member public key of the member granted of the admin role
-  bytes grantee_member_pk = 2 [(gogoproto.customname) = "GranteeMemberPK"];
+  bytes grantee_member_pk = 2;
 }
 
 // MultiMemberGroupInitialMemberAnnounced indicates that a member is the group creator, this event is signed using the group ID private key
 message MultiMemberGroupInitialMemberAnnounced {
   // member_pk is the public key of the member who is the group creator
-  bytes member_pk = 1 [(gogoproto.customname) = "MemberPK"];
+  bytes member_pk = 1;
 }
 
 // GroupAddAdditionalRendezvousSeed indicates that an additional rendezvous point should be used for data synchronization
 message GroupAddAdditionalRendezvousSeed {
   // device_pk is the device sending the event, signs the message, must be the device of an admin of the group
-  bytes device_pk = 1 [(gogoproto.customname) = "DevicePK"];
+  bytes device_pk = 1;
 
   // seed is the additional rendezvous point seed which should be used
   bytes seed = 2;
@@ -469,7 +462,7 @@ message GroupAddAdditionalRendezvousSeed {
 // GroupRemoveAdditionalRendezvousSeed indicates that a previously added rendezvous point should be removed
 message GroupRemoveAdditionalRendezvousSeed {
   // device_pk is the device sending the event, signs the message, must be the device of an admin of the group
-  bytes device_pk = 1 [(gogoproto.customname) = "DevicePK"];
+  bytes device_pk = 1;
 
   // seed is the additional rendezvous point seed which should be removed
   bytes seed = 2;
@@ -478,7 +471,7 @@ message GroupRemoveAdditionalRendezvousSeed {
 // AccountGroupJoined indicates that the account is now part of a new group
 message AccountGroupJoined {
   // device_pk is the device sending the event, signs the message
-  bytes device_pk = 1 [(gogoproto.customname) = "DevicePK"];
+  bytes device_pk = 1;
 
   // group describe the joined group
   Group group = 2;
@@ -487,28 +480,28 @@ message AccountGroupJoined {
 // AccountGroupLeft indicates that the account has left a group
 message AccountGroupLeft {
   // device_pk is the device sending the event, signs the message
-  bytes device_pk = 1 [(gogoproto.customname) = "DevicePK"];
+  bytes device_pk = 1;
 
   // group_pk references the group left
-  bytes group_pk = 2 [(gogoproto.customname) = "GroupPK"];
+  bytes group_pk = 2;
 }
 
 // AccountContactRequestDisabled indicates that the account should not be advertised on a public rendezvous point
 message AccountContactRequestDisabled {
   // device_pk is the device sending the event, signs the message
-  bytes device_pk = 1 [(gogoproto.customname) = "DevicePK"];
+  bytes device_pk = 1;
 }
 
 // AccountContactRequestEnabled indicates that the account should be advertised on a public rendezvous point
 message AccountContactRequestEnabled {
   // device_pk is the device sending the event, signs the message
-  bytes device_pk = 1 [(gogoproto.customname) = "DevicePK"];
+  bytes device_pk = 1;
 }
 
 // AccountContactRequestReferenceReset indicates that the account should be advertised on different public rendezvous points
 message AccountContactRequestReferenceReset {
   // device_pk is the device sending the event, signs the message
-  bytes device_pk = 1 [(gogoproto.customname) = "DevicePK"];
+  bytes device_pk = 1;
 
   // public_rendezvous_seed is the new rendezvous point seed
   bytes public_rendezvous_seed = 2;
@@ -520,10 +513,10 @@ message AccountContactRequestReferenceReset {
 // AccountContactRequestOutgoingEnqueued indicates that the account will attempt to send a contact request when a matching peer is discovered
 message AccountContactRequestOutgoingEnqueued {
   // device_pk is the device sending the event, signs the message
-  bytes device_pk = 1 [(gogoproto.customname) = "DevicePK"];
+  bytes device_pk = 1;
 
   // group_pk is the 1to1 group with the requested user
-  bytes group_pk = 2 [(gogoproto.customname) = "GroupPK"];
+  bytes group_pk = 2;
 
   // contact is a message describing how to connect to the other account
   ShareableContact contact = 3;
@@ -535,19 +528,19 @@ message AccountContactRequestOutgoingEnqueued {
 // AccountContactRequestOutgoingSent indicates that the account has sent a contact request
 message AccountContactRequestOutgoingSent {
   // device_pk is the device sending the account event, signs the message
-  bytes device_pk = 1 [(gogoproto.customname) = "DevicePK"];
+  bytes device_pk = 1;
 
   // contact_pk is the contacted account
-  bytes contact_pk = 2 [(gogoproto.customname) = "ContactPK"];
+  bytes contact_pk = 2;
 }
 
 // AccountContactRequestIncomingReceived indicates that the account has received a new contact request
 message AccountContactRequestIncomingReceived {
   // device_pk is the device sending the account event (which received the contact request), signs the message
-  bytes device_pk = 1 [(gogoproto.customname) = "DevicePK"];
+  bytes device_pk = 1;
 
   // contact_pk is the account sending the request
-  bytes contact_pk = 2 [(gogoproto.customname) = "ContactPK"];
+  bytes contact_pk = 2;
 
   // TODO: is this necessary?
   // contact_rendezvous_seed is the rendezvous seed of the contact sending the request
@@ -561,10 +554,10 @@ message AccountContactRequestIncomingReceived {
 // AccountContactRequestIncomingDiscarded indicates that a contact request has been refused
 message AccountContactRequestIncomingDiscarded {
   // device_pk is the device sending the event, signs the message
-  bytes device_pk = 1 [(gogoproto.customname) = "DevicePK"];
+  bytes device_pk = 1;
 
   // contact_pk is the contact whom request is refused
-  bytes contact_pk = 2 [(gogoproto.customname) = "ContactPK"];
+  bytes contact_pk = 2;
 }
 
 // This event should be followed by an AccountGroupJoined event
@@ -572,39 +565,39 @@ message AccountContactRequestIncomingDiscarded {
 // AccountContactRequestIncomingAccepted indicates that a contact request has been accepted
 message AccountContactRequestIncomingAccepted {
   // device_pk is the device sending the event, signs the message
-  bytes device_pk = 1 [(gogoproto.customname) = "DevicePK"];
+  bytes device_pk = 1;
 
   // contact_pk is the contact whom request is accepted
-  bytes contact_pk = 2 [(gogoproto.customname) = "ContactPK"];
+  bytes contact_pk = 2;
 
   // group_pk is the 1to1 group with the requester user
-  bytes group_pk = 3 [(gogoproto.customname) = "GroupPK"];
+  bytes group_pk = 3;
 }
 
 // AccountContactBlocked indicates that a contact is blocked
 message AccountContactBlocked {
   // device_pk is the device sending the event, signs the message
-  bytes device_pk = 1 [(gogoproto.customname) = "DevicePK"];
+  bytes device_pk = 1;
 
   // contact_pk is the contact blocked
-  bytes contact_pk = 2 [(gogoproto.customname) = "ContactPK"];
+  bytes contact_pk = 2;
 }
 
 // AccountContactUnblocked indicates that a contact is unblocked
 message AccountContactUnblocked {
   // device_pk is the device sending the event, signs the message
-  bytes device_pk = 1 [(gogoproto.customname) = "DevicePK"];
+  bytes device_pk = 1;
 
   // contact_pk is the contact unblocked
-  bytes contact_pk = 2 [(gogoproto.customname) = "ContactPK"];
+  bytes contact_pk = 2;
 }
 
 message GroupReplicating {
   // device_pk is the device sending the event, signs the message
-  bytes device_pk = 1 [(gogoproto.customname) = "DevicePK"];
+  bytes device_pk = 1;
 
   // authentication_url indicates which server has been used for authentication
-  string authentication_url = 2 [(gogoproto.customname) = "AuthenticationURL"];
+  string authentication_url = 2;
 
   // replication_server indicates which server will be used for replication
   string replication_server = 3;
@@ -631,16 +624,16 @@ message ServiceGetConfiguration {
   message Request {}
   message Reply {
     // account_pk is the public key of the current account
-    bytes account_pk = 1 [(gogoproto.customname) = "AccountPK"];
+    bytes account_pk = 1;
 
     // device_pk is the public key of the current device
-    bytes device_pk = 2 [(gogoproto.customname) = "DevicePK"];
+    bytes device_pk = 2;
 
     // account_group_pk is the public key of the account group
-    bytes account_group_pk = 3 [(gogoproto.customname) = "AccountGroupPK"];
+    bytes account_group_pk = 3;
 
     // peer_id is the peer ID of the current IPFS node
-    string peer_id = 4 [(gogoproto.customname) = "PeerID"];
+    string peer_id = 4;
 
     // listeners is the list of swarm listening addresses of the current IPFS node
     repeated string listeners = 5;
@@ -697,7 +690,7 @@ message ContactRequestSend {
 message ContactRequestAccept {
   message Request {
     // contact_pk is the identifier of the contact to accept the request from
-    bytes contact_pk = 1 [(gogoproto.customname) = "ContactPK"];
+    bytes contact_pk = 1;
   }
 
   message Reply {}
@@ -706,7 +699,7 @@ message ContactRequestAccept {
 message ContactRequestDiscard {
   message Request {
     // contact_pk is the identifier of the contact to ignore the request from
-    bytes contact_pk = 1 [(gogoproto.customname) = "ContactPK"];
+    bytes contact_pk = 1;
   }
 
   message Reply {}
@@ -734,7 +727,7 @@ message DecodeContact {
 message ContactBlock {
   message Request {
     // contact_pk is the identifier of the contact to block
-    bytes contact_pk = 1 [(gogoproto.customname) = "ContactPK"];
+    bytes contact_pk = 1;
   }
 
   message Reply {}
@@ -743,7 +736,7 @@ message ContactBlock {
 message ContactUnblock {
   message Request {
     // contact_pk is the identifier of the contact to unblock
-    bytes contact_pk = 1 [(gogoproto.customname) = "ContactPK"];
+    bytes contact_pk = 1;
   }
 
   message Reply {}
@@ -752,7 +745,7 @@ message ContactUnblock {
 message ContactAliasKeySend {
   message Request {
     // contact_pk is the identifier of the contact to send the alias public key to
-    bytes group_pk = 1 [(gogoproto.customname) = "GroupPK"];
+    bytes group_pk = 1;
   }
 
   message Reply {}
@@ -762,7 +755,7 @@ message MultiMemberGroupCreate {
   message Request {}
   message Reply {
     // group_pk is the identifier of the newly created group
-    bytes group_pk = 1 [(gogoproto.customname) = "GroupPK"];
+    bytes group_pk = 1;
   }
 }
 
@@ -777,7 +770,7 @@ message MultiMemberGroupJoin {
 
 message MultiMemberGroupLeave {
   message Request {
-    bytes group_pk = 1 [(gogoproto.customname) = "GroupPK"];
+    bytes group_pk = 1;
   }
 
   message Reply {}
@@ -786,7 +779,7 @@ message MultiMemberGroupLeave {
 message MultiMemberGroupAliasResolverDisclose {
   message Request {
     // group_pk is the identifier of the group
-    bytes group_pk = 1 [(gogoproto.customname) = "GroupPK"];
+    bytes group_pk = 1;
   }
 
   message Reply {}
@@ -795,10 +788,10 @@ message MultiMemberGroupAliasResolverDisclose {
 message MultiMemberGroupAdminRoleGrant {
   message Request {
     // group_pk is the identifier of the group
-    bytes group_pk = 1 [(gogoproto.customname) = "GroupPK"];
+    bytes group_pk = 1;
 
     // member_pk is the identifier of the member which will be granted the admin role
-    bytes member_pk = 2 [(gogoproto.customname) = "MemberPK"];
+    bytes member_pk = 2;
   }
 
   message Reply {}
@@ -807,7 +800,7 @@ message MultiMemberGroupAdminRoleGrant {
 message MultiMemberGroupInvitationCreate {
   message Request {
     // group_pk is the identifier of the group
-    bytes group_pk = 1 [(gogoproto.customname) = "GroupPK"];
+    bytes group_pk = 1;
   }
 
   message Reply {
@@ -819,34 +812,34 @@ message MultiMemberGroupInvitationCreate {
 message AppMetadataSend {
   message Request {
     // group_pk is the identifier of the group
-    bytes group_pk = 1 [(gogoproto.customname) = "GroupPK"];
+    bytes group_pk = 1;
 
     // payload is the payload to send
     bytes payload = 2;
 
     // attachment_cids is a list of attachment cids
-    reserved 3; // repeated bytes attachment_cids = 3 [(gogoproto.customname) = "AttachmentCIDs"];
+    reserved 3; // repeated bytes attachment_cids = 3;
   }
 
   message Reply {
-    bytes cid = 1 [(gogoproto.customname) = "CID"];
+    bytes cid = 1;
   }
 }
 
 message AppMessageSend {
   message Request {
     // group_pk is the identifier of the group
-    bytes group_pk = 1 [(gogoproto.customname) = "GroupPK"];
+    bytes group_pk = 1;
 
     // payload is the payload to send
     bytes payload = 2;
 
     // attachment_cids is a list of attachment cids
-    reserved 3; // repeated bytes attachment_cids = 3 [(gogoproto.customname) = "AttachmentCIDs"];
+    reserved 3; // repeated bytes attachment_cids = 3;
   }
 
   message Reply {
-    bytes cid = 1 [(gogoproto.customname) = "CID"];
+    bytes cid = 1;
   }
 }
 
@@ -875,11 +868,11 @@ message GroupMessageEvent {
 message GroupMetadataList {
   message Request {
     // group_pk is the identifier of the group
-    bytes group_pk = 1 [(gogoproto.customname) = "GroupPK"];
+    bytes group_pk = 1;
 
     // since is the lower ID bound used to filter events
     // if not set, will return events since the beginning
-    bytes since_id = 2 [(gogoproto.customname) = "SinceID"];
+    bytes since_id = 2;
 
     // since_now will list only new event to come
     // since_id must not be set
@@ -887,7 +880,7 @@ message GroupMetadataList {
 
     // until is the upper ID bound used to filter events
     // if not set, will subscribe to new events to come
-    bytes until_id = 4 [(gogoproto.customname) = "UntilID"];
+    bytes until_id = 4;
 
     // until_now will not list new event to come
     // until_id must not be set
@@ -902,11 +895,11 @@ message GroupMetadataList {
 message GroupMessageList {
   message Request {
     // group_pk is the identifier of the group
-    bytes group_pk = 1 [(gogoproto.customname) = "GroupPK"];
+    bytes group_pk = 1;
 
     // since is the lower ID bound used to filter events
     // if not set, will return events since the beginning
-    bytes since_id = 2 [(gogoproto.customname) = "SinceID"];
+    bytes since_id = 2;
 
     // since_now will list only new event to come
     // since_id must not be set
@@ -914,7 +907,7 @@ message GroupMessageList {
 
     // until is the upper ID bound used to filter events
     // if not set, will subscribe to new events to come
-    bytes until_id = 4 [(gogoproto.customname) = "UntilID"];
+    bytes until_id = 4;
 
     // until_now will not list new event to come
     // until_id must not be set
@@ -930,10 +923,10 @@ message GroupMessageList {
 message GroupInfo {
   message Request {
     // group_pk is the identifier of the group
-    bytes group_pk = 1 [(gogoproto.customname) = "GroupPK"];
+    bytes group_pk = 1;
 
     // contact_pk is the identifier of the contact
-    bytes contact_pk = 2 [(gogoproto.customname) = "ContactPK"];
+    bytes contact_pk = 2;
   }
 
   message Reply {
@@ -941,17 +934,17 @@ message GroupInfo {
     Group group = 1;
 
     // member_pk is the identifier of the current member in the group
-    bytes member_pk = 2 [(gogoproto.customname) = "MemberPK"];
+    bytes member_pk = 2;
 
     // device_pk is the identifier of the current device in the group
-    bytes device_pk = 3 [(gogoproto.customname) = "DevicePK"];
+    bytes device_pk = 3;
   }
 }
 
 message ActivateGroup {
   message Request {
     // group_pk is the identifier of the group
-    bytes group_pk = 1 [(gogoproto.customname) = "GroupPK"];
+    bytes group_pk = 1;
 
     // local_only will open the group without enabling network interactions
     // with other members
@@ -965,7 +958,7 @@ message ActivateGroup {
 message DeactivateGroup {
   message Request {
     // group_pk is the identifier of the group
-    bytes group_pk = 1 [(gogoproto.customname) = "GroupPK"];
+    bytes group_pk = 1;
   }
 
   message Reply {
@@ -988,23 +981,23 @@ message GroupDeviceStatus {
   }
 
   message Request {
-    bytes group_pk = 1 [(gogoproto.customname) = "GroupPK"];
+    bytes group_pk = 1;
   }
 
   message Reply {
     message PeerConnected {
-      string peer_id = 1 [(gogoproto.customname) = "PeerID"];
-      bytes device_pk = 2 [(gogoproto.customname) = "DevicePK"];
+      string peer_id = 1;
+      bytes device_pk = 2;
       repeated Transport transports = 3;
       repeated string maddrs = 4;
     }
 
     message PeerReconnecting {
-      string peer_id = 1 [(gogoproto.customname) = "PeerID"];
+      string peer_id = 1;
     }
 
     message PeerDisconnected {
-      string peer_id = 1 [(gogoproto.customname) = "PeerID"];
+      string peer_id = 1;
     }
 
     Type type = 1;
@@ -1018,37 +1011,37 @@ message DebugListGroups {
 
   message Reply {
     // group_pk is the public key of the group
-    bytes group_pk = 1 [(gogoproto.customname) = "GroupPK"];
+    bytes group_pk = 1;
 
     // group_type is the type of the group
-    GroupType group_type = 2 [(gogoproto.customname) = "GroupType"];
+    GroupType group_type = 2;
 
     // contact_pk is the contact public key if appropriate
-    bytes contact_pk = 3 [(gogoproto.customname) = "ContactPK"];
+    bytes contact_pk = 3;
   }
 }
 
 message DebugInspectGroupStore {
   message Request {
     // group_pk is the identifier of the group
-    bytes group_pk = 1 [(gogoproto.customname) = "GroupPK"];
+    bytes group_pk = 1;
 
     // log_type is the log to inspect
-    DebugInspectGroupLogType log_type = 2 [(gogoproto.customname) = "LogType"];
+    DebugInspectGroupLogType log_type = 2;
   }
 
   message Reply {
     // cid is the CID of the IPFS log entry
-    bytes cid = 1 [(gogoproto.customname) = "CID"];
+    bytes cid = 1;
 
     // parent_cids is the list of the parent entries
-    repeated bytes parent_cids = 2  [(gogoproto.customname) = "ParentCIDs"];
+    repeated bytes parent_cids = 2 ;
 
     // event_type metadata event type if subscribed to metadata events
     EventType metadata_event_type = 3;
 
     // device_pk is the public key of the device signing the entry
-    bytes device_pk = 4 [(gogoproto.customname) = "DevicePK"];
+    bytes device_pk = 4;
 
     // payload is the un encrypted entry payload if available
     bytes payload = 6;
@@ -1058,12 +1051,12 @@ message DebugInspectGroupStore {
 message DebugGroup {
   message Request {
     // group_pk is the identifier of the group
-    bytes group_pk = 1 [(gogoproto.customname) = "GroupPK"];
+    bytes group_pk = 1;
   }
 
   message Reply {
     // peer_ids is the list of peer ids connected to the same group
-    repeated string peer_ids = 1  [(gogoproto.customname) = "PeerIDs"];
+    repeated string peer_ids = 1 ;
   }
 }
 
@@ -1086,7 +1079,7 @@ enum ContactState {
 
 message ShareableContact {
   // pk is the account to send a contact request to
-  bytes pk = 1 [(gogoproto.customname) = "PK"];
+  bytes pk = 1;
 
   // public_rendezvous_seed is the rendezvous seed used by the account to send a contact request to
   bytes public_rendezvous_seed = 2;
@@ -1102,26 +1095,26 @@ message ServiceTokenSupportedService {
 
 message ServiceToken {
   string token = 1;
-  string authentication_url = 2  [(gogoproto.customname) = "AuthenticationURL"];
+  string authentication_url = 2 ;
   repeated ServiceTokenSupportedService supported_services = 3;
   int64 expiration = 4;
 }
 
 message CredentialVerificationServiceInitFlow {
   message Request {
-    string service_url = 1 [(gogoproto.customname) = "ServiceURL"];
+    string service_url = 1;
     bytes public_key = 2;
     string link = 3;
   }
   message Reply {
-    string url = 1 [(gogoproto.customname) = "URL"];
-    bool secure_url = 2 [(gogoproto.customname) = "SecureURL"];
+    string url = 1;
+    bool secure_url = 2;
   }
 }
 
 message CredentialVerificationServiceCompleteFlow {
   message Request {
-    string callback_uri = 1 [(gogoproto.customname) = "CallbackURI"];
+    string callback_uri = 1;
   }
   message Reply {
     string identifier = 1;
@@ -1141,9 +1134,9 @@ message VerifiedCredentialsList {
 
 message ReplicationServiceRegisterGroup {
   message Request{
-    bytes group_pk = 1 [(gogoproto.customname) = "GroupPK"];
+    bytes group_pk = 1;
     string token = 2;
-    string authentication_url = 3 [(gogoproto.customname) = "AuthenticationURL"];
+    string authentication_url = 3;
     string replication_server = 4;
   }
   message Reply{}
@@ -1154,7 +1147,7 @@ message ReplicationServiceReplicateGroup {
     Group group = 1;
   }
   message Reply {
-    bool ok = 1 [(gogoproto.customname) = "OK"];
+    bool ok = 1;
   }
 }
 
@@ -1162,8 +1155,8 @@ message SystemInfo {
   message Request {}
   message Reply {
     Process process = 1;
-    P2P p2p = 2 [(gogoproto.customname) = "P2P"];
-    OrbitDB orbitdb = 3 [(gogoproto.customname) = "OrbitDB"];
+    P2P p2p = 2;
+    OrbitDB orbitdb = 3;
     repeated string warns = 4;
   }
 
@@ -1184,24 +1177,24 @@ message SystemInfo {
   message Process {
     string version = 1;
     string vcs_ref = 2;
-    int64 uptime_ms = 3 [(gogoproto.customname) = "UptimeMS"];
-    int64 user_cpu_time_ms = 10 [(gogoproto.customname) = "UserCPUTimeMS"];
-    int64 system_cpu_time_ms = 11 [(gogoproto.customname) = "SystemCPUTimeMS"];
+    int64 uptime_ms = 3;
+    int64 user_cpu_time_ms = 10;
+    int64 system_cpu_time_ms = 11;
     int64 started_at = 12;
     uint64 rlimit_cur = 13;
     int64 num_goroutine = 14;
     int64 nofile = 15;
     bool too_many_open_files = 16;
-    int64 num_cpu = 17 [(gogoproto.customname) = "NumCPU"];
+    int64 num_cpu = 17;
     string go_version = 18;
     string operating_system = 19;
     string host_name = 20;
     string arch = 21;
     uint64 rlimit_max = 22;
-    int64 pid = 23 [(gogoproto.customname) = "PID"];
-    int64 ppid = 24 [(gogoproto.customname) = "PPID"];
+    int64 pid = 23;
+    int64 ppid = 24;
     int64 priority = 25;
-    int64 uid = 26 [(gogoproto.customname) = "UID"];
+    int64 uid = 26;
     string working_dir = 27;
     string system_username = 28;
   }
@@ -1215,7 +1208,7 @@ message PeerList {
 
   message Peer {
     // id is the libp2p.PeerID.
-    string id = 1 [(gogoproto.customname) = "ID"];
+    string id = 1;
 
     // routes are the list of active and known maddr.
     repeated Route routes = 2;
@@ -1255,7 +1248,7 @@ message PeerList {
 
   message Stream {
     // id is an identifier used to write protocol headers in streams.
-    string id = 1 [(gogoproto.customname) = "ID"];
+    string id = 1;
   }
 
   enum Feature {
@@ -1287,8 +1280,8 @@ message Progress {
 }
 
 message OutOfStoreMessage {
-  bytes cid = 1 [(gogoproto.customname) = "CID"];
-  bytes device_pk = 2 [(gogoproto.customname) = "DevicePK"];
+  bytes cid = 1;
+  bytes device_pk = 2;
   fixed64 counter = 3;
   bytes sig = 4;
   fixed32 flags = 5;
@@ -1316,7 +1309,7 @@ message OutOfStoreReceive {
 
 message OutOfStoreSeal {
   message Request {
-    bytes cid = 1 [(gogoproto.customname) = "CID"];
+    bytes cid = 1;
     bytes group_public_key = 2;
   }
   message Reply {
@@ -1326,7 +1319,7 @@ message OutOfStoreSeal {
 
 message AccountVerifiedCredentialRegistered {
   // device_pk is the public key of the device sending the message
-  bytes device_pk = 1 [(gogoproto.customname) = "DevicePK"];
+  bytes device_pk = 1;
 
   bytes signed_identity_public_key = 2;
 
@@ -1351,8 +1344,8 @@ message OrbitDBMessageHeads {
   message Box {
     string address = 1;
     bytes heads = 2;
-    bytes device_pk = 3 [(gogoproto.customname) = "DevicePK"];
-    bytes peer_id = 4 [(gogoproto.customname) = "PeerID"];
+    bytes device_pk = 3;
+    bytes peer_id = 4;
   }
 
   // sealed box should contain encrypted Box
@@ -1365,14 +1358,14 @@ message OrbitDBMessageHeads {
 message RefreshContactRequest {
   message Peer {
     // id is the libp2p.PeerID.
-    string id = 1 [(gogoproto.customname) = "ID"];
+    string id = 1;
 
     // list of peers multiaddrs.
     repeated string addrs = 2;
   }
 
   message Request {
-    bytes contact_pk = 1 [(gogoproto.customname) = "ContactPK"];
+    bytes contact_pk = 1;
     // timeout in second
     int64 timeout = 2;
   }
