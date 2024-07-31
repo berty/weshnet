@@ -14,19 +14,19 @@ import (
 func checkParametersConsistency(sinceID, untilID []byte, sinceNow, untilNow, reverseOrder bool) error {
 	// Since can't be both set to an ID and to now
 	if sinceID != nil && sinceNow {
-		return errcode.ErrInvalidInput.Wrap(errors.New("params SinceNow and SinceID are both set"))
+		return errcode.ErrCode_ErrInvalidInput.Wrap(errors.New("params SinceNow and SinceID are both set"))
 	}
 	// Until can't be both set to an ID and to now
 	if untilID != nil && untilNow {
-		return errcode.ErrInvalidInput.Wrap(errors.New("params UntilNow and UntilID are both set"))
+		return errcode.ErrCode_ErrInvalidInput.Wrap(errors.New("params UntilNow and UntilID are both set"))
 	}
 	// Since and Until can't be both set to now at the same time
 	if sinceNow && untilNow {
-		return errcode.ErrInvalidInput.Wrap(errors.New("params SinceNow and UntilNow are both set"))
+		return errcode.ErrCode_ErrInvalidInput.Wrap(errors.New("params SinceNow and UntilNow are both set"))
 	}
 	// Can't reverse events orders if subscribed to new events
 	if untilID == nil && !untilNow && reverseOrder {
-		return errcode.ErrInvalidInput.Wrap(errors.New("reverse chronological order requested while subscribing to new events"))
+		return errcode.ErrCode_ErrInvalidInput.Wrap(errors.New("reverse chronological order requested while subscribing to new events"))
 	}
 
 	return nil
@@ -38,19 +38,19 @@ func (s *service) GroupMetadataList(req *protocoltypes.GroupMetadataList_Request
 	defer cancel()
 
 	// Get group context / check if the group is opened
-	cg, err := s.GetContextGroupForID(req.GroupPK)
+	cg, err := s.GetContextGroupForID(req.GroupPk)
 	if err != nil {
-		return errcode.ErrGroupMemberUnknownGroupID.Wrap(err)
+		return errcode.ErrCode_ErrGroupMemberUnknownGroupID.Wrap(err)
 	}
 
 	// Check parameters consistency
-	if err := checkParametersConsistency(req.SinceID, req.UntilID, req.SinceNow, req.UntilNow, req.ReverseOrder); err != nil {
+	if err := checkParametersConsistency(req.SinceId, req.UntilId, req.SinceNow, req.UntilNow, req.ReverseOrder); err != nil {
 		return err
 	}
 
 	// Subscribe to new metadata events if requested
 	var newEvents <-chan interface{}
-	if req.UntilID == nil && !req.UntilNow {
+	if req.UntilId == nil && !req.UntilNow {
 		sub, err := cg.MetadataStore().EventBus().Subscribe([]interface{}{
 			// new(stores.EventReplicated),
 			new(protocoltypes.GroupMetadataEvent),
@@ -65,7 +65,7 @@ func (s *service) GroupMetadataList(req *protocoltypes.GroupMetadataList_Request
 	// Subscribe to previous metadata events and stream them if requested
 	previousEvents := make(chan protocoltypes.GroupMetadataEvent)
 	if !req.SinceNow {
-		pevt, err := cg.MetadataStore().ListEvents(ctx, req.SinceID, req.UntilID, req.ReverseOrder)
+		pevt, err := cg.MetadataStore().ListEvents(ctx, req.SinceId, req.UntilId, req.ReverseOrder)
 		if err != nil {
 			return err
 		}
@@ -126,19 +126,19 @@ func (s *service) GroupMessageList(req *protocoltypes.GroupMessageList_Request, 
 	defer cancel()
 
 	// Get group context / check if the group is opened
-	cg, err := s.GetContextGroupForID(req.GroupPK)
+	cg, err := s.GetContextGroupForID(req.GroupPk)
 	if err != nil {
-		return errcode.ErrGroupMemberUnknownGroupID.Wrap(err)
+		return errcode.ErrCode_ErrGroupMemberUnknownGroupID.Wrap(err)
 	}
 
 	// Check parameters consistency
-	if err := checkParametersConsistency(req.SinceID, req.UntilID, req.SinceNow, req.UntilNow, req.ReverseOrder); err != nil {
+	if err := checkParametersConsistency(req.SinceId, req.UntilId, req.SinceNow, req.UntilNow, req.ReverseOrder); err != nil {
 		return err
 	}
 
 	// Subscribe to new message events if requested
 	var newEvents <-chan interface{}
-	if req.UntilID == nil && !req.UntilNow {
+	if req.UntilId == nil && !req.UntilNow {
 		messageStoreSub, err := cg.MessageStore().EventBus().Subscribe([]interface{}{
 			new(protocoltypes.GroupMessageEvent),
 		}, eventbus.Name("weshnet/api/group-message-list"))
@@ -152,7 +152,7 @@ func (s *service) GroupMessageList(req *protocoltypes.GroupMessageList_Request, 
 	// Subscribe to previous message events and stream them if requested
 	previousEvents := make(chan protocoltypes.GroupMessageEvent)
 	if !req.SinceNow {
-		pevt, err := cg.MessageStore().ListEvents(ctx, req.SinceID, req.UntilID, req.ReverseOrder)
+		pevt, err := cg.MessageStore().ListEvents(ctx, req.SinceId, req.UntilId, req.ReverseOrder)
 		if err != nil {
 			return err
 		}

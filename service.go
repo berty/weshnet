@@ -163,7 +163,7 @@ func (opts *Opts) applyDefaults(ctx context.Context) error {
 			Logger: opts.Logger,
 		})
 		if err != nil {
-			return errcode.ErrInternal.Wrap(err)
+			return errcode.ErrCode_ErrInternal.Wrap(err)
 		}
 
 		opts.SecretStore = secretStore
@@ -316,7 +316,7 @@ func NewService(opts Opts) (_ Service, err error) {
 
 	if err := opts.applyDefaults(ctx); err != nil {
 		cancel()
-		return nil, errcode.TODO.Wrap(err)
+		return nil, errcode.ErrCode_TODO.Wrap(err)
 	}
 
 	opts.Logger = opts.Logger.Named("pt")
@@ -335,7 +335,7 @@ func NewService(opts Opts) (_ Service, err error) {
 	accountGroupCtx, err := opts.OrbitDB.openAccountGroup(ctx, dbOpts, opts.IpfsCoreAPI)
 	if err != nil {
 		cancel()
-		return nil, errcode.TODO.Wrap(err)
+		return nil, errcode.ErrCode_TODO.Wrap(err)
 	}
 
 	opts.Logger.Debug("Opened account group", tyber.FormatStepLogFields(ctx, []tyber.Detail{{Name: "AccountGroup", Description: accountGroupCtx.group.String()}})...)
@@ -348,7 +348,7 @@ func NewService(opts Opts) (_ Service, err error) {
 
 		if contactRequestsManager, err = newContactRequestsManager(swiper, accountGroupCtx.metadataStore, opts.IpfsCoreAPI, opts.Logger); err != nil {
 			cancel()
-			return nil, errcode.TODO.Wrap(err)
+			return nil, errcode.ErrCode_TODO.Wrap(err)
 		}
 	} else {
 		opts.Logger.Warn("No tinder driver provided, incoming and outgoing contact requests won't be enabled", tyber.FormatStepLogFields(ctx, []tyber.Detail{})...)
@@ -356,7 +356,7 @@ func NewService(opts Opts) (_ Service, err error) {
 
 	if err := opts.SecretStore.PutGroup(ctx, accountGroupCtx.Group()); err != nil {
 		cancel()
-		return nil, errcode.ErrInternal.Wrap(fmt.Errorf("unable to add account group to group datastore, err: %w", err))
+		return nil, errcode.ErrCode_ErrInternal.Wrap(fmt.Errorf("unable to add account group to group datastore, err: %w", err))
 	}
 
 	s := &service{

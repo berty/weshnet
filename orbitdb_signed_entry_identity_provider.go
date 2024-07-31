@@ -42,12 +42,12 @@ func (b *bertySignedIdentityProvider) VerifyIdentity(identity *identityprovider.
 func (b *bertySignedIdentityProvider) Sign(ctx context.Context, identity *identityprovider.Identity, bytes []byte) ([]byte, error) {
 	key, err := b.keyStore.GetKey(ctx, identity.ID)
 	if err != nil {
-		return nil, errcode.TODO.Wrap(err)
+		return nil, errcode.ErrCode_TODO.Wrap(err)
 	}
 
 	sig, err := key.Sign(bytes)
 	if err != nil {
-		return nil, errcode.TODO.Wrap(err)
+		return nil, errcode.ErrCode_TODO.Wrap(err)
 	}
 
 	return sig, nil

@@ -3,10 +3,12 @@ package handshake
 import (
 	crand "crypto/rand"
 	"encoding/base64"
+	"io"
 
-	ggio "github.com/gogo/protobuf/io"
 	p2pcrypto "github.com/libp2p/go-libp2p/core/crypto"
+	inet "github.com/libp2p/go-libp2p/core/network"
 	"golang.org/x/crypto/nacl/box"
+	"google.golang.org/protobuf/proto"
 
 	"berty.tech/weshnet/pkg/cryptoutil"
 	"berty.tech/weshnet/pkg/errcode"
@@ -21,8 +23,8 @@ var (
 
 // Common struct and methods
 type handshakeContext struct {
-	reader          ggio.Reader
-	writer          ggio.Writer
+	reader          io.Reader
+	writer          io.Writer
 	ownAccountID    p2pcrypto.PrivKey
 	peerAccountID   p2pcrypto.PubKey
 	ownEphemeral    *[cryptoutil.KeySize]byte
@@ -61,7 +63,7 @@ func (hc *handshakeContext) generateOwnEphemeralAndSendPubKey() error {
 	// Generate own Ephemeral key pair
 	ownEphemeralPub, ownEphemeralPriv, err := box.GenerateKey(crand.Reader)
 	if err != nil {
-		return errcode.ErrCryptoKeyGeneration.Wrap(err)
+		return errcode.ErrCode_ErrCryptoKeyGeneration.Wrap(err)
 	}
 
 	// Set own Ephemeral priv key in Handshake Context
@@ -69,8 +71,13 @@ func (hc *handshakeContext) generateOwnEphemeralAndSendPubKey() error {
 
 	// Send own Ephemeral pub key to peer
 	hello := HelloPayload{EphemeralPubKey: ownEphemeralPub[:]}
-	if err := hc.writer.WriteMsg(&hello); err != nil {
-		return errcode.ErrStreamWrite.Wrap(err)
+	helloBytes, err := proto.Marshal(&hello)
+	if err != nil {
+		return errcode.ErrCode_ErrSerialization.Wrap(err)
+	}
+
+	if _, err := hc.writer.Write(helloBytes); err != nil {
+		return errcode.ErrCode_ErrStreamWrite.Wrap(err)
 	}
 
 	return nil
@@ -81,15 +88,21 @@ func (hc *handshakeContext) receivePeerEphemeralPubKey() error {
 	var err error
 
 	// Receive peer's Ephemeral pub key
+	buffer := make([]byte, inet.MessageSizeMax)
+	n, err := hc.reader.Read(buffer)
+	if err != nil && err != io.EOF {
+		return errcode.ErrCode_ErrStreamRead.Wrap(err)
+	}
+
 	hello := HelloPayload{}
-	if err := hc.reader.ReadMsg(&hello); err != nil {
-		return errcode.ErrStreamRead.Wrap(err)
+	if err := proto.Unmarshal(buffer[:n], &hello); err != nil {
+		return errcode.ErrCode_ErrSerialization.Wrap(err)
 	}
 
 	// Set peer's Ephemeral pub key in Handshake Context
 	hc.peerEphemeral, err = cryptoutil.KeySliceToArray(hello.EphemeralPubKey)
 	if err != nil {
-		return errcode.ErrSerialization.Wrap(err)
+		return errcode.ErrCode_ErrSerialization.Wrap(err)
 	}
 
 	return nil
@@ -104,7 +117,7 @@ func (hc *handshakeContext) computeRequesterAuthenticateBoxKey(asRequester bool)
 		// Convert Ed25519 peer's AccountID key to X25519 key
 		mongPeerAccountID, err := cryptoutil.EdwardsToMontgomeryPub(hc.peerAccountID)
 		if err != nil {
-			return nil, errcode.ErrCryptoKeyConversion.Wrap(err)
+			return nil, errcode.ErrCode_ErrCryptoKeyConversion.Wrap(err)
 		}
 
 		// Compute shared key from own Ephemeral key and peer's AccountID key
@@ -117,7 +130,7 @@ func (hc *handshakeContext) computeRequesterAuthenticateBoxKey(asRequester bool)
 		// Convert Ed25519 own AccountID key to X25519 key
 		mongOwnAccountID, err := cryptoutil.EdwardsToMontgomeryPriv(hc.ownAccountID)
 		if err != nil {
-			return nil, errcode.ErrCryptoKeyConversion.Wrap(err)
+			return nil, errcode.ErrCode_ErrCryptoKeyConversion.Wrap(err)
 		}
 
 		// Compute shared key from peer's Ephemeral key and own AccountID key
@@ -147,7 +160,7 @@ func (hc *handshakeContext) computeResponderAcceptBoxKey() (*[cryptoutil.KeySize
 		hc.peerAccountID,
 	)
 	if err != nil {
-		return nil, errcode.ErrCryptoKeyConversion.Wrap(err)
+		return nil, errcode.ErrCode_ErrCryptoKeyConversion.Wrap(err)
 	}
 
 	// Compute shared key from AccountID keys (X25519 converted)

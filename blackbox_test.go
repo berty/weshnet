@@ -94,7 +94,7 @@ func ExampleNewPersistentServiceClient_basic() {
 			panic(err)
 		}
 
-		peerid = ret.PeerID
+		peerid = ret.PeerId
 
 		if err := client.Close(); err != nil {
 			panic(err)
@@ -114,7 +114,7 @@ func ExampleNewPersistentServiceClient_basic() {
 			panic(err)
 		}
 
-		if peerid != ret.PeerID {
+		if peerid != ret.PeerId {
 			panic("peerid should be identical")
 		}
 	}

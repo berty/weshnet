@@ -3,19 +3,21 @@ package handshake
 import (
 	"context"
 	"errors"
+	"io"
 
-	ggio "github.com/gogo/protobuf/io"
 	p2pcrypto "github.com/libp2p/go-libp2p/core/crypto"
+	inet "github.com/libp2p/go-libp2p/core/network"
 	"go.uber.org/zap"
 	"golang.org/x/crypto/nacl/box"
+	"google.golang.org/protobuf/proto"
 
 	"berty.tech/weshnet/pkg/cryptoutil"
 	"berty.tech/weshnet/pkg/errcode"
 	"berty.tech/weshnet/pkg/tyber"
 )
 
-// ResponseUsingReaderWriter handle the handshake inited by the requester, using provided ggio reader and writer
-func ResponseUsingReaderWriter(ctx context.Context, logger *zap.Logger, reader ggio.Reader, writer ggio.Writer, ownAccountID p2pcrypto.PrivKey) (p2pcrypto.PubKey, error) {
+// ResponseUsingReaderWriter handle the handshake inited by the requester, using provided io reader and writer
+func ResponseUsingReaderWriter(ctx context.Context, logger *zap.Logger, reader io.Reader, writer io.Writer, ownAccountID p2pcrypto.PrivKey) (p2pcrypto.PubKey, error) {
 	hc := &handshakeContext{
 		reader:          reader,
 		writer:          writer,
@@ -25,23 +27,23 @@ func ResponseUsingReaderWriter(ctx context.Context, logger *zap.Logger, reader g
 
 	// Handshake steps on responder side (see comments below)
 	if err := hc.receiveRequesterHello(); err != nil {
-		return nil, errcode.ErrHandshakeRequesterHello.Wrap(err)
+		return nil, errcode.ErrCode_ErrHandshakeRequesterHello.Wrap(err)
 	}
 	tyber.LogStep(ctx, logger, "Received hello", hc.toTyberStepMutator(), tyber.ForceReopen)
 	if err := hc.sendResponderHello(); err != nil {
-		return nil, errcode.ErrHandshakeResponderHello.Wrap(err)
+		return nil, errcode.ErrCode_ErrHandshakeResponderHello.Wrap(err)
 	}
 	tyber.LogStep(ctx, logger, "Sent hello", hc.toTyberStepMutator(), tyber.ForceReopen)
 	if err := hc.receiveRequesterAuthenticate(); err != nil {
-		return nil, errcode.ErrHandshakeRequesterAuthenticate.Wrap(err)
+		return nil, errcode.ErrCode_ErrHandshakeRequesterAuthenticate.Wrap(err)
 	}
 	tyber.LogStep(ctx, logger, "Received authenticate", hc.toTyberStepMutator(), tyber.ForceReopen)
 	if err := hc.sendResponderAccept(); err != nil {
-		return nil, errcode.ErrHandshakeResponderAccept.Wrap(err)
+		return nil, errcode.ErrCode_ErrHandshakeResponderAccept.Wrap(err)
 	}
 	tyber.LogStep(ctx, logger, "Sent accept", hc.toTyberStepMutator(), tyber.ForceReopen)
 	if err := hc.receiveRequesterAcknowledge(); err != nil {
-		return nil, errcode.ErrHandshakeRequesterAcknowledge.Wrap(err)
+		return nil, errcode.ErrCode_ErrHandshakeRequesterAcknowledge.Wrap(err)
 	}
 	tyber.LogStep(ctx, logger, "Received acknowledge", hc.toTyberStepMutator(), tyber.ForceReopen)
 
@@ -51,7 +53,7 @@ func ResponseUsingReaderWriter(ctx context.Context, logger *zap.Logger, reader g
 // 1st step - Responder receives: a
 func (hc *handshakeContext) receiveRequesterHello() error {
 	if err := hc.receivePeerEphemeralPubKey(); err != nil {
-		return errcode.ErrHandshakePeerEphemeralKeyRecv.Wrap(err)
+		return errcode.ErrCode_ErrHandshakePeerEphemeralKeyRecv.Wrap(err)
 	}
 
 	return nil
@@ -60,7 +62,7 @@ func (hc *handshakeContext) receiveRequesterHello() error {
 // 2nd step - Responder sends: b
 func (hc *handshakeContext) sendResponderHello() error {
 	if err := hc.generateOwnEphemeralAndSendPubKey(); err != nil {
-		return errcode.ErrHandshakeOwnEphemeralKeyGenSend.Wrap(err)
+		return errcode.ErrCode_ErrHandshakeOwnEphemeralKeyGenSend.Wrap(err)
 	}
 
 	// Compute shared key from Ephemeral keys
@@ -77,15 +79,21 @@ func (hc *handshakeContext) receiveRequesterAuthenticate() error {
 	)
 
 	// Receive BoxEnvelope from requester
-	if err := hc.reader.ReadMsg(&boxEnvelope); err != nil {
-		return errcode.ErrStreamRead.Wrap(err)
+	buffer := make([]byte, inet.MessageSizeMax)
+	n, err := hc.reader.Read(buffer)
+	if err != nil && err != io.EOF {
+		return errcode.ErrCode_ErrStreamRead.Wrap(err)
+	}
+
+	if err := proto.Unmarshal(buffer[:n], &boxEnvelope); err != nil {
+		return errcode.ErrCode_ErrSerialization.Wrap(err)
 	}
 
 	// Compute box key and open marshaled RequesterAuthenticatePayload using
 	// constant nonce (see handshake.go)
 	boxKey, err := hc.computeRequesterAuthenticateBoxKey(false)
 	if err != nil {
-		return errcode.ErrHandshakeRequesterAuthenticateBoxKeyGen.Wrap(err)
+		return errcode.ErrCode_ErrHandshakeRequesterAuthenticateBoxKeyGen.Wrap(err)
 	}
 	requestBytes, _ := box.OpenAfterPrecomputation(
 		nil,
@@ -95,17 +103,17 @@ func (hc *handshakeContext) receiveRequesterAuthenticate() error {
 	)
 	if requestBytes == nil {
 		err := errors.New("box opening failed")
-		return errcode.ErrCryptoDecrypt.Wrap(err)
+		return errcode.ErrCode_ErrCryptoDecrypt.Wrap(err)
 	}
 
 	// Unmarshal RequesterAuthenticatePayload and RequesterAccountId
-	err = request.Unmarshal(requestBytes)
+	err = proto.Unmarshal(requestBytes, &request)
 	if err != nil {
-		return errcode.ErrDeserialization.Wrap(err)
+		return errcode.ErrCode_ErrDeserialization.Wrap(err)
 	}
 	hc.peerAccountID, err = p2pcrypto.UnmarshalPublicKey(request.RequesterAccountId)
 	if err != nil {
-		return errcode.ErrDeserialization.Wrap(err)
+		return errcode.ErrCode_ErrDeserialization.Wrap(err)
 	}
 
 	// Verify proof (shared_a_b signed by peer's AccountID)
@@ -114,9 +122,9 @@ func (hc *handshakeContext) receiveRequesterAuthenticate() error {
 		request.RequesterAccountSig,
 	)
 	if err != nil {
-		return errcode.ErrCryptoSignatureVerification.Wrap(err)
+		return errcode.ErrCode_ErrCryptoSignatureVerification.Wrap(err)
 	} else if !valid {
-		return errcode.ErrCryptoSignatureVerification
+		return errcode.ErrCode_ErrCryptoSignatureVerification
 	}
 
 	return nil
@@ -133,18 +141,18 @@ func (hc *handshakeContext) sendResponderAccept() error {
 	// before marshaling it
 	response.ResponderAccountSig, err = hc.ownAccountID.Sign(hc.sharedEphemeral[:])
 	if err != nil {
-		return errcode.ErrCryptoSignature.Wrap(err)
+		return errcode.ErrCode_ErrCryptoSignature.Wrap(err)
 	}
-	responseBytes, err := response.Marshal()
+	responseBytes, err := proto.Marshal(&response)
 	if err != nil {
-		return errcode.ErrSerialization.Wrap(err)
+		return errcode.ErrCode_ErrSerialization.Wrap(err)
 	}
 
 	// Compute box key and seal marshaled ResponderAcceptPayload using
 	// constant nonce (see handshake.go)
 	boxKey, err := hc.computeResponderAcceptBoxKey()
 	if err != nil {
-		return errcode.ErrHandshakeResponderAcceptBoxKeyGen.Wrap(err)
+		return errcode.ErrCode_ErrHandshakeResponderAcceptBoxKeyGen.Wrap(err)
 	}
 	boxContent := box.SealAfterPrecomputation(
 		nil,
@@ -153,9 +161,14 @@ func (hc *handshakeContext) sendResponderAccept() error {
 		boxKey,
 	)
 
+	boxBytes, err := proto.Marshal(&BoxEnvelope{Box: boxContent})
+	if err != nil {
+		return errcode.ErrCode_ErrSerialization.Wrap(err)
+	}
+
 	// Send BoxEnvelope to requester
-	if err = hc.writer.WriteMsg(&BoxEnvelope{Box: boxContent}); err != nil {
-		return errcode.ErrStreamWrite.Wrap(err)
+	if _, err = hc.writer.Write(boxBytes); err != nil {
+		return errcode.ErrCode_ErrStreamWrite.Wrap(err)
 	}
 
 	return nil
@@ -166,11 +179,18 @@ func (hc *handshakeContext) receiveRequesterAcknowledge() error {
 	var acknowledge RequesterAcknowledgePayload
 
 	// Receive Acknowledge from requester
-	if err := hc.reader.ReadMsg(&acknowledge); err != nil {
-		return errcode.ErrStreamRead.Wrap(err)
+	buffer := make([]byte, inet.MessageSizeMax)
+	n, err := hc.reader.Read(buffer)
+	if err != nil && err != io.EOF {
+		return errcode.ErrCode_ErrStreamRead.Wrap(err)
 	}
+
+	if err := proto.Unmarshal(buffer[:n], &acknowledge); err != nil {
+		return errcode.ErrCode_ErrDeserialization.Wrap(err)
+	}
+
 	if !acknowledge.Success {
-		return errcode.ErrInvalidInput
+		return errcode.ErrCode_ErrInvalidInput
 	}
 
 	return nil

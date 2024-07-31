@@ -11,10 +11,10 @@ import (
 	emitter "github.com/berty/emitter-go/v2"
 	rendezvous "github.com/berty/go-libp2p-rendezvous"
 	pb "github.com/berty/go-libp2p-rendezvous/pb"
-	"github.com/golang/protobuf/proto" // nolint:staticcheck // cannot use the new protobuf API while keeping gogoproto
 	"github.com/libp2p/go-libp2p/core/peer"
 	"github.com/multiformats/go-multiaddr"
 	"go.uber.org/zap"
+	"google.golang.org/protobuf/proto"
 )
 
 type SyncClient interface {

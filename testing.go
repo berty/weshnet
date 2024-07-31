@@ -24,6 +24,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
+	"google.golang.org/protobuf/proto"
 
 	encrepo "berty.tech/go-ipfs-repo-encrypted"
 	orbitdb "berty.tech/go-orbit-db"
@@ -488,14 +489,14 @@ func GetRootDatastoreForPath(dir string, key []byte, salt []byte, logger *zap.Lo
 	} else {
 		err := os.MkdirAll(dir, os.ModePerm)
 		if err != nil {
-			return nil, errcode.TODO.Wrap(err)
+			return nil, errcode.ErrCode_TODO.Wrap(err)
 		}
 
 		dbPath := filepath.Join(dir, "datastore.sqlite")
 		sqldsOpts := encrepo.SQLCipherDatastoreOptions{JournalMode: "WAL", PlaintextHeader: len(salt) != 0, Salt: salt}
 		ds, err = encrepo.NewSQLCipherDatastore("sqlite3", dbPath, "blocks", key, sqldsOpts)
 		if err != nil {
-			return nil, errcode.TODO.Wrap(err)
+			return nil, errcode.ErrCode_TODO.Wrap(err)
 		}
 	}
 
@@ -555,13 +556,13 @@ func CreateMultiMemberGroupInstance(ctx context.Context, t *testing.T, tps ...*T
 
 		for i, pt := range tps {
 			res, err := pt.Client.GroupInfo(ctx, &protocoltypes.GroupInfo_Request{
-				GroupPK: group.PublicKey,
+				GroupPk: group.PublicKey,
 			})
 			require.NoError(t, err)
 			assert.Equal(t, group.PublicKey, res.Group.PublicKey)
 
-			memberPKs[i] = res.MemberPK
-			devicePKs[i] = res.DevicePK
+			memberPKs[i] = res.MemberPk
+			devicePKs[i] = res.DevicePk
 		}
 
 		testutil.LogTree(t, "duration: %s", 1, false, time.Since(start))
@@ -574,7 +575,7 @@ func CreateMultiMemberGroupInstance(ctx context.Context, t *testing.T, tps ...*T
 
 		for i, pt := range tps {
 			_, err := pt.Client.ActivateGroup(ctx, &protocoltypes.ActivateGroup_Request{
-				GroupPK: group.PublicKey,
+				GroupPk: group.PublicKey,
 			})
 
 			assert.NoError(t, err, fmt.Sprintf("error for client %d", i))
@@ -606,7 +607,7 @@ func CreateMultiMemberGroupInstance(ctx context.Context, t *testing.T, tps ...*T
 				defer cancel()
 
 				sub, inErr := tp.Client.GroupMetadataList(ctx, &protocoltypes.GroupMetadataList_Request{
-					GroupPK: group.PublicKey,
+					GroupPk: group.PublicKey,
 				})
 				if inErr != nil {
 					assert.NoError(t, err, fmt.Sprintf("error for client %d", i))
@@ -668,20 +669,20 @@ func CreateMultiMemberGroupInstance(ctx context.Context, t *testing.T, tps ...*T
 
 func isEventAddSecretTargetedToMember(ownRawPK []byte, evt *protocoltypes.GroupMetadataEvent) ([]byte, error) {
 	// Only count EventTypeGroupDeviceChainKeyAdded events
-	if evt.Metadata.EventType != protocoltypes.EventTypeGroupDeviceChainKeyAdded {
+	if evt.Metadata.EventType != protocoltypes.EventType_EventTypeGroupDeviceChainKeyAdded {
 		return nil, nil
 	}
 
 	sec := &protocoltypes.GroupDeviceChainKeyAdded{}
-	err := sec.Unmarshal(evt.Event)
+	err := proto.Unmarshal(evt.Event, sec)
 	if err != nil {
 		return nil, err
 	}
 
 	// Filter out events targeted at other members
-	if !bytes.Equal(ownRawPK, sec.DestMemberPK) {
+	if !bytes.Equal(ownRawPK, sec.DestMemberPk) {
 		return nil, nil
 	}
 
-	return sec.DevicePK, nil
+	return sec.DevicePk, nil
 }

@@ -18,7 +18,7 @@ type BertySignedKeyStore struct {
 func (s *BertySignedKeyStore) SetKey(pk crypto.PrivKey) error {
 	pubKeyBytes, err := pk.GetPublic().Raw()
 	if err != nil {
-		return errcode.TODO.Wrap(err)
+		return errcode.ErrCode_TODO.Wrap(err)
 	}
 
 	keyID := hex.EncodeToString(pubKeyBytes)
@@ -45,7 +45,7 @@ func (s *BertySignedKeyStore) GetKey(ctx context.Context, id string) (crypto.Pri
 		}
 	}
 
-	return nil, errcode.ErrGroupMemberUnknownGroupID
+	return nil, errcode.ErrCode_ErrGroupMemberUnknownGroupID
 }
 
 func (s *BertySignedKeyStore) Sign(privKey crypto.PrivKey, bytes []byte) ([]byte, error) {
@@ -59,7 +59,7 @@ func (s *BertySignedKeyStore) Verify(signature []byte, publicKey crypto.PubKey, 
 	}
 
 	if !ok {
-		return errcode.ErrGroupMemberLogEventSignature
+		return errcode.ErrCode_ErrGroupMemberLogEventSignature
 	}
 
 	return nil

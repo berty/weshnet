@@ -8,7 +8,6 @@ import (
 	"time"
 
 	p2pmocknet "github.com/berty/go-libp2p-mock"
-	ggio "github.com/gogo/protobuf/io"
 	p2pcrypto "github.com/libp2p/go-libp2p/core/crypto"
 	p2pnetwork "github.com/libp2p/go-libp2p/core/network"
 	p2ppeer "github.com/libp2p/go-libp2p/core/peer"
@@ -94,8 +93,8 @@ func (mh *mockedHandshake) close(t *testing.T) {
 
 func newTestHandshakeContext(stream p2pnetwork.Stream, ownAccountID p2pcrypto.PrivKey, peerAccountID p2pcrypto.PubKey) *handshakeContext {
 	return &handshakeContext{
-		reader:          ggio.NewDelimitedReader(stream, 2048),
-		writer:          ggio.NewDelimitedWriter(stream),
+		reader:          stream,
+		writer:          stream,
 		ownAccountID:    ownAccountID,
 		peerAccountID:   peerAccountID,
 		sharedEphemeral: &[32]byte{},

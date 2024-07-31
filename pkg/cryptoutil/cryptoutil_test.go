@@ -33,7 +33,7 @@ func TestCurve25519Conversion(t *testing.T) {
 func TestSeedFromEd25519PrivateKey(t *testing.T) {
 	priv, _, _ := crypto.GenerateECDSAKeyPair(rand.Reader)
 	_, err := SeedFromEd25519PrivateKey(priv)
-	if err != errcode.ErrInvalidInput {
+	if err != errcode.ErrCode_ErrInvalidInput {
 		t.Error("Should fail with ErrInvalidInput")
 	}
 	priv, _, _ = crypto.GenerateEd25519Key(rand.Reader)
@@ -51,7 +51,7 @@ func TestEdwardsToMontgomeryPub(t *testing.T) {
 	}
 	_, pub, _ = crypto.GenerateECDSAKeyPair(rand.Reader)
 	_, err = EdwardsToMontgomeryPub(pub)
-	if err != errcode.ErrInvalidInput {
+	if err != errcode.ErrCode_ErrInvalidInput {
 		t.Error("Should fail with ErrInvalidInput")
 	}
 }
@@ -64,7 +64,7 @@ func TestEdwardsToMontgomeryPriv(t *testing.T) {
 	}
 	priv, _, _ = crypto.GenerateECDSAKeyPair(rand.Reader)
 	_, err = EdwardsToMontgomeryPriv(priv)
-	if err != errcode.ErrInvalidInput {
+	if err != errcode.ErrCode_ErrInvalidInput {
 		t.Error("Should fail with ErrInvalidInput")
 	}
 }

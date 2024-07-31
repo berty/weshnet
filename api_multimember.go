@@ -18,40 +18,40 @@ func (s *service) MultiMemberGroupCreate(ctx context.Context, req *protocoltypes
 
 	group, groupPrivateKey, err := NewGroupMultiMember()
 	if err != nil {
-		return nil, errcode.ErrCryptoKeyGeneration.Wrap(err)
+		return nil, errcode.ErrCode_ErrCryptoKeyGeneration.Wrap(err)
 	}
 
 	accountGroup := s.getAccountGroup()
 	if accountGroup == nil {
-		return nil, errcode.ErrGroupMissing
+		return nil, errcode.ErrCode_ErrGroupMissing
 	}
 
 	_, err = accountGroup.MetadataStore().GroupJoin(ctx, group)
 	if err != nil {
-		return nil, errcode.ErrOrbitDBAppend.Wrap(err)
+		return nil, errcode.ErrCode_ErrOrbitDBAppend.Wrap(err)
 	}
 
 	if err := s.secretStore.PutGroup(ctx, group); err != nil {
-		return nil, errcode.ErrInternal.Wrap(err)
+		return nil, errcode.ErrCode_ErrInternal.Wrap(err)
 	}
 
 	err = s.activateGroup(ctx, groupPrivateKey.GetPublic(), false)
 	if err != nil {
-		return nil, errcode.ErrInternal.Wrap(fmt.Errorf("unable to activate group: %w", err))
+		return nil, errcode.ErrCode_ErrInternal.Wrap(fmt.Errorf("unable to activate group: %w", err))
 	}
 
 	cg, err := s.GetContextGroupForID(group.PublicKey)
 	if err != nil {
-		return nil, errcode.ErrOrbitDBAppend.Wrap(err)
+		return nil, errcode.ErrCode_ErrOrbitDBAppend.Wrap(err)
 	}
 
 	_, err = cg.MetadataStore().ClaimGroupOwnership(ctx, groupPrivateKey)
 	if err != nil {
-		return nil, errcode.ErrOrbitDBAppend.Wrap(err)
+		return nil, errcode.ErrCode_ErrOrbitDBAppend.Wrap(err)
 	}
 
 	return &protocoltypes.MultiMemberGroupCreate_Reply{
-		GroupPK: group.PublicKey,
+		GroupPk: group.PublicKey,
 	}, nil
 }
 
@@ -62,11 +62,11 @@ func (s *service) MultiMemberGroupJoin(ctx context.Context, req *protocoltypes.M
 
 	accountGroup := s.getAccountGroup()
 	if accountGroup == nil {
-		return nil, errcode.ErrGroupMissing
+		return nil, errcode.ErrCode_ErrGroupMissing
 	}
 
 	if _, err := accountGroup.MetadataStore().GroupJoin(ctx, req.Group); err != nil {
-		return nil, errcode.ErrOrbitDBAppend.Wrap(err)
+		return nil, errcode.ErrCode_ErrOrbitDBAppend.Wrap(err)
 	}
 
 	return &protocoltypes.MultiMemberGroupJoin_Reply{}, nil
@@ -77,23 +77,23 @@ func (s *service) MultiMemberGroupLeave(ctx context.Context, req *protocoltypes.
 	ctx, _, endSection := tyber.Section(ctx, s.logger, "Leaving MultiMember group")
 	defer func() { endSection(err, "") }()
 
-	pk, err := crypto.UnmarshalEd25519PublicKey(req.GroupPK)
+	pk, err := crypto.UnmarshalEd25519PublicKey(req.GroupPk)
 	if err != nil {
-		return nil, errcode.ErrDeserialization.Wrap(err)
+		return nil, errcode.ErrCode_ErrDeserialization.Wrap(err)
 	}
 
 	accountGroup := s.getAccountGroup()
 	if accountGroup == nil {
-		return nil, errcode.ErrGroupMissing
+		return nil, errcode.ErrCode_ErrGroupMissing
 	}
 
 	_, err = accountGroup.MetadataStore().GroupLeave(ctx, pk)
 	if err != nil {
-		return nil, errcode.ErrOrbitDBAppend.Wrap(err)
+		return nil, errcode.ErrCode_ErrOrbitDBAppend.Wrap(err)
 	}
 
 	if err := s.deactivateGroup(pk); err != nil {
-		return nil, errcode.ErrOrbitDBAppend.Wrap(err)
+		return nil, errcode.ErrCode_ErrOrbitDBAppend.Wrap(err)
 	}
 
 	return &protocoltypes.MultiMemberGroupLeave_Reply{}, nil
@@ -101,14 +101,14 @@ func (s *service) MultiMemberGroupLeave(ctx context.Context, req *protocoltypes.
 
 // MultiMemberGroupAliasResolverDisclose sends an deviceKeystore identity proof to the group members
 func (s *service) MultiMemberGroupAliasResolverDisclose(ctx context.Context, req *protocoltypes.MultiMemberGroupAliasResolverDisclose_Request) (*protocoltypes.MultiMemberGroupAliasResolverDisclose_Reply, error) {
-	cg, err := s.GetContextGroupForID(req.GroupPK)
+	cg, err := s.GetContextGroupForID(req.GroupPk)
 	if err != nil {
-		return nil, errcode.ErrGroupMemberUnknownGroupID.Wrap(err)
+		return nil, errcode.ErrCode_ErrGroupMemberUnknownGroupID.Wrap(err)
 	}
 
 	_, err = cg.MetadataStore().SendAliasProof(ctx)
 	if err != nil {
-		return nil, errcode.ErrOrbitDBAppend.Wrap(err)
+		return nil, errcode.ErrCode_ErrOrbitDBAppend.Wrap(err)
 	}
 
 	return &protocoltypes.MultiMemberGroupAliasResolverDisclose_Reply{}, nil
@@ -116,14 +116,14 @@ func (s *service) MultiMemberGroupAliasResolverDisclose(ctx context.Context, req
 
 // MultiMemberGroupAdminRoleGrant grants admin role to another member of the group
 func (s *service) MultiMemberGroupAdminRoleGrant(context.Context, *protocoltypes.MultiMemberGroupAdminRoleGrant_Request) (*protocoltypes.MultiMemberGroupAdminRoleGrant_Reply, error) {
-	return nil, errcode.ErrNotImplemented
+	return nil, errcode.ErrCode_ErrNotImplemented
 }
 
 // MultiMemberGroupInvitationCreate creates a group invitation
 func (s *service) MultiMemberGroupInvitationCreate(ctx context.Context, req *protocoltypes.MultiMemberGroupInvitationCreate_Request) (*protocoltypes.MultiMemberGroupInvitationCreate_Reply, error) {
-	cg, err := s.GetContextGroupForID(req.GroupPK)
+	cg, err := s.GetContextGroupForID(req.GroupPk)
 	if err != nil {
-		return nil, errcode.ErrGroupMemberUnknownGroupID.Wrap(err)
+		return nil, errcode.ErrCode_ErrGroupMemberUnknownGroupID.Wrap(err)
 	}
 
 	return &protocoltypes.MultiMemberGroupInvitationCreate_Reply{

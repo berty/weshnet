@@ -99,7 +99,7 @@ func CreateBaseConfig() (*ipfs_cfg.Config, error) {
 
 	// Identity
 	if err := ResetRepoIdentity(&c); err != nil {
-		return nil, errcode.TODO.Wrap(err)
+		return nil, errcode.ErrCode_TODO.Wrap(err)
 	}
 
 	// Discovery
@@ -127,17 +127,17 @@ func CreateBaseConfig() (*ipfs_cfg.Config, error) {
 func ResetRepoIdentity(c *ipfs_cfg.Config) error {
 	priv, pub, err := p2p_ci.GenerateKeyPairWithReader(p2p_ci.Ed25519, 2048, crand.Reader) // nolint:staticcheck
 	if err != nil {
-		return errcode.TODO.Wrap(err)
+		return errcode.ErrCode_TODO.Wrap(err)
 	}
 
 	pid, err := p2p_peer.IDFromPublicKey(pub) // nolint:staticcheck
 	if err != nil {
-		return errcode.TODO.Wrap(err)
+		return errcode.ErrCode_TODO.Wrap(err)
 	}
 
 	privkeyb, err := p2p_ci.MarshalPrivateKey(priv)
 	if err != nil {
-		return errcode.TODO.Wrap(err)
+		return errcode.ErrCode_TODO.Wrap(err)
 	}
 
 	// Identity
@@ -208,11 +208,11 @@ func ResetExistingRepoIdentity(repo ipfs_repo.Repo) (ipfs_repo.Repo, error) {
 	cfg, err := repo.Config()
 	if err != nil {
 		_ = repo.Close()
-		return nil, errcode.ErrInternal.Wrap(err)
+		return nil, errcode.ErrCode_ErrInternal.Wrap(err)
 	}
 
 	if err := ResetRepoIdentity(cfg); err != nil {
-		return nil, errcode.TODO.Wrap(err)
+		return nil, errcode.ErrCode_TODO.Wrap(err)
 	}
 
 	updatedCfg, err := upgradeToPersistentConfig(cfg)
@@ -222,7 +222,7 @@ func ResetExistingRepoIdentity(repo ipfs_repo.Repo) (ipfs_repo.Repo, error) {
 
 	err = repo.SetConfig(updatedCfg)
 	if err != nil {
-		return nil, errcode.ErrInternal.Wrap(err)
+		return nil, errcode.ErrCode_ErrInternal.Wrap(err)
 	}
 
 	return repo, nil

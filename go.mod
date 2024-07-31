@@ -313,3 +313,5 @@ require (
 	moul.io/banner v1.0.1 // indirect
 	moul.io/motd v1.0.0 // indirect
 )
+
+replace github.com/berty/go-libp2p-rendezvous => /Users/remi/go-libp2p-rendezvous

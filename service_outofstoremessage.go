@@ -138,7 +138,7 @@ func (s *oosmService) IpfsCoreAPI() coreiface.CoreAPI {
 func (s *oosmService) OutOfStoreReceive(ctx context.Context, request *protocoltypes.OutOfStoreReceive_Request) (*protocoltypes.OutOfStoreReceive_Reply, error) {
 	outOfStoreMessage, group, clearPayload, alreadyDecrypted, err := s.secretStore.OpenOutOfStoreMessage(ctx, request.Payload)
 	if err != nil {
-		return nil, errcode.ErrCryptoDecrypt.Wrap(err)
+		return nil, errcode.ErrCode_ErrCryptoDecrypt.Wrap(err)
 	}
 
 	return &protocoltypes.OutOfStoreReceive_Reply{

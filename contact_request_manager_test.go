@@ -9,6 +9,7 @@ import (
 	libp2p_mocknet "github.com/berty/go-libp2p-mock"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"google.golang.org/protobuf/proto"
 
 	"berty.tech/weshnet/pkg/protocoltypes"
 	"berty.tech/weshnet/pkg/testutil"
@@ -58,14 +59,14 @@ func TestContactRequestFlow(t *testing.T) {
 	defer subCancel()
 
 	subMeta0, err := pts[0].Client.GroupMetadataList(subCtx, &protocoltypes.GroupMetadataList_Request{
-		GroupPK: config0.AccountGroupPK,
+		GroupPk: config0.AccountGroupPk,
 	})
 	require.NoError(t, err)
 	found := false
 
 	_, err = pts[1].Client.ContactRequestSend(ctx, &protocoltypes.ContactRequestSend_Request{
 		Contact: &protocoltypes.ShareableContact{
-			PK:                   config0.AccountPK,
+			Pk:                   config0.AccountPk,
 			PublicRendezvousSeed: ref0.PublicRendezvousSeed,
 		},
 		OwnMetadata: metadataSender1,
@@ -80,15 +81,15 @@ func TestContactRequestFlow(t *testing.T) {
 
 		require.NoError(t, err)
 
-		if evt == nil || evt.Metadata.EventType != protocoltypes.EventTypeAccountContactRequestIncomingReceived {
+		if evt == nil || evt.Metadata.EventType != protocoltypes.EventType_EventTypeAccountContactRequestIncomingReceived {
 			continue
 		}
 
 		req := &protocoltypes.AccountContactRequestIncomingReceived{}
-		err = req.Unmarshal(evt.Event)
+		err = proto.Unmarshal(evt.Event, req)
 
 		require.NoError(t, err)
-		require.Equal(t, config1.AccountPK, req.ContactPK)
+		require.Equal(t, config1.AccountPk, req.ContactPk)
 		require.Equal(t, metadataSender1, req.ContactMetadata)
 		found = true
 		subCancel()
@@ -97,42 +98,42 @@ func TestContactRequestFlow(t *testing.T) {
 	require.True(t, found)
 
 	_, err = pts[1].Client.ContactRequestAccept(ctx, &protocoltypes.ContactRequestAccept_Request{
-		ContactPK: config0.AccountPK,
+		ContactPk: config0.AccountPk,
 	})
 
 	require.Error(t, err)
 
 	_, err = pts[1].Client.ContactRequestAccept(ctx, &protocoltypes.ContactRequestAccept_Request{
-		ContactPK: config1.AccountPK,
+		ContactPk: config1.AccountPk,
 	})
 
 	require.Error(t, err)
 
 	_, err = pts[0].Client.ContactRequestAccept(ctx, &protocoltypes.ContactRequestAccept_Request{
-		ContactPK: config0.AccountPK,
+		ContactPk: config0.AccountPk,
 	})
 
 	require.Error(t, err)
 
 	_, err = pts[0].Client.ContactRequestAccept(ctx, &protocoltypes.ContactRequestAccept_Request{
-		ContactPK: config1.AccountPK,
+		ContactPk: config1.AccountPk,
 	})
 
 	require.NoError(t, err)
 
 	grpInfo, err := pts[0].Client.GroupInfo(ctx, &protocoltypes.GroupInfo_Request{
-		ContactPK: config1.AccountPK,
+		ContactPk: config1.AccountPk,
 	})
 	require.NoError(t, err)
 
 	_, err = pts[0].Client.ActivateGroup(ctx, &protocoltypes.ActivateGroup_Request{
-		GroupPK: grpInfo.Group.PublicKey,
+		GroupPk: grpInfo.Group.PublicKey,
 	})
 
 	require.NoError(t, err)
 
 	_, err = pts[1].Client.ActivateGroup(ctx, &protocoltypes.ActivateGroup_Request{
-		GroupPK: grpInfo.Group.PublicKey,
+		GroupPk: grpInfo.Group.PublicKey,
 	})
 
 	require.NoError(t, err)
@@ -181,14 +182,14 @@ func TestContactRequestFlowWithoutIncoming(t *testing.T) {
 	defer subCancel()
 
 	subMeta0, err := pts[0].Client.GroupMetadataList(subCtx, &protocoltypes.GroupMetadataList_Request{
-		GroupPK: config0.AccountGroupPK,
+		GroupPk: config0.AccountGroupPk,
 	})
 	require.NoError(t, err)
 	found := false
 
 	_, err = pts[1].Client.ContactRequestSend(ctx, &protocoltypes.ContactRequestSend_Request{
 		Contact: &protocoltypes.ShareableContact{
-			PK:                   config0.AccountPK,
+			Pk:                   config0.AccountPk,
 			PublicRendezvousSeed: ref0.PublicRendezvousSeed,
 		},
 		OwnMetadata: metadataSender1,
@@ -204,15 +205,15 @@ func TestContactRequestFlowWithoutIncoming(t *testing.T) {
 
 		require.NoError(t, err)
 
-		if evt == nil || evt.Metadata.EventType != protocoltypes.EventTypeAccountContactRequestIncomingReceived {
+		if evt == nil || evt.Metadata.EventType != protocoltypes.EventType_EventTypeAccountContactRequestIncomingReceived {
 			continue
 		}
 
 		req := &protocoltypes.AccountContactRequestIncomingReceived{}
-		err = req.Unmarshal(evt.Event)
+		err = proto.Unmarshal(evt.Event, req)
 
 		require.NoError(t, err)
-		require.Equal(t, config1.AccountPK, req.ContactPK)
+		require.Equal(t, config1.AccountPk, req.ContactPk)
 		require.Equal(t, metadataSender1, req.ContactMetadata)
 		found = true
 		subCancel()
@@ -221,13 +222,13 @@ func TestContactRequestFlowWithoutIncoming(t *testing.T) {
 	require.True(t, found)
 
 	_, err = pts[0].Client.ContactRequestAccept(ctx, &protocoltypes.ContactRequestAccept_Request{
-		ContactPK: config1.AccountPK,
+		ContactPk: config1.AccountPk,
 	})
 
 	require.NoError(t, err)
 
 	_, err = pts[0].Client.GroupInfo(ctx, &protocoltypes.GroupInfo_Request{
-		ContactPK: config1.AccountPK,
+		ContactPk: config1.AccountPk,
 	})
 	require.NoError(t, err)
 }

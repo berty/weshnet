@@ -31,19 +31,19 @@ func (s *service) ServiceExportData(_ *protocoltypes.ServiceExportData_Request, 
 			if err == io.EOF {
 				break
 			} else if err != nil {
-				exportErr = errcode.ErrStreamRead.Wrap(err)
+				exportErr = errcode.ErrCode_ErrStreamRead.Wrap(err)
 				break
 			}
 
 			if err := server.Send(&protocoltypes.ServiceExportData_Reply{ExportedData: contents[:l]}); err != nil {
-				exportErr = errcode.ErrStreamWrite.Wrap(err)
+				exportErr = errcode.ErrCode_ErrStreamWrite.Wrap(err)
 				break
 			}
 		}
 	}()
 
 	if err := s.export(ctx, w); err != nil {
-		return errcode.ErrInternal.Wrap(err)
+		return errcode.ErrCode_ErrInternal.Wrap(err)
 	}
 	_ = w.Close()
 
@@ -59,12 +59,12 @@ func (s *service) ServiceExportData(_ *protocoltypes.ServiceExportData_Request, 
 func (s *service) ServiceGetConfiguration(ctx context.Context, req *protocoltypes.ServiceGetConfiguration_Request) (*protocoltypes.ServiceGetConfiguration_Reply, error) {
 	key, err := s.ipfsCoreAPI.Key().Self(ctx)
 	if err != nil {
-		return nil, errcode.TODO.Wrap(err)
+		return nil, errcode.ErrCode_TODO.Wrap(err)
 	}
 
 	maddrs, err := s.ipfsCoreAPI.Swarm().ListenAddrs(ctx)
 	if err != nil {
-		return nil, errcode.TODO.Wrap(err)
+		return nil, errcode.ErrCode_TODO.Wrap(err)
 	}
 
 	listeners := make([]string, len(maddrs))
@@ -74,24 +74,24 @@ func (s *service) ServiceGetConfiguration(ctx context.Context, req *protocoltype
 
 	accountGroup := s.getAccountGroup()
 	if accountGroup == nil {
-		return nil, errcode.ErrGroupMissing
+		return nil, errcode.ErrCode_ErrGroupMissing
 	}
 
 	member, err := accountGroup.MemberPubKey().Raw()
 	if err != nil {
-		return nil, errcode.ErrSerialization.Wrap(err)
+		return nil, errcode.ErrCode_ErrSerialization.Wrap(err)
 	}
 
 	device, err := accountGroup.DevicePubKey().Raw()
 	if err != nil {
-		return nil, errcode.ErrSerialization.Wrap(err)
+		return nil, errcode.ErrCode_ErrSerialization.Wrap(err)
 	}
 
 	return &protocoltypes.ServiceGetConfiguration_Reply{
-		AccountPK:      member,
-		DevicePK:       device,
-		AccountGroupPK: accountGroup.Group().PublicKey,
-		PeerID:         key.ID().String(),
+		AccountPk:      member,
+		DevicePk:       device,
+		AccountGroupPk: accountGroup.Group().PublicKey,
+		PeerId:         key.ID().String(),
 		Listeners:      listeners,
 	}, nil
 }

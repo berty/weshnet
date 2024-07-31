@@ -38,18 +38,18 @@ func (m *ShareableContact) CheckFormat(options ...ShareableContactOptions) error
 
 	if l := len(m.PublicRendezvousSeed); l != RendezvousSeedLength {
 		if !(l == 0 && optionMissingRDVSeedAllowed) {
-			return errcode.ErrInvalidInput.Wrap(fmt.Errorf("rendezvous seed length should not be %d", l))
+			return errcode.ErrCode_ErrInvalidInput.Wrap(fmt.Errorf("rendezvous seed length should not be %d", l))
 		}
 	}
 
-	if l := len(m.PK); l == 0 && !optionMissingPKAllowed {
-		return errcode.ErrInvalidInput.Wrap(fmt.Errorf("contact public key is missing"))
+	if l := len(m.Pk); l == 0 && !optionMissingPKAllowed {
+		return errcode.ErrCode_ErrInvalidInput.Wrap(fmt.Errorf("contact public key is missing"))
 	}
 
-	if l := len(m.PK); l != 0 {
-		_, err := crypto.UnmarshalEd25519PublicKey(m.PK)
+	if l := len(m.Pk); l != 0 {
+		_, err := crypto.UnmarshalEd25519PublicKey(m.Pk)
 		if err != nil {
-			return errcode.ErrDeserialization.Wrap(err)
+			return errcode.ErrCode_ErrDeserialization.Wrap(err)
 		}
 	}
 
@@ -66,9 +66,9 @@ func (m *ShareableContact) IsSamePK(otherPK crypto.PubKey) bool {
 }
 
 func (m *ShareableContact) GetPubKey() (crypto.PubKey, error) {
-	pk, err := crypto.UnmarshalEd25519PublicKey(m.PK)
+	pk, err := crypto.UnmarshalEd25519PublicKey(m.Pk)
 	if err != nil {
-		return nil, errcode.ErrDeserialization.Wrap(err)
+		return nil, errcode.ErrCode_ErrDeserialization.Wrap(err)
 	}
 
 	return pk, nil

@@ -12,6 +12,7 @@ import (
 	"github.com/libp2p/go-libp2p/core/crypto"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"google.golang.org/protobuf/proto"
 
 	"berty.tech/weshnet/pkg/protocoltypes"
 )
@@ -208,7 +209,7 @@ func Test_OutOfStoreDeserialize(t *testing.T) {
 	outOfStoreMessageEnvelope, err := secretStore1.SealOutOfStoreMessageEnvelope(dummyCID, envHeaders, msgHeaders, group)
 	require.NoError(t, err)
 
-	outOfStoreMessageEnvelopeBytes, err := outOfStoreMessageEnvelope.Marshal()
+	outOfStoreMessageEnvelopeBytes, err := proto.Marshal(outOfStoreMessageEnvelope)
 	require.NoError(t, err)
 
 	// Attempting to decrypt the message without a relay
@@ -217,8 +218,8 @@ func Test_OutOfStoreDeserialize(t *testing.T) {
 		require.NoError(t, err)
 
 		require.Equal(t, testPayload, clearPayload)
-		require.Equal(t, device1Raw, openedOutOfStoreMessage.DevicePK)
-		require.Equal(t, dummyCID.Bytes(), openedOutOfStoreMessage.CID)
+		require.Equal(t, device1Raw, openedOutOfStoreMessage.DevicePk)
+		require.Equal(t, dummyCID.Bytes(), openedOutOfStoreMessage.Cid)
 		require.Equal(t, group.PublicKey, groupFound.PublicKey)
 		require.False(t, alreadyDecrypted)
 	}
@@ -278,7 +279,7 @@ func Test_EncryptMessageEnvelopeAndDerive(t *testing.T) {
 	initialCounter := ds1.Counter
 
 	for i := 0; i < 1000; i++ {
-		payloadRef, err := (&protocoltypes.EncryptedMessage{Plaintext: []byte("Test payload 1")}).Marshal()
+		payloadRef, err := proto.Marshal(&protocoltypes.EncryptedMessage{Plaintext: []byte("Test payload 1")})
 		assert.NoError(t, err)
 		envEncrypted, err := mkh1.SealEnvelope(ctx, g, payloadRef)
 		assert.NoError(t, err)
@@ -303,9 +304,9 @@ func Test_EncryptMessageEnvelopeAndDerive(t *testing.T) {
 			devRaw, err := omd1.Device().Raw()
 			assert.NoError(t, err)
 
-			assert.Equal(t, headers.DevicePK, devRaw)
+			assert.Equal(t, headers.DevicePk, devRaw)
 
-			payloadClrBytes, err := payloadClr.Marshal()
+			payloadClrBytes, err := proto.Marshal(payloadClr)
 			assert.NoError(t, err)
 			assert.Equal(t, payloadRef, payloadClrBytes)
 		} else {
@@ -341,7 +342,7 @@ func mustMessageHeaders(t testing.TB, omd OwnMemberDevice, counter uint64, paylo
 
 	return &protocoltypes.MessageHeaders{
 		Counter:  counter,
-		DevicePK: pkB,
+		DevicePk: pkB,
 		Sig:      sig,
 	}
 }
@@ -549,7 +550,7 @@ func TestGetGroupForContact(t *testing.T) {
 	group, err := getGroupForContact(privateKey)
 	require.NoError(t, err)
 
-	require.Equal(t, group.GroupType, protocoltypes.GroupTypeContact)
+	require.Equal(t, group.GroupType, protocoltypes.GroupType_GroupTypeContact)
 	require.Equal(t, len(group.PublicKey), 32)
 	require.Equal(t, len(group.Secret), 32)
 }

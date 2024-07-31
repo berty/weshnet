@@ -15,7 +15,7 @@ import (
 
 func (s *service) CredentialVerificationServiceInitFlow(ctx context.Context, request *protocoltypes.CredentialVerificationServiceInitFlow_Request) (*protocoltypes.CredentialVerificationServiceInitFlow_Reply, error) {
 	s.lock.Lock()
-	s.vcClient = bertyvcissuer.NewClient(request.ServiceURL)
+	s.vcClient = bertyvcissuer.NewClient(request.ServiceUrl)
 	client := s.vcClient
 	s.lock.Unlock()
 
@@ -26,21 +26,21 @@ func (s *service) CredentialVerificationServiceInitFlow(ctx context.Context, req
 	// TODO: avoid exporting account keys
 	pkRaw, err := s.accountGroupCtx.ownMemberDevice.Member().Raw()
 	if err != nil {
-		return nil, errcode.ErrInvalidInput
+		return nil, errcode.ErrCode_ErrInvalidInput
 	}
 
 	if !bytes.Equal(pkRaw, request.PublicKey) {
-		return nil, errcode.ErrInvalidInput
+		return nil, errcode.ErrCode_ErrInvalidInput
 	}
 
 	url, err := client.Init(ctx, request.Link, cryptoutil.NewFuncSigner(s.accountGroupCtx.ownMemberDevice.Member(), s.accountGroupCtx.ownMemberDevice.MemberSign))
 	if err != nil {
-		return nil, errcode.ErrInternal.Wrap(err)
+		return nil, errcode.ErrCode_ErrInternal.Wrap(err)
 	}
 
 	return &protocoltypes.CredentialVerificationServiceInitFlow_Reply{
-		URL:       url,
-		SecureURL: strings.HasPrefix(url, "https://"),
+		Url:       url,
+		SecureUrl: strings.HasPrefix(url, "https://"),
 	}, nil
 }
 
@@ -50,12 +50,12 @@ func (s *service) CredentialVerificationServiceCompleteFlow(ctx context.Context,
 	s.lock.Unlock()
 
 	if client == nil {
-		return nil, errcode.ErrInvalidInput.Wrap(fmt.Errorf("a verification flow needs to be started first"))
+		return nil, errcode.ErrCode_ErrInvalidInput.Wrap(fmt.Errorf("a verification flow needs to be started first"))
 	}
 
-	credentials, identifier, parsedCredential, err := client.Complete(request.CallbackURI)
+	credentials, identifier, parsedCredential, err := client.Complete(request.CallbackUri)
 	if err != nil {
-		return nil, errcode.ErrInternal.Wrap(err)
+		return nil, errcode.ErrCode_ErrInternal.Wrap(err)
 	}
 
 	_, err = s.accountGroupCtx.metadataStore.SendAccountVerifiedCredentialAdded(ctx, &protocoltypes.AccountVerifiedCredentialRegistered{
@@ -66,7 +66,7 @@ func (s *service) CredentialVerificationServiceCompleteFlow(ctx context.Context,
 		Issuer:             parsedCredential.Issuer.ID,
 	})
 	if err != nil {
-		return nil, errcode.ErrInternal.Wrap(err)
+		return nil, errcode.ErrCode_ErrInternal.Wrap(err)
 	}
 
 	return &protocoltypes.CredentialVerificationServiceCompleteFlow_Reply{
@@ -94,7 +94,7 @@ func (s *service) VerifiedCredentialsList(request *protocoltypes.VerifiedCredent
 		if err := server.Send(&protocoltypes.VerifiedCredentialsList_Reply{
 			Credential: credential,
 		}); err != nil {
-			return errcode.ErrStreamWrite.Wrap(err)
+			return errcode.ErrCode_ErrStreamWrite.Wrap(err)
 		}
 	}
 

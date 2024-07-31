@@ -7,12 +7,12 @@ import (
 	"testing"
 	"time"
 
-	ggio "github.com/gogo/protobuf/io"
 	p2pcrypto "github.com/libp2p/go-libp2p/core/crypto"
 	p2pnetwork "github.com/libp2p/go-libp2p/core/network"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap"
 	"golang.org/x/crypto/nacl/box"
+	"google.golang.org/protobuf/proto"
 
 	"berty.tech/weshnet/pkg/cryptoutil"
 	"berty.tech/weshnet/pkg/errcode"
@@ -22,18 +22,12 @@ import (
 
 // Request init a handshake with the responder
 func Request(stream p2pnetwork.Stream, ownAccountID p2pcrypto.PrivKey, peerAccountID p2pcrypto.PubKey) error {
-	reader := ggio.NewDelimitedReader(stream, 2048)
-	writer := ggio.NewDelimitedWriter(stream)
-
-	return RequestUsingReaderWriter(context.TODO(), zap.NewNop(), reader, writer, ownAccountID, peerAccountID)
+	return RequestUsingReaderWriter(context.TODO(), zap.NewNop(), stream, stream, ownAccountID, peerAccountID)
 }
 
 // Response handle the handshake inited by the requester
 func Response(stream p2pnetwork.Stream, ownAccountID p2pcrypto.PrivKey) (p2pcrypto.PubKey, error) {
-	reader := ggio.NewDelimitedReader(stream, 2048)
-	writer := ggio.NewDelimitedWriter(stream)
-
-	return ResponseUsingReaderWriter(context.TODO(), zap.NewNop(), reader, writer, ownAccountID)
+	return ResponseUsingReaderWriter(context.TODO(), zap.NewNop(), stream, stream, ownAccountID)
 }
 
 func TestValidHandshake(t *testing.T) {
@@ -101,8 +95,8 @@ func TestInvalidRequesterHello(t *testing.T) {
 			defer ipfsutil.FullClose(stream)
 
 			_, err := Response(stream, mh.responder.accountID)
-			require.Contains(t, errcode.Codes(err), errcode.ErrHandshakeRequesterHello)
-			require.Contains(t, errcode.Codes(err), errcode.ErrStreamRead)
+			require.Contains(t, errcode.Codes(err), errcode.ErrCode_ErrHandshakeRequesterHello)
+			require.Contains(t, errcode.Codes(err), errcode.ErrCode_ErrStreamRead)
 		}
 
 		runHandshakeTest(t, requesterTest, responderTest)
@@ -129,7 +123,7 @@ func TestInvalidResponderHello(t *testing.T) {
 				mh.requester.accountID,
 				mh.responder.accountID.GetPublic(),
 			)
-			require.Equal(t, errcode.Codes(err), []errcode.ErrCode{errcode.ErrHandshakeResponderHello, errcode.ErrHandshakePeerEphemeralKeyRecv, errcode.ErrStreamRead})
+			require.Equal(t, errcode.Codes(err), []errcode.ErrCode{errcode.ErrCode_ErrHandshakeResponderHello, errcode.ErrCode_ErrHandshakePeerEphemeralKeyRecv, errcode.ErrCode_ErrStreamRead})
 		}
 
 		var responderTest responderTestFunc = func(
@@ -191,7 +185,7 @@ func TestInvalidRequesterAuthenticate(t *testing.T) {
 			defer ipfsutil.FullClose(stream)
 
 			_, err := Response(stream, mh.requester.accountID)
-			require.Equal(t, errcode.Codes(err), []errcode.ErrCode{errcode.ErrHandshakeRequesterAuthenticate, errcode.ErrStreamRead})
+			require.Equal(t, errcode.Codes(err), []errcode.ErrCode{errcode.ErrCode_ErrHandshakeRequesterAuthenticate, errcode.ErrCode_ErrStreamRead})
 		}
 
 		runHandshakeTest(t, requesterTest, responderTest)
@@ -226,7 +220,7 @@ func TestInvalidRequesterAuthenticate(t *testing.T) {
 			request.RequesterAccountSig, err = hc.ownAccountID.Sign(hc.sharedEphemeral[:])
 			require.NoError(t, err, "sharedEphemeral signing failed")
 
-			requestBytes, err := request.Marshal()
+			requestBytes, err := proto.Marshal(&request)
 			require.NoError(t, err, "request marshaling failed")
 
 			boxKey, err := hc.computeRequesterAuthenticateBoxKey(true)
@@ -239,7 +233,10 @@ func TestInvalidRequesterAuthenticate(t *testing.T) {
 				boxKey,
 			)
 
-			hc.writer.WriteMsg(&BoxEnvelope{Box: boxContent})
+			boxBytes, err := proto.Marshal(&BoxEnvelope{Box: boxContent})
+			require.NoError(t, err, "box envelope marshaling failed")
+
+			hc.writer.Write(boxBytes)
 
 			ipfsutil.FullClose(stream)
 		}
@@ -254,7 +251,7 @@ func TestInvalidRequesterAuthenticate(t *testing.T) {
 			defer ipfsutil.FullClose(stream)
 
 			_, err := Response(stream, mh.responder.accountID)
-			require.Equal(t, errcode.Codes(err), []errcode.ErrCode{errcode.ErrHandshakeRequesterAuthenticate, errcode.ErrDeserialization})
+			require.Equal(t, errcode.Codes(err), []errcode.ErrCode{errcode.ErrCode_ErrHandshakeRequesterAuthenticate, errcode.ErrCode_ErrDeserialization})
 		}
 
 		runHandshakeTest(t, requesterTest, responderTest)
@@ -294,7 +291,7 @@ func TestInvalidRequesterAuthenticate(t *testing.T) {
 			request.RequesterAccountSig, err = hc.ownAccountID.Sign(hc.sharedEphemeral[:])
 			require.NoError(t, err, "sharedEphemeral signing failed")
 
-			requestBytes, err := request.Marshal()
+			requestBytes, err := proto.Marshal(&request)
 			require.NoError(t, err, "request marshaling failed")
 
 			boxKey, err := hc.computeRequesterAuthenticateBoxKey(true)
@@ -307,7 +304,10 @@ func TestInvalidRequesterAuthenticate(t *testing.T) {
 				boxKey,
 			)
 
-			hc.writer.WriteMsg(&BoxEnvelope{Box: boxContent})
+			boxBytes, err := proto.Marshal(&BoxEnvelope{Box: boxContent})
+			require.NoError(t, err, "box envelope marshaling failed")
+
+			hc.writer.Write(boxBytes)
 
 			ipfsutil.FullClose(stream)
 		}
@@ -322,7 +322,7 @@ func TestInvalidRequesterAuthenticate(t *testing.T) {
 			defer ipfsutil.FullClose(stream)
 
 			_, err := Response(stream, mh.responder.accountID)
-			require.Equal(t, errcode.Codes(err), []errcode.ErrCode{errcode.ErrHandshakeRequesterAuthenticate, errcode.ErrCryptoSignatureVerification})
+			require.Equal(t, errcode.Codes(err), []errcode.ErrCode{errcode.ErrCode_ErrHandshakeRequesterAuthenticate, errcode.ErrCode_ErrCryptoSignatureVerification})
 		}
 
 		runHandshakeTest(t, requesterTest, responderTest)
@@ -362,7 +362,7 @@ func TestInvalidRequesterAuthenticate(t *testing.T) {
 			request.RequesterAccountSig, err = wrongAccountID.Sign(hc.sharedEphemeral[:])
 			require.NoError(t, err, "sharedEphemeral signing failed")
 
-			requestBytes, err := request.Marshal()
+			requestBytes, err := proto.Marshal(&request)
 			require.NoError(t, err, "request marshaling failed")
 
 			boxKey, err := hc.computeRequesterAuthenticateBoxKey(true)
@@ -375,7 +375,10 @@ func TestInvalidRequesterAuthenticate(t *testing.T) {
 				boxKey,
 			)
 
-			hc.writer.WriteMsg(&BoxEnvelope{Box: boxContent})
+			boxBytes, err := proto.Marshal(&BoxEnvelope{Box: boxContent})
+			require.NoError(t, err, "box envelope marshaling failed")
+
+			hc.writer.Write(boxBytes)
 
 			ipfsutil.FullClose(stream)
 		}
@@ -390,7 +393,7 @@ func TestInvalidRequesterAuthenticate(t *testing.T) {
 			defer ipfsutil.FullClose(stream)
 
 			_, err := Response(stream, mh.responder.accountID)
-			require.Equal(t, errcode.Codes(err), []errcode.ErrCode{errcode.ErrHandshakeRequesterAuthenticate, errcode.ErrCryptoSignatureVerification})
+			require.Equal(t, errcode.Codes(err), []errcode.ErrCode{errcode.ErrCode_ErrHandshakeRequesterAuthenticate, errcode.ErrCode_ErrCryptoSignatureVerification})
 		}
 
 		runHandshakeTest(t, requesterTest, responderTest)
@@ -427,7 +430,7 @@ func TestInvalidRequesterAuthenticate(t *testing.T) {
 			request.RequesterAccountSig, err = hc.ownAccountID.Sign([]byte("WrongProof"))
 			require.NoError(t, err, "sharedEphemeral signing failed")
 
-			requestBytes, err := request.Marshal()
+			requestBytes, err := proto.Marshal(&request)
 			require.NoError(t, err, "request marshaling failed")
 
 			boxKey, err := hc.computeRequesterAuthenticateBoxKey(true)
@@ -440,7 +443,10 @@ func TestInvalidRequesterAuthenticate(t *testing.T) {
 				boxKey,
 			)
 
-			hc.writer.WriteMsg(&BoxEnvelope{Box: boxContent})
+			boxBytes, err := proto.Marshal(&BoxEnvelope{Box: boxContent})
+			require.NoError(t, err, "box envelope marshaling failed")
+
+			hc.writer.Write(boxBytes)
 
 			ipfsutil.FullClose(stream)
 		}
@@ -455,7 +461,7 @@ func TestInvalidRequesterAuthenticate(t *testing.T) {
 			defer ipfsutil.FullClose(stream)
 
 			_, err := Response(stream, mh.responder.accountID)
-			require.Equal(t, errcode.Codes(err), []errcode.ErrCode{errcode.ErrHandshakeRequesterAuthenticate, errcode.ErrCryptoSignatureVerification})
+			require.Equal(t, errcode.Codes(err), []errcode.ErrCode{errcode.ErrCode_ErrHandshakeRequesterAuthenticate, errcode.ErrCode_ErrCryptoSignatureVerification})
 		}
 
 		runHandshakeTest(t, requesterTest, responderTest)
@@ -496,7 +502,10 @@ func TestInvalidRequesterAuthenticate(t *testing.T) {
 				boxKey,
 			)
 
-			hc.writer.WriteMsg(&BoxEnvelope{Box: boxContent})
+			boxBytes, err := proto.Marshal(&BoxEnvelope{Box: boxContent})
+			require.NoError(t, err, "box envelope marshaling failed")
+
+			hc.writer.Write(boxBytes)
 
 			ipfsutil.FullClose(stream)
 		}
@@ -511,7 +520,7 @@ func TestInvalidRequesterAuthenticate(t *testing.T) {
 			defer ipfsutil.FullClose(stream)
 
 			_, err := Response(stream, mh.responder.accountID)
-			require.Equal(t, errcode.Codes(err), []errcode.ErrCode{errcode.ErrHandshakeRequesterAuthenticate, errcode.ErrDeserialization})
+			require.Equal(t, errcode.Codes(err), []errcode.ErrCode{errcode.ErrCode_ErrHandshakeRequesterAuthenticate, errcode.ErrCode_ErrDeserialization})
 		}
 
 		runHandshakeTest(t, requesterTest, responderTest)
@@ -547,7 +556,7 @@ func TestInvalidRequesterAuthenticate(t *testing.T) {
 			request.RequesterAccountSig, err = hc.ownAccountID.Sign(hc.sharedEphemeral[:])
 			require.NoError(t, err, "sharedEphemeral signing failed")
 
-			requestBytes, err := request.Marshal()
+			requestBytes, err := proto.Marshal(&request)
 			require.NoError(t, err, "request marshaling failed")
 
 			// Seal box using another key
@@ -561,7 +570,10 @@ func TestInvalidRequesterAuthenticate(t *testing.T) {
 				wrongBoxKey,
 			)
 
-			hc.writer.WriteMsg(&BoxEnvelope{Box: boxContent})
+			boxBytes, err := proto.Marshal(&BoxEnvelope{Box: boxContent})
+			require.NoError(t, err, "box envelope marshaling failed")
+
+			hc.writer.Write(boxBytes)
 
 			ipfsutil.FullClose(stream)
 		}
@@ -576,7 +588,7 @@ func TestInvalidRequesterAuthenticate(t *testing.T) {
 			defer ipfsutil.FullClose(stream)
 
 			_, err := Response(stream, mh.responder.accountID)
-			require.Equal(t, errcode.Codes(err), []errcode.ErrCode{errcode.ErrHandshakeRequesterAuthenticate, errcode.ErrCryptoDecrypt})
+			require.Equal(t, errcode.Codes(err), []errcode.ErrCode{errcode.ErrCode_ErrHandshakeRequesterAuthenticate, errcode.ErrCode_ErrCryptoDecrypt})
 		}
 
 		runHandshakeTest(t, requesterTest, responderTest)
@@ -612,7 +624,7 @@ func TestInvalidRequesterAuthenticate(t *testing.T) {
 			request.RequesterAccountSig, err = hc.ownAccountID.Sign(hc.sharedEphemeral[:])
 			require.NoError(t, err, "sharedEphemeral signing failed")
 
-			requestBytes, err := request.Marshal()
+			requestBytes, err := proto.Marshal(&request)
 			require.NoError(t, err, "request marshaling failed")
 
 			boxKey, err := hc.computeRequesterAuthenticateBoxKey(true)
@@ -629,7 +641,10 @@ func TestInvalidRequesterAuthenticate(t *testing.T) {
 				boxKey,
 			)
 
-			hc.writer.WriteMsg(&BoxEnvelope{Box: boxContent})
+			boxBytes, err := proto.Marshal(&BoxEnvelope{Box: boxContent})
+			require.NoError(t, err, "box envelope marshaling failed")
+
+			hc.writer.Write(boxBytes)
 
 			ipfsutil.FullClose(stream)
 		}
@@ -644,7 +659,7 @@ func TestInvalidRequesterAuthenticate(t *testing.T) {
 			defer ipfsutil.FullClose(stream)
 
 			_, err := Response(stream, mh.responder.accountID)
-			require.Equal(t, errcode.Codes(err), []errcode.ErrCode{errcode.ErrHandshakeRequesterAuthenticate, errcode.ErrCryptoDecrypt})
+			require.Equal(t, errcode.Codes(err), []errcode.ErrCode{errcode.ErrCode_ErrHandshakeRequesterAuthenticate, errcode.ErrCode_ErrCryptoDecrypt})
 		}
 
 		runHandshakeTest(t, requesterTest, responderTest)
@@ -673,7 +688,10 @@ func TestInvalidRequesterAuthenticate(t *testing.T) {
 			require.NoError(t, err, "receive ResponderHello failed")
 
 			// Send invalid box content
-			hc.writer.WriteMsg(&BoxEnvelope{Box: []byte("WrongBoxContent")})
+			boxBytes, err := proto.Marshal(&BoxEnvelope{Box: []byte("WrongBoxContent")})
+			require.NoError(t, err, "box envelope marshaling failed")
+
+			hc.writer.Write(boxBytes)
 
 			ipfsutil.FullClose(stream)
 		}
@@ -688,7 +706,7 @@ func TestInvalidRequesterAuthenticate(t *testing.T) {
 			defer ipfsutil.FullClose(stream)
 
 			_, err := Response(stream, mh.responder.accountID)
-			require.Equal(t, errcode.Codes(err), []errcode.ErrCode{errcode.ErrHandshakeRequesterAuthenticate, errcode.ErrCryptoDecrypt})
+			require.Equal(t, errcode.Codes(err), []errcode.ErrCode{errcode.ErrCode_ErrHandshakeRequesterAuthenticate, errcode.ErrCode_ErrCryptoDecrypt})
 		}
 
 		runHandshakeTest(t, requesterTest, responderTest)
@@ -715,7 +733,7 @@ func TestInvalidResponderAccept(t *testing.T) {
 				mh.requester.accountID,
 				mh.responder.accountID.GetPublic(),
 			)
-			require.Equal(t, errcode.Codes(err), []errcode.ErrCode{errcode.ErrHandshakeResponderAccept, errcode.ErrStreamRead})
+			require.Equal(t, errcode.Codes(err), []errcode.ErrCode{errcode.ErrCode_ErrHandshakeResponderAccept, errcode.ErrCode_ErrStreamRead})
 		}
 
 		var responderTest responderTestFunc = func(
@@ -760,7 +778,7 @@ func TestInvalidResponderAccept(t *testing.T) {
 				mh.requester.accountID,
 				mh.responder.accountID.GetPublic(),
 			)
-			require.Equal(t, errcode.Codes(err), []errcode.ErrCode{errcode.ErrHandshakeResponderAccept, errcode.ErrCryptoSignatureVerification})
+			require.Equal(t, errcode.Codes(err), []errcode.ErrCode{errcode.ErrCode_ErrHandshakeResponderAccept, errcode.ErrCode_ErrCryptoSignatureVerification})
 		}
 
 		var responderTest responderTestFunc = func(
@@ -791,7 +809,7 @@ func TestInvalidResponderAccept(t *testing.T) {
 			response.ResponderAccountSig, err = wrongAccountID.Sign(hc.sharedEphemeral[:])
 			require.NoError(t, err, "sharedEphemeral signing failed")
 
-			responseBytes, err := response.Marshal()
+			responseBytes, err := proto.Marshal(&response)
 			require.NoError(t, err, "response marshaling failed")
 
 			boxKey, err := hc.computeResponderAcceptBoxKey()
@@ -804,7 +822,10 @@ func TestInvalidResponderAccept(t *testing.T) {
 				boxKey,
 			)
 
-			hc.writer.WriteMsg(&BoxEnvelope{Box: boxContent})
+			boxBytes, err := proto.Marshal(&BoxEnvelope{Box: boxContent})
+			require.NoError(t, err, "box envelope marshaling failed")
+
+			hc.writer.Write(boxBytes)
 
 			ipfsutil.FullClose(stream)
 		}
@@ -829,7 +850,7 @@ func TestInvalidResponderAccept(t *testing.T) {
 				mh.requester.accountID,
 				mh.responder.accountID.GetPublic(),
 			)
-			require.Equal(t, errcode.Codes(err), []errcode.ErrCode{errcode.ErrHandshakeResponderAccept, errcode.ErrCryptoSignatureVerification})
+			require.Equal(t, errcode.Codes(err), []errcode.ErrCode{errcode.ErrCode_ErrHandshakeResponderAccept, errcode.ErrCode_ErrCryptoSignatureVerification})
 		}
 
 		var responderTest responderTestFunc = func(
@@ -857,7 +878,7 @@ func TestInvalidResponderAccept(t *testing.T) {
 			response.ResponderAccountSig, err = hc.ownAccountID.Sign([]byte("WrongProof"))
 			require.NoError(t, err, "sharedEphemeral signing failed")
 
-			responseBytes, err := response.Marshal()
+			responseBytes, err := proto.Marshal(&response)
 			require.NoError(t, err, "response marshaling failed")
 
 			boxKey, err := hc.computeResponderAcceptBoxKey()
@@ -870,7 +891,10 @@ func TestInvalidResponderAccept(t *testing.T) {
 				boxKey,
 			)
 
-			hc.writer.WriteMsg(&BoxEnvelope{Box: boxContent})
+			boxBytes, err := proto.Marshal(&BoxEnvelope{Box: boxContent})
+			require.NoError(t, err, "box envelope marshaling failed")
+
+			hc.writer.Write(boxBytes)
 
 			ipfsutil.FullClose(stream)
 		}
@@ -895,7 +919,7 @@ func TestInvalidResponderAccept(t *testing.T) {
 				mh.requester.accountID,
 				mh.responder.accountID.GetPublic(),
 			)
-			require.Equal(t, errcode.Codes(err), []errcode.ErrCode{errcode.ErrHandshakeResponderAccept, errcode.ErrDeserialization})
+			require.Equal(t, errcode.Codes(err), []errcode.ErrCode{errcode.ErrCode_ErrHandshakeResponderAccept, errcode.ErrCode_ErrDeserialization})
 		}
 
 		var responderTest responderTestFunc = func(
@@ -930,7 +954,10 @@ func TestInvalidResponderAccept(t *testing.T) {
 				boxKey,
 			)
 
-			hc.writer.WriteMsg(&BoxEnvelope{Box: boxContent})
+			boxBytes, err := proto.Marshal(&BoxEnvelope{Box: boxContent})
+			require.NoError(t, err, "box envelope marshaling failed")
+
+			hc.writer.Write(boxBytes)
 
 			ipfsutil.FullClose(stream)
 		}
@@ -955,7 +982,7 @@ func TestInvalidResponderAccept(t *testing.T) {
 				mh.requester.accountID,
 				mh.responder.accountID.GetPublic(),
 			)
-			require.Equal(t, errcode.Codes(err), []errcode.ErrCode{errcode.ErrHandshakeResponderAccept, errcode.ErrCryptoDecrypt})
+			require.Equal(t, errcode.Codes(err), []errcode.ErrCode{errcode.ErrCode_ErrHandshakeResponderAccept, errcode.ErrCode_ErrCryptoDecrypt})
 		}
 
 		var responderTest responderTestFunc = func(
@@ -982,7 +1009,7 @@ func TestInvalidResponderAccept(t *testing.T) {
 			response.ResponderAccountSig, err = hc.ownAccountID.Sign(hc.sharedEphemeral[:])
 			require.NoError(t, err, "sharedEphemeral signing failed")
 
-			responseBytes, err := response.Marshal()
+			responseBytes, err := proto.Marshal(&response)
 			require.NoError(t, err, "response marshaling failed")
 
 			// Seal box using another key
@@ -996,7 +1023,10 @@ func TestInvalidResponderAccept(t *testing.T) {
 				wrongBoxKey,
 			)
 
-			hc.writer.WriteMsg(&BoxEnvelope{Box: boxContent})
+			boxBytes, err := proto.Marshal(&BoxEnvelope{Box: boxContent})
+			require.NoError(t, err, "box envelope marshaling failed")
+
+			hc.writer.Write(boxBytes)
 
 			ipfsutil.FullClose(stream)
 		}
@@ -1021,7 +1051,7 @@ func TestInvalidResponderAccept(t *testing.T) {
 				mh.requester.accountID,
 				mh.responder.accountID.GetPublic(),
 			)
-			require.Equal(t, errcode.Codes(err), []errcode.ErrCode{errcode.ErrHandshakeResponderAccept, errcode.ErrCryptoDecrypt})
+			require.Equal(t, errcode.Codes(err), []errcode.ErrCode{errcode.ErrCode_ErrHandshakeResponderAccept, errcode.ErrCode_ErrCryptoDecrypt})
 		}
 
 		var responderTest responderTestFunc = func(
@@ -1048,7 +1078,7 @@ func TestInvalidResponderAccept(t *testing.T) {
 			response.ResponderAccountSig, err = hc.ownAccountID.Sign(hc.sharedEphemeral[:])
 			require.NoError(t, err, "sharedEphemeral signing failed")
 
-			responseBytes, err := response.Marshal()
+			responseBytes, err := proto.Marshal(&response)
 			require.NoError(t, err, "response marshaling failed")
 
 			boxKey, err := hc.computeResponderAcceptBoxKey()
@@ -1065,7 +1095,10 @@ func TestInvalidResponderAccept(t *testing.T) {
 				boxKey,
 			)
 
-			hc.writer.WriteMsg(&BoxEnvelope{Box: boxContent})
+			boxBytes, err := proto.Marshal(&BoxEnvelope{Box: boxContent})
+			require.NoError(t, err, "box envelope marshaling failed")
+
+			hc.writer.Write(boxBytes)
 
 			ipfsutil.FullClose(stream)
 		}
@@ -1090,7 +1123,7 @@ func TestInvalidResponderAccept(t *testing.T) {
 				mh.requester.accountID,
 				mh.responder.accountID.GetPublic(),
 			)
-			require.Equal(t, errcode.Codes(err), []errcode.ErrCode{errcode.ErrHandshakeResponderAccept, errcode.ErrCryptoDecrypt})
+			require.Equal(t, errcode.Codes(err), []errcode.ErrCode{errcode.ErrCode_ErrHandshakeResponderAccept, errcode.ErrCode_ErrCryptoDecrypt})
 		}
 
 		var responderTest responderTestFunc = func(
@@ -1113,7 +1146,10 @@ func TestInvalidResponderAccept(t *testing.T) {
 			require.NoError(t, err, "receive RequesterAuthenticate failed")
 
 			// Send wrong boxContent
-			hc.writer.WriteMsg(&BoxEnvelope{Box: []byte("WrongBoxContent")})
+			boxBytes, err := proto.Marshal(&BoxEnvelope{Box: []byte("WrongBoxContent")})
+			require.NoError(t, err, "box envelope marshaling failed")
+
+			hc.writer.Write(boxBytes)
 
 			ipfsutil.FullClose(stream)
 		}
@@ -1166,7 +1202,7 @@ func TestInvalidResponderAcceptAck(t *testing.T) {
 			defer ipfsutil.FullClose(stream)
 
 			_, err := Response(stream, mh.responder.accountID)
-			require.Equal(t, errcode.Codes(err), []errcode.ErrCode{errcode.ErrHandshakeRequesterAcknowledge, errcode.ErrStreamRead})
+			require.Equal(t, errcode.Codes(err), []errcode.ErrCode{errcode.ErrCode_ErrHandshakeRequesterAcknowledge, errcode.ErrCode_ErrStreamRead})
 		}
 
 		runHandshakeTest(t, requesterTest, responderTest)
@@ -1201,7 +1237,10 @@ func TestInvalidResponderAcceptAck(t *testing.T) {
 			require.NoError(t, err, "receive ResponderAccept failed")
 
 			acknowledge := &RequesterAcknowledgePayload{Success: false}
-			hc.writer.WriteMsg(acknowledge)
+			ackBytes, err := proto.Marshal(acknowledge)
+			require.NoError(t, err, "acknowledge marshaling failed")
+
+			hc.writer.Write(ackBytes)
 
 			ipfsutil.FullClose(stream)
 		}
@@ -1216,7 +1255,7 @@ func TestInvalidResponderAcceptAck(t *testing.T) {
 			defer ipfsutil.FullClose(stream)
 
 			_, err := Response(stream, mh.responder.accountID)
-			require.Equal(t, errcode.Codes(err), []errcode.ErrCode{errcode.ErrHandshakeRequesterAcknowledge, errcode.ErrInvalidInput})
+			require.Equal(t, errcode.Codes(err), []errcode.ErrCode{errcode.ErrCode_ErrHandshakeRequesterAcknowledge, errcode.ErrCode_ErrInvalidInput})
 		}
 
 		runHandshakeTest(t, requesterTest, responderTest)

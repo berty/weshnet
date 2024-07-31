@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/gogo/protobuf/proto"
 	"github.com/libp2p/go-libp2p/core/crypto"
 	peer "github.com/libp2p/go-libp2p/core/peer"
+	"google.golang.org/protobuf/proto"
 
 	"berty.tech/go-ipfs-log/enc"
 	"berty.tech/go-ipfs-log/entry"
@@ -114,8 +114,8 @@ func (m *OrbitDBMessageMarshaler) Marshal(msg *iface.MessageExchangeHeads) ([]by
 	box := &protocoltypes.OrbitDBMessageHeads_Box{
 		Address:  msg.Address,
 		Heads:    heads,
-		DevicePK: ownPK,
-		PeerID:   pid,
+		DevicePk: ownPK,
+		PeerId:   pid,
 	}
 
 	sealedBox, err := m.sealBox(msg.Address, box)
@@ -168,13 +168,13 @@ func (m *OrbitDBMessageMarshaler) Unmarshal(payload []byte, msg *iface.MessageEx
 	msg.Address = box.Address
 	msg.Heads = entries
 
-	if box.DevicePK == nil {
+	if box.DevicePk == nil {
 		// @NOTE(gfanton): this is probably a message from a replication server
 		// which should not have a DevicePK
 		return nil
 	}
 
-	pid, err := peer.IDFromBytes(box.PeerID)
+	pid, err := peer.IDFromBytes(box.PeerId)
 	if err != nil {
 		return fmt.Errorf("unable to parse peer id: %w", err)
 	}
@@ -182,7 +182,7 @@ func (m *OrbitDBMessageMarshaler) Unmarshal(payload []byte, msg *iface.MessageEx
 	// store device into cache
 	var pdg PeerDeviceGroup
 
-	pub, err := crypto.UnmarshalEd25519PublicKey(box.DevicePK)
+	pub, err := crypto.UnmarshalEd25519PublicKey(box.DevicePk)
 	if err != nil {
 		return fmt.Errorf("unable to unmarshal remote device pk: %w", err)
 	}

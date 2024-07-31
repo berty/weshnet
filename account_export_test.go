@@ -145,7 +145,7 @@ func TestFlappyRestoreAccount(t *testing.T) {
 		_, err = nodeA.Client.MultiMemberGroupJoin(ctx, &protocoltypes.MultiMemberGroupJoin_Request{Group: g})
 		require.NoError(t, err)
 
-		_, err = nodeA.Client.ActivateGroup(ctx, &protocoltypes.ActivateGroup_Request{GroupPK: g.PublicKey})
+		_, err = nodeA.Client.ActivateGroup(ctx, &protocoltypes.ActivateGroup_Request{GroupPk: g.PublicKey})
 		require.NoError(t, err)
 
 		op, err = serviceA.openedGroups[string(g.PublicKey)].messageStore.AddMessage(ctx, testPayload3)
@@ -203,9 +203,9 @@ func TestFlappyRestoreAccount(t *testing.T) {
 		require.NoError(t, err)
 
 		require.NotNil(t, nodeBInstanceConfig)
-		require.Equal(t, nodeAInstanceConfig.AccountPK, nodeBInstanceConfig.AccountPK)
-		require.NotEqual(t, nodeAInstanceConfig.DevicePK, nodeBInstanceConfig.DevicePK)
-		require.Equal(t, nodeAInstanceConfig.AccountGroupPK, nodeBInstanceConfig.AccountGroupPK)
+		require.Equal(t, nodeAInstanceConfig.AccountPk, nodeBInstanceConfig.AccountPk)
+		require.NotEqual(t, nodeAInstanceConfig.DevicePk, nodeBInstanceConfig.DevicePk)
+		require.Equal(t, nodeAInstanceConfig.AccountGroupPk, nodeBInstanceConfig.AccountGroupPk)
 
 		accountGroup := nodeB.Service.(*service).getAccountGroup()
 		require.NotNil(t, accountGroup)
@@ -216,14 +216,14 @@ func TestFlappyRestoreAccount(t *testing.T) {
 			require.True(t, ok)
 		}
 
-		_, err = nodeB.Service.ActivateGroup(ctx, &protocoltypes.ActivateGroup_Request{GroupPK: g.PublicKey})
+		_, err = nodeB.Service.ActivateGroup(ctx, &protocoltypes.ActivateGroup_Request{GroupPk: g.PublicKey})
 		require.NoError(t, err)
 
-		for _, gPK := range [][]byte{nodeBInstanceConfig.AccountGroupPK, g.PublicKey} {
+		for _, gPK := range [][]byte{nodeBInstanceConfig.AccountGroupPk, g.PublicKey} {
 			sub, err := nodeB.Client.GroupMessageList(
 				ctx,
 				&protocoltypes.GroupMessageList_Request{
-					GroupPK:  gPK,
+					GroupPk:  gPK,
 					UntilNow: true,
 				},
 			)
@@ -236,7 +236,7 @@ func TestFlappyRestoreAccount(t *testing.T) {
 					break
 				}
 
-				id, err := cid.Parse(evt.EventContext.ID)
+				id, err := cid.Parse(evt.EventContext.Id)
 				require.NoError(t, err)
 
 				ref, ok := expectedMessages[id]

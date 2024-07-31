@@ -47,12 +47,12 @@ func newMessageMetricsTracer(reg prometheus.Registerer) (mt *messageMetricsTrace
 
 func (s *messageMetricsTracer) ItemQueued(name string, m *messageItem) {
 	collectorMessageStoreQueueLength.WithLabelValues(
-		name, hex.EncodeToString(m.headers.DevicePK),
+		name, hex.EncodeToString(m.headers.DevicePk),
 	).Inc()
 }
 
 func (s *messageMetricsTracer) ItemPop(name string, m *messageItem) {
 	collectorMessageStoreQueueLength.WithLabelValues(
-		name, hex.EncodeToString(m.headers.DevicePK),
+		name, hex.EncodeToString(m.headers.DevicePk),
 	).Dec()
 }

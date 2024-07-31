@@ -3,6 +3,8 @@ package testutil
 import (
 	"testing"
 
+	"google.golang.org/protobuf/proto"
+
 	"berty.tech/weshnet/pkg/protocoltypes"
 )
 
@@ -16,12 +18,12 @@ func TestFilterGroupMetadataPayloadSent(t *testing.T, events <-chan *protocoltyp
 			continue
 		}
 
-		if evt.Metadata.EventType != protocoltypes.EventTypeGroupMetadataPayloadSent {
+		if evt.Metadata.EventType != protocoltypes.EventType_EventTypeGroupMetadataPayloadSent {
 			continue
 		}
 
 		m := &protocoltypes.GroupMetadataPayloadSent{}
-		if err := m.Unmarshal(evt.Event); err != nil {
+		if err := proto.Unmarshal(evt.Event, m); err != nil {
 			continue
 		}
 

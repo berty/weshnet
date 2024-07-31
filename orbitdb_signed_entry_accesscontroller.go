@@ -52,7 +52,7 @@ func (o *simpleAccessController) Load(ctx context.Context, address string) error
 func simpleAccessControllerCID(allowedKeys map[string][]string) (cid.Cid, error) {
 	d, err := json.Marshal(allowedKeys)
 	if err != nil {
-		return cid.Undef, errcode.ErrInvalidInput.Wrap(err)
+		return cid.Undef, errcode.ErrCode_ErrInvalidInput.Wrap(err)
 	}
 
 	c, err := cid.Prefix{
@@ -62,7 +62,7 @@ func simpleAccessControllerCID(allowedKeys map[string][]string) (cid.Cid, error)
 		MhLength: -1,
 	}.Sum(d)
 	if err != nil {
-		return cid.Undef, errcode.ErrInvalidInput.Wrap(err)
+		return cid.Undef, errcode.ErrCode_ErrInvalidInput.Wrap(err)
 	}
 
 	return c, nil
@@ -71,7 +71,7 @@ func simpleAccessControllerCID(allowedKeys map[string][]string) (cid.Cid, error)
 func (o *simpleAccessController) Save(ctx context.Context) (accesscontroller.ManifestParams, error) {
 	c, err := simpleAccessControllerCID(o.allowedKeys)
 	if err != nil {
-		return nil, errcode.ErrInvalidInput.Wrap(err)
+		return nil, errcode.ErrCode_ErrInvalidInput.Wrap(err)
 	}
 
 	return accesscontroller.NewManifestParams(c, true, "simple"), nil

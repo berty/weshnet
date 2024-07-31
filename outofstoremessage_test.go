@@ -7,6 +7,7 @@ import (
 
 	"github.com/ipfs/go-cid"
 	"github.com/stretchr/testify/require"
+	"google.golang.org/protobuf/proto"
 
 	"berty.tech/weshnet/pkg/protocoltypes"
 	"berty.tech/weshnet/pkg/secretstore"
@@ -34,7 +35,7 @@ func Test_sealPushMessage_OutOfStoreReceive(t *testing.T) {
 	gPKRaw, err := gPK.Raw()
 	require.NoError(t, err)
 
-	_, err = s.ActivateGroup(ctx, &protocoltypes.ActivateGroup_Request{GroupPK: gPKRaw})
+	_, err = s.ActivateGroup(ctx, &protocoltypes.ActivateGroup_Request{GroupPk: gPKRaw})
 	require.NoError(t, err)
 
 	gc, err := s.(ServiceMethods).GetContextGroupForID(g.PublicKey)
@@ -53,7 +54,7 @@ func Test_sealPushMessage_OutOfStoreReceive(t *testing.T) {
 
 	oosMsgEnv, err := otherSecretStore.SealOutOfStoreMessageEnvelope(cid.Undef, env, headers, g)
 	require.NoError(t, err)
-	oosMsgEnvBytes, err := oosMsgEnv.Marshal()
+	oosMsgEnvBytes, err := proto.Marshal(oosMsgEnv)
 	require.NoError(t, err)
 
 	outOfStoreMessage, group, clearPayload, alreadyDecrypted, err := gc.SecretStore().OpenOutOfStoreMessage(ctx, oosMsgEnvBytes)
@@ -64,7 +65,7 @@ func Test_sealPushMessage_OutOfStoreReceive(t *testing.T) {
 	require.False(t, alreadyDecrypted)
 
 	require.Equal(t, headers.Counter, outOfStoreMessage.Counter)
-	require.Equal(t, headers.DevicePK, outOfStoreMessage.DevicePK)
+	require.Equal(t, headers.DevicePk, outOfStoreMessage.DevicePk)
 	require.Equal(t, headers.Sig, outOfStoreMessage.Sig)
 	require.Equal(t, env.Message, outOfStoreMessage.EncryptedPayload)
 }
@@ -95,12 +96,12 @@ func Test_OutOfStoreMessageFlow(t *testing.T) {
 	gPKRaw, err := gPK.Raw()
 	require.NoError(t, err)
 
-	_, err = s.ActivateGroup(ctx, &protocoltypes.ActivateGroup_Request{GroupPK: gPKRaw})
+	_, err = s.ActivateGroup(ctx, &protocoltypes.ActivateGroup_Request{GroupPk: gPKRaw})
 	require.NoError(t, err)
 
 	// send a message
 	sendReply, err := s.AppMessageSend(ctx, &protocoltypes.AppMessageSend_Request{
-		GroupPK: gPKRaw,
+		GroupPk: gPKRaw,
 		Payload: message,
 	})
 	require.NoError(t, err)
@@ -109,7 +110,7 @@ func Test_OutOfStoreMessageFlow(t *testing.T) {
 
 	// craft an out of store message
 	craftReply, err := s.OutOfStoreSeal(ctx, &protocoltypes.OutOfStoreSeal_Request{
-		CID:            sendReply.CID,
+		Cid:            sendReply.Cid,
 		GroupPublicKey: gPKRaw,
 	})
 	require.NoError(t, err)
@@ -120,8 +121,8 @@ func Test_OutOfStoreMessageFlow(t *testing.T) {
 	})
 	require.NoError(t, err)
 
-	encryptedMessage := protocoltypes.EncryptedMessage{}
-	err = encryptedMessage.Unmarshal(openReply.Cleartext)
+	encryptedMessage := &protocoltypes.EncryptedMessage{}
+	err = proto.Unmarshal(openReply.Cleartext, encryptedMessage)
 	require.NoError(t, err)
 
 	require.Equal(t, message, encryptedMessage.Plaintext)

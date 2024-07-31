@@ -1,8 +1,8 @@
 package weshnet
 
 import (
-	"github.com/gogo/protobuf/proto"
 	"github.com/libp2p/go-libp2p/core/crypto"
+	"google.golang.org/protobuf/proto"
 
 	"berty.tech/weshnet/pkg/errcode"
 	"berty.tech/weshnet/pkg/protocoltypes"
@@ -18,11 +18,11 @@ func sigCheckerGroupSigned(g *protocoltypes.Group, metadata *protocoltypes.Group
 
 	ok, err := pk.Verify(metadata.Payload, metadata.Sig)
 	if err != nil {
-		return errcode.ErrCryptoSignatureVerification.Wrap(err)
+		return errcode.ErrCode_ErrCryptoSignatureVerification.Wrap(err)
 	}
 
 	if !ok {
-		return errcode.ErrCryptoSignatureVerification
+		return errcode.ErrCode_ErrCryptoSignatureVerification
 	}
 
 	return nil
@@ -36,21 +36,21 @@ type eventDeviceSigned interface {
 func sigCheckerDeviceSigned(g *protocoltypes.Group, metadata *protocoltypes.GroupMetadata, message proto.Message) error {
 	msg, ok := message.(eventDeviceSigned)
 	if !ok {
-		return errcode.ErrDeserialization
+		return errcode.ErrCode_ErrDeserialization
 	}
 
 	devPK, err := crypto.UnmarshalEd25519PublicKey(msg.GetDevicePK())
 	if err != nil {
-		return errcode.ErrDeserialization.Wrap(err)
+		return errcode.ErrCode_ErrDeserialization.Wrap(err)
 	}
 
 	ok, err = devPK.Verify(metadata.Payload, metadata.Sig)
 	if err != nil {
-		return errcode.ErrCryptoSignatureVerification.Wrap(err)
+		return errcode.ErrCode_ErrCryptoSignatureVerification.Wrap(err)
 	}
 
 	if !ok {
-		return errcode.ErrCryptoSignatureVerification
+		return errcode.ErrCode_ErrCryptoSignatureVerification
 	}
 
 	return nil
@@ -59,21 +59,21 @@ func sigCheckerDeviceSigned(g *protocoltypes.Group, metadata *protocoltypes.Grou
 func sigCheckerGroupMemberDeviceAdded(g *protocoltypes.Group, metadata *protocoltypes.GroupMetadata, message proto.Message) error {
 	msg, ok := message.(*protocoltypes.GroupMemberDeviceAdded)
 	if !ok {
-		return errcode.ErrDeserialization
+		return errcode.ErrCode_ErrDeserialization
 	}
 
-	memPK, err := crypto.UnmarshalEd25519PublicKey(msg.MemberPK)
+	memPK, err := crypto.UnmarshalEd25519PublicKey(msg.MemberPk)
 	if err != nil {
-		return errcode.ErrDeserialization.Wrap(err)
+		return errcode.ErrCode_ErrDeserialization.Wrap(err)
 	}
 
-	ok, err = memPK.Verify(msg.DevicePK, msg.MemberSig)
+	ok, err = memPK.Verify(msg.DevicePk, msg.MemberSig)
 	if err != nil {
-		return errcode.ErrCryptoSignatureVerification.Wrap(err)
+		return errcode.ErrCode_ErrCryptoSignatureVerification.Wrap(err)
 	}
 
 	if !ok {
-		return errcode.ErrCryptoSignatureVerification
+		return errcode.ErrCode_ErrCryptoSignatureVerification
 	}
 
 	return sigCheckerDeviceSigned(g, metadata, message)

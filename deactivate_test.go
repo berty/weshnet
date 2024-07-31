@@ -73,12 +73,12 @@ func TestReactivateAccountGroup(t *testing.T) {
 	require.NotNil(t, nodeACfg)
 
 	_, err = nodeA.Client.DeactivateGroup(ctx, &protocoltypes.DeactivateGroup_Request{
-		GroupPK: nodeACfg.AccountGroupPK,
+		GroupPk: nodeACfg.AccountGroupPk,
 	})
 	require.NoError(t, err)
 
 	_, err = nodeA.Client.ActivateGroup(ctx, &protocoltypes.ActivateGroup_Request{
-		GroupPK: nodeACfg.AccountGroupPK,
+		GroupPk: nodeACfg.AccountGroupPk,
 	})
 	require.NoError(t, err)
 
@@ -135,7 +135,7 @@ func TestRaceReactivateAccountGroup(t *testing.T) {
 	deactivateFunc := func() {
 		t.Log("DeactivateGroup")
 		_, err := nodeA.Client.DeactivateGroup(ctx, &protocoltypes.DeactivateGroup_Request{
-			GroupPK: nodeACfg.AccountGroupPK,
+			GroupPk: nodeACfg.AccountGroupPk,
 		})
 		require.NoError(t, err)
 	}
@@ -143,7 +143,7 @@ func TestRaceReactivateAccountGroup(t *testing.T) {
 	activateFunc := func() {
 		t.Log("ActivateGroup")
 		_, err := nodeA.Client.ActivateGroup(ctx, &protocoltypes.ActivateGroup_Request{
-			GroupPK: nodeACfg.AccountGroupPK,
+			GroupPk: nodeACfg.AccountGroupPk,
 		})
 		require.NoError(t, err)
 	}
@@ -187,13 +187,13 @@ func TestReactivateContactGroup(t *testing.T) {
 
 	// deactivate contact group
 	_, err := nodes[0].Client.DeactivateGroup(ctx, &protocoltypes.DeactivateGroup_Request{
-		GroupPK: contactGroup.Group.PublicKey,
+		GroupPk: contactGroup.Group.PublicKey,
 	})
 	require.NoError(t, err)
 
 	// reactivate group
 	_, err = nodes[0].Client.ActivateGroup(ctx, &protocoltypes.ActivateGroup_Request{
-		GroupPK: contactGroup.Group.PublicKey,
+		GroupPk: contactGroup.Group.PublicKey,
 	})
 	require.NoError(t, err)
 
@@ -233,7 +233,7 @@ func TestRaceReactivateContactGroup(t *testing.T) {
 	deactivateFunc := func() {
 		t.Log("DeactivateGroup")
 		_, err := nodes[0].Client.DeactivateGroup(ctx, &protocoltypes.DeactivateGroup_Request{
-			GroupPK: contactGroup.Group.PublicKey,
+			GroupPk: contactGroup.Group.PublicKey,
 		})
 		require.NoError(t, err)
 	}
@@ -242,7 +242,7 @@ func TestRaceReactivateContactGroup(t *testing.T) {
 	activateFunc := func() {
 		t.Log("ActivateGroup")
 		_, err := nodes[0].Client.ActivateGroup(ctx, &protocoltypes.ActivateGroup_Request{
-			GroupPK: contactGroup.Group.PublicKey,
+			GroupPk: contactGroup.Group.PublicKey,
 		})
 		require.NoError(t, err)
 	}
@@ -281,13 +281,13 @@ func TestReactivateMultimemberGroup(t *testing.T) {
 
 	// deactivate multimember group
 	_, err := nodes[0].Client.DeactivateGroup(ctx, &protocoltypes.DeactivateGroup_Request{
-		GroupPK: group.PublicKey,
+		GroupPk: group.PublicKey,
 	})
 	require.NoError(t, err)
 
 	// reactivate group
 	_, err = nodes[0].Client.ActivateGroup(ctx, &protocoltypes.ActivateGroup_Request{
-		GroupPK: group.PublicKey,
+		GroupPk: group.PublicKey,
 	})
 	require.NoError(t, err)
 

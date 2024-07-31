@@ -43,7 +43,7 @@ func DefaultOrbitDBOptions(g *protocoltypes.Group, options *orbitdb.CreateDBOpti
 	if options.AccessController == nil {
 		options.AccessController, err = defaultACForGroup(g, storeType)
 		if err != nil {
-			return nil, errcode.TODO.Wrap(err)
+			return nil, errcode.ErrCode_TODO.Wrap(err)
 		}
 	}
 
@@ -51,12 +51,12 @@ func DefaultOrbitDBOptions(g *protocoltypes.Group, options *orbitdb.CreateDBOpti
 	if groupOpenMode != GroupOpenModeReplicate {
 		options.Identity, err = defaultIdentityForGroup(context.TODO(), g, keystore)
 		if err != nil {
-			return nil, errcode.TODO.Wrap(err)
+			return nil, errcode.ErrCode_TODO.Wrap(err)
 		}
 	} else {
 		options.Identity, err = readIdentityForGroup(g, keystore)
 		if err != nil {
-			return nil, errcode.TODO.Wrap(err)
+			return nil, errcode.ErrCode_TODO.Wrap(err)
 		}
 	}
 
@@ -68,12 +68,12 @@ func defaultACForGroup(g *protocoltypes.Group, storeType string) (accesscontroll
 
 	sigPK, err := g.GetSigningPubKey()
 	if err != nil {
-		return nil, errcode.TODO.Wrap(err)
+		return nil, errcode.ErrCode_TODO.Wrap(err)
 	}
 
 	signingKeyBytes, err := sigPK.Raw()
 	if err != nil {
-		return nil, errcode.TODO.Wrap(err)
+		return nil, errcode.ErrCode_TODO.Wrap(err)
 	}
 
 	access := map[string][]string{
@@ -100,12 +100,12 @@ func defaultACForGroup(g *protocoltypes.Group, storeType string) (accesscontroll
 func defaultIdentityForGroup(ctx context.Context, g *protocoltypes.Group, ks *BertySignedKeyStore) (*identityprovider.Identity, error) {
 	sigPK, err := g.GetSigningPubKey()
 	if err != nil {
-		return nil, errcode.TODO.Wrap(err)
+		return nil, errcode.ErrCode_TODO.Wrap(err)
 	}
 
 	signingKeyBytes, err := sigPK.Raw()
 	if err != nil {
-		return nil, errcode.TODO.Wrap(err)
+		return nil, errcode.ErrCode_TODO.Wrap(err)
 	}
 
 	identity, err := ks.getIdentityProvider().createIdentity(ctx, &identityprovider.CreateIdentityOptions{
@@ -114,7 +114,7 @@ func defaultIdentityForGroup(ctx context.Context, g *protocoltypes.Group, ks *Be
 		ID:       hex.EncodeToString(signingKeyBytes),
 	})
 	if err != nil {
-		return nil, errcode.TODO.Wrap(err)
+		return nil, errcode.ErrCode_TODO.Wrap(err)
 	}
 
 	return identity, nil
@@ -123,12 +123,12 @@ func defaultIdentityForGroup(ctx context.Context, g *protocoltypes.Group, ks *Be
 func readIdentityForGroup(g *protocoltypes.Group, ks *BertySignedKeyStore) (*identityprovider.Identity, error) {
 	sigPK, err := g.GetSigningPubKey()
 	if err != nil {
-		return nil, errcode.TODO.Wrap(err)
+		return nil, errcode.ErrCode_TODO.Wrap(err)
 	}
 
 	signingKeyBytes, err := sigPK.Raw()
 	if err != nil {
-		return nil, errcode.TODO.Wrap(err)
+		return nil, errcode.ErrCode_TODO.Wrap(err)
 	}
 
 	return &identityprovider.Identity{

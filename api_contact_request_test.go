@@ -47,6 +47,6 @@ func TestShareContact(t *testing.T) {
 	config, err := pts[0].Client.ServiceGetConfiguration(ctx,
 		&protocoltypes.ServiceGetConfiguration_Request{})
 	require.NoError(t, err)
-	require.Equal(t, contact.Contact.PK, config.AccountPK)
+	require.Equal(t, contact.Contact.Pk, config.AccountPk)
 	require.Equal(t, contact.Contact.PublicRendezvousSeed, contactRequestRef.PublicRendezvousSeed)
 }

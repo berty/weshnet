@@ -12,8 +12,6 @@ import (
 	// required by Makefile
 	_ "github.com/daixiang0/gci"
 	// required by protoc
-	_ "github.com/gogo/protobuf/types"
-	// required by protoc
 	_ "github.com/golang/protobuf/proto"
 	// required by protoc
 	_ "github.com/grpc-ecosystem/grpc-gateway/protoc-gen-grpc-gateway"

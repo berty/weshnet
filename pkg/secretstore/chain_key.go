@@ -6,6 +6,7 @@ import (
 
 	"github.com/libp2p/go-libp2p/core/crypto"
 	"golang.org/x/crypto/nacl/box"
+	"google.golang.org/protobuf/proto"
 
 	"berty.tech/weshnet/pkg/cryptoutil"
 	"berty.tech/weshnet/pkg/errcode"
@@ -17,7 +18,7 @@ func newDeviceChainKey() (*protocoltypes.DeviceChainKey, error) {
 	chainKey := make([]byte, 32)
 	_, err := crand.Read(chainKey)
 	if err != nil {
-		return nil, errcode.ErrCryptoRandomGeneration.Wrap(err)
+		return nil, errcode.ErrCode_ErrCryptoRandomGeneration.Wrap(err)
 	}
 
 	return &protocoltypes.DeviceChainKey{
@@ -28,14 +29,14 @@ func newDeviceChainKey() (*protocoltypes.DeviceChainKey, error) {
 
 // encryptDeviceChainKey encrypts a device chain key for a target member
 func encryptDeviceChainKey(localDevicePrivateKey crypto.PrivKey, remoteMemberPubKey crypto.PubKey, deviceChainKey *protocoltypes.DeviceChainKey, group *protocoltypes.Group) ([]byte, error) {
-	chainKeyBytes, err := deviceChainKey.Marshal()
+	chainKeyBytes, err := proto.Marshal(deviceChainKey)
 	if err != nil {
-		return nil, errcode.ErrSerialization.Wrap(err)
+		return nil, errcode.ErrCode_ErrSerialization.Wrap(err)
 	}
 
 	mongPriv, mongPub, err := cryptoutil.EdwardsToMontgomery(localDevicePrivateKey, remoteMemberPubKey)
 	if err != nil {
-		return nil, errcode.ErrCryptoKeyConversion.Wrap(err)
+		return nil, errcode.ErrCode_ErrCryptoKeyConversion.Wrap(err)
 	}
 
 	nonce := groupIDToNonce(group)
@@ -48,19 +49,19 @@ func encryptDeviceChainKey(localDevicePrivateKey crypto.PrivKey, remoteMemberPub
 func decryptDeviceChainKey(encryptedDeviceChainKey []byte, group *protocoltypes.Group, localMemberPrivateKey crypto.PrivKey, senderDevicePubKey crypto.PubKey) (*protocoltypes.DeviceChainKey, error) {
 	mongPriv, mongPub, err := cryptoutil.EdwardsToMontgomery(localMemberPrivateKey, senderDevicePubKey)
 	if err != nil {
-		return nil, errcode.ErrCryptoKeyConversion.Wrap(err)
+		return nil, errcode.ErrCode_ErrCryptoKeyConversion.Wrap(err)
 	}
 
 	nonce := groupIDToNonce(group)
 	decryptedSecret := &protocoltypes.DeviceChainKey{}
 	decryptedMessage, ok := box.Open(nil, encryptedDeviceChainKey, nonce, mongPub, mongPriv)
 	if !ok {
-		return nil, errcode.ErrCryptoDecrypt.Wrap(fmt.Errorf("unable to decrypt message"))
+		return nil, errcode.ErrCode_ErrCryptoDecrypt.Wrap(fmt.Errorf("unable to decrypt message"))
 	}
 
-	err = decryptedSecret.Unmarshal(decryptedMessage)
+	err = proto.Unmarshal(decryptedMessage, decryptedSecret)
 	if err != nil {
-		return nil, errcode.ErrDeserialization.Wrap(err)
+		return nil, errcode.ErrCode_ErrDeserialization.Wrap(err)
 	}
 
 	return decryptedSecret, nil

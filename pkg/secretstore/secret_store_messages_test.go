@@ -12,6 +12,7 @@ import (
 	"github.com/libp2p/go-libp2p/core/crypto"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"google.golang.org/protobuf/proto"
 
 	"berty.tech/weshnet"
 	"berty.tech/weshnet/pkg/protocoltypes"
@@ -80,7 +81,7 @@ func Test_EncryptMessageEnvelope(t *testing.T) {
 	omd2, err := secretStore2.GetOwnMemberDeviceForGroup(g)
 	assert.NoError(t, err)
 
-	payloadRef1, err := (&protocoltypes.EncryptedMessage{Plaintext: []byte("Test payload 1")}).Marshal()
+	payloadRef1, err := proto.Marshal(&protocoltypes.EncryptedMessage{Plaintext: []byte("Test payload 1")})
 	assert.NoError(t, err)
 
 	deviceChainKey1For2, err := secretStore1.GetShareableChainKey(ctx, g, omd2.Member())
@@ -102,9 +103,9 @@ func Test_EncryptMessageEnvelope(t *testing.T) {
 	assert.NoError(t, err)
 
 	devRaw, err := omd1.Device().Raw()
-	assert.Equal(t, headers.DevicePK, devRaw)
+	assert.Equal(t, headers.DevicePk, devRaw)
 
-	payloadClrlBytes, err := payloadClr1.Marshal()
+	payloadClrlBytes, err := proto.Marshal(payloadClr1)
 	assert.NoError(t, err)
 	assert.Equal(t, payloadRef1, payloadClrlBytes)
 }

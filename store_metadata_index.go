@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/gogo/protobuf/proto"
 	"github.com/libp2p/go-libp2p/core/crypto"
 	"go.uber.org/zap"
+	"google.golang.org/protobuf/proto"
 
 	ipfslog "berty.tech/go-ipfs-log"
 	"berty.tech/go-orbit-db/iface"
@@ -78,7 +78,7 @@ func (m *metadataStoreIndex) UpdateIndex(log ipfslog.Log, _ []ipfslog.Entry) err
 		_, alreadyHandledEvent := m.handledEvents[e.GetHash().String()]
 
 		// TODO: improve account events handling
-		if m.group.GroupType != protocoltypes.GroupTypeAccount && alreadyHandledEvent {
+		if m.group.GroupType != protocoltypes.GroupType_GroupTypeAccount && alreadyHandledEvent {
 			continue
 		}
 
@@ -115,7 +115,7 @@ func (m *metadataStoreIndex) UpdateIndex(log ipfslog.Log, _ []ipfslog.Entry) err
 
 	for _, h := range m.postIndexActions {
 		if err := h(); err != nil {
-			return errcode.ErrInternal.Wrap(err)
+			return errcode.ErrCode_ErrInternal.Wrap(err)
 		}
 	}
 
@@ -125,27 +125,27 @@ func (m *metadataStoreIndex) UpdateIndex(log ipfslog.Log, _ []ipfslog.Entry) err
 func (m *metadataStoreIndex) handleGroupMemberDeviceAdded(event proto.Message) error {
 	e, ok := event.(*protocoltypes.GroupMemberDeviceAdded)
 	if !ok {
-		return errcode.ErrInvalidInput
+		return errcode.ErrCode_ErrInvalidInput
 	}
 
-	member, err := crypto.UnmarshalEd25519PublicKey(e.MemberPK)
+	member, err := crypto.UnmarshalEd25519PublicKey(e.MemberPk)
 	if err != nil {
-		return errcode.ErrDeserialization.Wrap(err)
+		return errcode.ErrCode_ErrDeserialization.Wrap(err)
 	}
 
-	device, err := crypto.UnmarshalEd25519PublicKey(e.DevicePK)
+	device, err := crypto.UnmarshalEd25519PublicKey(e.DevicePk)
 	if err != nil {
-		return errcode.ErrDeserialization.Wrap(err)
+		return errcode.ErrCode_ErrDeserialization.Wrap(err)
 	}
 
-	if _, ok := m.devices[string(e.DevicePK)]; ok {
+	if _, ok := m.devices[string(e.DevicePk)]; ok {
 		return nil
 	}
 
 	memberDevice := secretstore.NewMemberDevice(member, device)
 
-	m.devices[string(e.DevicePK)] = memberDevice
-	m.members[string(e.MemberPK)] = append(m.members[string(e.MemberPK)], memberDevice)
+	m.devices[string(e.DevicePk)] = memberDevice
+	m.members[string(e.MemberPk)] = append(m.members[string(e.MemberPk)], memberDevice)
 
 	return nil
 }
@@ -153,21 +153,21 @@ func (m *metadataStoreIndex) handleGroupMemberDeviceAdded(event proto.Message) e
 func (m *metadataStoreIndex) handleGroupDeviceChainKeyAdded(event proto.Message) error {
 	e, ok := event.(*protocoltypes.GroupDeviceChainKeyAdded)
 	if !ok {
-		return errcode.ErrInvalidInput
+		return errcode.ErrCode_ErrInvalidInput
 	}
 
-	_, err := crypto.UnmarshalEd25519PublicKey(e.DestMemberPK)
+	_, err := crypto.UnmarshalEd25519PublicKey(e.DestMemberPk)
 	if err != nil {
-		return errcode.ErrDeserialization.Wrap(err)
+		return errcode.ErrCode_ErrDeserialization.Wrap(err)
 	}
 
-	senderPK, err := crypto.UnmarshalEd25519PublicKey(e.DevicePK)
+	senderPK, err := crypto.UnmarshalEd25519PublicKey(e.DevicePk)
 	if err != nil {
-		return errcode.ErrDeserialization.Wrap(err)
+		return errcode.ErrCode_ErrDeserialization.Wrap(err)
 	}
 
 	if m.ownMemberDevice.Device().Equals(senderPK) {
-		m.sentSecrets[string(e.DestMemberPK)] = struct{}{}
+		m.sentSecrets[string(e.DestMemberPk)] = struct{}{}
 	}
 
 	return nil
@@ -179,7 +179,7 @@ func (m *metadataStoreIndex) getMemberByDevice(devicePublicKey crypto.PubKey) (c
 
 	publicKeyBytes, err := devicePublicKey.Raw()
 	if err != nil {
-		return nil, errcode.ErrInvalidInput.Wrap(err)
+		return nil, errcode.ErrCode_ErrInvalidInput.Wrap(err)
 	}
 
 	return m.unsafeGetMemberByDevice(publicKeyBytes)
@@ -187,12 +187,12 @@ func (m *metadataStoreIndex) getMemberByDevice(devicePublicKey crypto.PubKey) (c
 
 func (m *metadataStoreIndex) unsafeGetMemberByDevice(publicKeyBytes []byte) (crypto.PubKey, error) {
 	if l := len(publicKeyBytes); l != cryptoutil.KeySize {
-		return nil, errcode.ErrInvalidInput.Wrap(fmt.Errorf("invalid private key size, expected %d got %d", cryptoutil.KeySize, l))
+		return nil, errcode.ErrCode_ErrInvalidInput.Wrap(fmt.Errorf("invalid private key size, expected %d got %d", cryptoutil.KeySize, l))
 	}
 
 	device, ok := m.devices[string(publicKeyBytes)]
 	if !ok {
-		return nil, errcode.ErrMissingInput
+		return nil, errcode.ErrCode_ErrMissingInput
 	}
 
 	return device.Member(), nil
@@ -204,12 +204,12 @@ func (m *metadataStoreIndex) getDevicesForMember(pk crypto.PubKey) ([]crypto.Pub
 
 	id, err := pk.Raw()
 	if err != nil {
-		return nil, errcode.ErrInvalidInput.Wrap(err)
+		return nil, errcode.ErrCode_ErrInvalidInput.Wrap(err)
 	}
 
 	mds, ok := m.members[string(id)]
 	if !ok {
-		return nil, errcode.ErrInvalidInput
+		return nil, errcode.ErrCode_ErrInvalidInput
 	}
 
 	ret := make([]crypto.PubKey, len(mds))
@@ -244,7 +244,7 @@ func (m *metadataStoreIndex) listContacts() map[string]*AccountContact {
 		contacts[k] = &AccountContact{
 			state: contact.state,
 			contact: &protocoltypes.ShareableContact{
-				PK:                   contact.contact.PK,
+				Pk:                   contact.contact.Pk,
 				PublicRendezvousSeed: contact.contact.PublicRendezvousSeed,
 				Metadata:             contact.contact.Metadata,
 			},
@@ -297,7 +297,7 @@ func (m *metadataStoreIndex) areSecretsAlreadySent(pk crypto.PubKey) (bool, erro
 
 	key, err := pk.Raw()
 	if err != nil {
-		return false, errcode.ErrInvalidInput.Wrap(err)
+		return false, errcode.ErrCode_ErrInvalidInput.Wrap(err)
 	}
 
 	_, ok := m.sentSecrets[string(key)]
@@ -324,7 +324,7 @@ type AccountContact struct {
 func (m *metadataStoreIndex) handleGroupJoined(event proto.Message) error {
 	evt, ok := event.(*protocoltypes.AccountGroupJoined)
 	if !ok {
-		return errcode.ErrInvalidInput
+		return errcode.ErrCode_ErrInvalidInput
 	}
 
 	_, ok = m.groups[string(evt.Group.PublicKey)]
@@ -343,15 +343,15 @@ func (m *metadataStoreIndex) handleGroupJoined(event proto.Message) error {
 func (m *metadataStoreIndex) handleGroupLeft(event proto.Message) error {
 	evt, ok := event.(*protocoltypes.AccountGroupLeft)
 	if !ok {
-		return errcode.ErrInvalidInput
+		return errcode.ErrCode_ErrInvalidInput
 	}
 
-	_, ok = m.groups[string(evt.GroupPK)]
+	_, ok = m.groups[string(evt.GroupPk)]
 	if ok {
 		return nil
 	}
 
-	m.groups[string(evt.GroupPK)] = &accountGroup{
+	m.groups[string(evt.GroupPk)] = &accountGroup{
 		state: accountGroupJoinedStateLeft,
 	}
 
@@ -365,7 +365,7 @@ func (m *metadataStoreIndex) handleContactRequestDisabled(event proto.Message) e
 
 	_, ok := event.(*protocoltypes.AccountContactRequestDisabled)
 	if !ok {
-		return errcode.ErrInvalidInput
+		return errcode.ErrCode_ErrInvalidInput
 	}
 
 	f := false
@@ -381,7 +381,7 @@ func (m *metadataStoreIndex) handleContactRequestEnabled(event proto.Message) er
 
 	_, ok := event.(*protocoltypes.AccountContactRequestEnabled)
 	if !ok {
-		return errcode.ErrInvalidInput
+		return errcode.ErrCode_ErrInvalidInput
 	}
 
 	t := true
@@ -393,7 +393,7 @@ func (m *metadataStoreIndex) handleContactRequestEnabled(event proto.Message) er
 func (m *metadataStoreIndex) handleContactRequestReferenceReset(event proto.Message) error {
 	evt, ok := event.(*protocoltypes.AccountContactRequestReferenceReset)
 	if !ok {
-		return errcode.ErrInvalidInput
+		return errcode.ErrCode_ErrInvalidInput
 	}
 
 	if m.contactRequestSeed != nil {
@@ -406,18 +406,18 @@ func (m *metadataStoreIndex) handleContactRequestReferenceReset(event proto.Mess
 }
 
 func (m *metadataStoreIndex) registerContactFromGroupPK(ac *AccountContact) error {
-	if m.group.GroupType != protocoltypes.GroupTypeAccount {
-		return errcode.ErrGroupInvalidType
+	if m.group.GroupType != protocoltypes.GroupType_GroupTypeAccount {
+		return errcode.ErrCode_ErrGroupInvalidType
 	}
 
-	contactPK, err := crypto.UnmarshalEd25519PublicKey(ac.contact.PK)
+	contactPK, err := crypto.UnmarshalEd25519PublicKey(ac.contact.Pk)
 	if err != nil {
-		return errcode.ErrDeserialization.Wrap(err)
+		return errcode.ErrCode_ErrDeserialization.Wrap(err)
 	}
 
 	group, err := m.secretStore.GetGroupForContact(contactPK)
 	if err != nil {
-		return errcode.ErrOrbitDBOpen.Wrap(err)
+		return errcode.ErrCode_ErrOrbitDBOpen.Wrap(err)
 	}
 
 	m.contactsFromGroupPK[string(group.PublicKey)] = ac
@@ -428,35 +428,35 @@ func (m *metadataStoreIndex) registerContactFromGroupPK(ac *AccountContact) erro
 func (m *metadataStoreIndex) handleContactRequestOutgoingEnqueued(event proto.Message) error {
 	evt, ok := event.(*protocoltypes.AccountContactRequestOutgoingEnqueued)
 	if ko := !ok || evt.Contact == nil; ko {
-		return errcode.ErrInvalidInput
+		return errcode.ErrCode_ErrInvalidInput
 	}
 
-	if _, ok := m.contacts[string(evt.Contact.PK)]; ok {
-		if m.contacts[string(evt.Contact.PK)].contact.Metadata == nil {
-			m.contacts[string(evt.Contact.PK)].contact.Metadata = evt.Contact.Metadata
+	if _, ok := m.contacts[string(evt.Contact.Pk)]; ok {
+		if m.contacts[string(evt.Contact.Pk)].contact.Metadata == nil {
+			m.contacts[string(evt.Contact.Pk)].contact.Metadata = evt.Contact.Metadata
 		}
 
-		if m.contacts[string(evt.Contact.PK)].contact.PublicRendezvousSeed == nil {
-			m.contacts[string(evt.Contact.PK)].contact.PublicRendezvousSeed = evt.Contact.PublicRendezvousSeed
+		if m.contacts[string(evt.Contact.Pk)].contact.PublicRendezvousSeed == nil {
+			m.contacts[string(evt.Contact.Pk)].contact.PublicRendezvousSeed = evt.Contact.PublicRendezvousSeed
 		}
 
 		return nil
 	}
 
-	if data, ok := m.contactRequestMetadata[string(evt.Contact.PK)]; !ok || len(data) == 0 {
-		m.contactRequestMetadata[string(evt.Contact.PK)] = evt.OwnMetadata
+	if data, ok := m.contactRequestMetadata[string(evt.Contact.Pk)]; !ok || len(data) == 0 {
+		m.contactRequestMetadata[string(evt.Contact.Pk)] = evt.OwnMetadata
 	}
 
 	ac := &AccountContact{
-		state: protocoltypes.ContactStateToRequest,
+		state: protocoltypes.ContactState_ContactStateToRequest,
 		contact: &protocoltypes.ShareableContact{
-			PK:                   evt.Contact.PK,
+			Pk:                   evt.Contact.Pk,
 			Metadata:             evt.Contact.Metadata,
 			PublicRendezvousSeed: evt.Contact.PublicRendezvousSeed,
 		},
 	}
 
-	m.contacts[string(evt.Contact.PK)] = ac
+	m.contacts[string(evt.Contact.Pk)] = ac
 	err := m.registerContactFromGroupPK(ac)
 
 	return err
@@ -465,21 +465,21 @@ func (m *metadataStoreIndex) handleContactRequestOutgoingEnqueued(event proto.Me
 func (m *metadataStoreIndex) handleContactRequestOutgoingSent(event proto.Message) error {
 	evt, ok := event.(*protocoltypes.AccountContactRequestOutgoingSent)
 	if !ok {
-		return errcode.ErrInvalidInput
+		return errcode.ErrCode_ErrInvalidInput
 	}
 
-	if _, ok := m.contacts[string(evt.ContactPK)]; ok {
+	if _, ok := m.contacts[string(evt.ContactPk)]; ok {
 		return nil
 	}
 
 	ac := &AccountContact{
-		state: protocoltypes.ContactStateAdded,
+		state: protocoltypes.ContactState_ContactStateAdded,
 		contact: &protocoltypes.ShareableContact{
-			PK: evt.ContactPK,
+			Pk: evt.ContactPk,
 		},
 	}
 
-	m.contacts[string(evt.ContactPK)] = ac
+	m.contacts[string(evt.ContactPk)] = ac
 	err := m.registerContactFromGroupPK(ac)
 
 	return err
@@ -488,31 +488,31 @@ func (m *metadataStoreIndex) handleContactRequestOutgoingSent(event proto.Messag
 func (m *metadataStoreIndex) handleContactRequestIncomingReceived(event proto.Message) error {
 	evt, ok := event.(*protocoltypes.AccountContactRequestIncomingReceived)
 	if !ok {
-		return errcode.ErrInvalidInput
+		return errcode.ErrCode_ErrInvalidInput
 	}
 
-	if _, ok := m.contacts[string(evt.ContactPK)]; ok {
-		if m.contacts[string(evt.ContactPK)].contact.Metadata == nil {
-			m.contacts[string(evt.ContactPK)].contact.Metadata = evt.ContactMetadata
+	if _, ok := m.contacts[string(evt.ContactPk)]; ok {
+		if m.contacts[string(evt.ContactPk)].contact.Metadata == nil {
+			m.contacts[string(evt.ContactPk)].contact.Metadata = evt.ContactMetadata
 		}
 
-		if m.contacts[string(evt.ContactPK)].contact.PublicRendezvousSeed == nil {
-			m.contacts[string(evt.ContactPK)].contact.PublicRendezvousSeed = evt.ContactRendezvousSeed
+		if m.contacts[string(evt.ContactPk)].contact.PublicRendezvousSeed == nil {
+			m.contacts[string(evt.ContactPk)].contact.PublicRendezvousSeed = evt.ContactRendezvousSeed
 		}
 
 		return nil
 	}
 
 	ac := &AccountContact{
-		state: protocoltypes.ContactStateReceived,
+		state: protocoltypes.ContactState_ContactStateReceived,
 		contact: &protocoltypes.ShareableContact{
-			PK:                   evt.ContactPK,
+			Pk:                   evt.ContactPk,
 			Metadata:             evt.ContactMetadata,
 			PublicRendezvousSeed: evt.ContactRendezvousSeed,
 		},
 	}
 
-	m.contacts[string(evt.ContactPK)] = ac
+	m.contacts[string(evt.ContactPk)] = ac
 	err := m.registerContactFromGroupPK(ac)
 
 	return err
@@ -521,21 +521,21 @@ func (m *metadataStoreIndex) handleContactRequestIncomingReceived(event proto.Me
 func (m *metadataStoreIndex) handleContactRequestIncomingDiscarded(event proto.Message) error {
 	evt, ok := event.(*protocoltypes.AccountContactRequestIncomingDiscarded)
 	if !ok {
-		return errcode.ErrInvalidInput
+		return errcode.ErrCode_ErrInvalidInput
 	}
 
-	if _, ok := m.contacts[string(evt.ContactPK)]; ok {
+	if _, ok := m.contacts[string(evt.ContactPk)]; ok {
 		return nil
 	}
 
 	ac := &AccountContact{
-		state: protocoltypes.ContactStateDiscarded,
+		state: protocoltypes.ContactState_ContactStateDiscarded,
 		contact: &protocoltypes.ShareableContact{
-			PK: evt.ContactPK,
+			Pk: evt.ContactPk,
 		},
 	}
 
-	m.contacts[string(evt.ContactPK)] = ac
+	m.contacts[string(evt.ContactPk)] = ac
 	err := m.registerContactFromGroupPK(ac)
 
 	return err
@@ -544,21 +544,21 @@ func (m *metadataStoreIndex) handleContactRequestIncomingDiscarded(event proto.M
 func (m *metadataStoreIndex) handleContactRequestIncomingAccepted(event proto.Message) error {
 	evt, ok := event.(*protocoltypes.AccountContactRequestIncomingAccepted)
 	if !ok {
-		return errcode.ErrInvalidInput
+		return errcode.ErrCode_ErrInvalidInput
 	}
 
-	if _, ok := m.contacts[string(evt.ContactPK)]; ok {
+	if _, ok := m.contacts[string(evt.ContactPk)]; ok {
 		return nil
 	}
 
 	ac := &AccountContact{
-		state: protocoltypes.ContactStateAdded,
+		state: protocoltypes.ContactState_ContactStateAdded,
 		contact: &protocoltypes.ShareableContact{
-			PK: evt.ContactPK,
+			Pk: evt.ContactPk,
 		},
 	}
 
-	m.contacts[string(evt.ContactPK)] = ac
+	m.contacts[string(evt.ContactPk)] = ac
 	err := m.registerContactFromGroupPK(ac)
 
 	return err
@@ -567,21 +567,21 @@ func (m *metadataStoreIndex) handleContactRequestIncomingAccepted(event proto.Me
 func (m *metadataStoreIndex) handleContactBlocked(event proto.Message) error {
 	evt, ok := event.(*protocoltypes.AccountContactBlocked)
 	if !ok {
-		return errcode.ErrInvalidInput
+		return errcode.ErrCode_ErrInvalidInput
 	}
 
-	if _, ok := m.contacts[string(evt.ContactPK)]; ok {
+	if _, ok := m.contacts[string(evt.ContactPk)]; ok {
 		return nil
 	}
 
 	ac := &AccountContact{
-		state: protocoltypes.ContactStateBlocked,
+		state: protocoltypes.ContactState_ContactStateBlocked,
 		contact: &protocoltypes.ShareableContact{
-			PK: evt.ContactPK,
+			Pk: evt.ContactPk,
 		},
 	}
 
-	m.contacts[string(evt.ContactPK)] = ac
+	m.contacts[string(evt.ContactPk)] = ac
 	err := m.registerContactFromGroupPK(ac)
 
 	return err
@@ -590,21 +590,21 @@ func (m *metadataStoreIndex) handleContactBlocked(event proto.Message) error {
 func (m *metadataStoreIndex) handleContactUnblocked(event proto.Message) error {
 	evt, ok := event.(*protocoltypes.AccountContactUnblocked)
 	if !ok {
-		return errcode.ErrInvalidInput
+		return errcode.ErrCode_ErrInvalidInput
 	}
 
-	if _, ok := m.contacts[string(evt.ContactPK)]; ok {
+	if _, ok := m.contacts[string(evt.ContactPk)]; ok {
 		return nil
 	}
 
 	ac := &AccountContact{
-		state: protocoltypes.ContactStateRemoved,
+		state: protocoltypes.ContactState_ContactStateRemoved,
 		contact: &protocoltypes.ShareableContact{
-			PK: evt.ContactPK,
+			Pk: evt.ContactPk,
 		},
 	}
 
-	m.contacts[string(evt.ContactPK)] = ac
+	m.contacts[string(evt.ContactPk)] = ac
 	err := m.registerContactFromGroupPK(ac)
 
 	return err
@@ -613,7 +613,7 @@ func (m *metadataStoreIndex) handleContactUnblocked(event proto.Message) error {
 func (m *metadataStoreIndex) handleContactAliasKeyAdded(event proto.Message) error {
 	evt, ok := event.(*protocoltypes.ContactAliasKeyAdded)
 	if !ok {
-		return errcode.ErrInvalidInput
+		return errcode.ErrCode_ErrInvalidInput
 	}
 
 	m.eventsContactAddAliasKey = append(m.eventsContactAddAliasKey, evt)
@@ -624,16 +624,16 @@ func (m *metadataStoreIndex) handleContactAliasKeyAdded(event proto.Message) err
 func (m *metadataStoreIndex) handleMultiMemberInitialMember(event proto.Message) error {
 	e, ok := event.(*protocoltypes.MultiMemberGroupInitialMemberAnnounced)
 	if !ok {
-		return errcode.ErrInvalidInput
+		return errcode.ErrCode_ErrInvalidInput
 	}
 
-	pk, err := crypto.UnmarshalEd25519PublicKey(e.MemberPK)
+	pk, err := crypto.UnmarshalEd25519PublicKey(e.MemberPk)
 	if err != nil {
-		return errcode.ErrDeserialization.Wrap(err)
+		return errcode.ErrCode_ErrDeserialization.Wrap(err)
 	}
 
 	if _, ok := m.admins[pk]; ok {
-		return errcode.ErrInternal
+		return errcode.ErrCode_ErrInternal
 	}
 
 	m.admins[pk] = struct{}{}
@@ -654,7 +654,7 @@ func (m *metadataStoreIndex) handleGroupMetadataPayloadSent(_ proto.Message) err
 func (m *metadataStoreIndex) handleAccountVerifiedCredentialRegistered(event proto.Message) error {
 	e, ok := event.(*protocoltypes.AccountVerifiedCredentialRegistered)
 	if !ok {
-		return errcode.ErrInvalidInput
+		return errcode.ErrCode_ErrInvalidInput
 	}
 
 	m.verifiedCredentials = append(m.verifiedCredentials, e)
@@ -725,12 +725,12 @@ func (m *metadataStoreIndex) getContact(pk crypto.PubKey) (*AccountContact, erro
 
 	bytes, err := pk.Raw()
 	if err != nil {
-		return nil, errcode.ErrSerialization.Wrap(err)
+		return nil, errcode.ErrCode_ErrSerialization.Wrap(err)
 	}
 
 	contact, ok := m.contacts[string(bytes)]
 	if !ok {
-		return nil, errcode.ErrMissingMapKey.Wrap(err)
+		return nil, errcode.ErrCode_ErrMissingMapKey.Wrap(err)
 	}
 
 	return contact, nil
@@ -738,7 +738,7 @@ func (m *metadataStoreIndex) getContact(pk crypto.PubKey) (*AccountContact, erro
 
 func (m *metadataStoreIndex) postHandlerSentAliases() error {
 	for _, evt := range m.eventsContactAddAliasKey {
-		memberPublicKey, err := m.unsafeGetMemberByDevice(evt.DevicePK)
+		memberPublicKey, err := m.unsafeGetMemberByDevice(evt.DevicePk)
 		if err != nil {
 			return fmt.Errorf("couldn't get member for device")
 		}
@@ -748,11 +748,11 @@ func (m *metadataStoreIndex) postHandlerSentAliases() error {
 			continue
 		}
 
-		if l := len(evt.AliasPK); l != cryptoutil.KeySize {
-			return errcode.ErrInvalidInput.Wrap(fmt.Errorf("invalid alias key size, expected %d, got %d", cryptoutil.KeySize, l))
+		if l := len(evt.AliasPk); l != cryptoutil.KeySize {
+			return errcode.ErrCode_ErrInvalidInput.Wrap(fmt.Errorf("invalid alias key size, expected %d, got %d", cryptoutil.KeySize, l))
 		}
 
-		m.otherAliasKey = evt.AliasPK
+		m.otherAliasKey = evt.AliasPk
 	}
 
 	m.eventsContactAddAliasKey = nil
@@ -782,25 +782,25 @@ func newMetadataIndex(ctx context.Context, g *protocoltypes.Group, md secretstor
 		}
 
 		m.eventHandlers = map[protocoltypes.EventType][]func(event proto.Message) error{
-			protocoltypes.EventTypeAccountContactBlocked:                  {m.handleContactBlocked},
-			protocoltypes.EventTypeAccountContactRequestDisabled:          {m.handleContactRequestDisabled},
-			protocoltypes.EventTypeAccountContactRequestEnabled:           {m.handleContactRequestEnabled},
-			protocoltypes.EventTypeAccountContactRequestIncomingAccepted:  {m.handleContactRequestIncomingAccepted},
-			protocoltypes.EventTypeAccountContactRequestIncomingDiscarded: {m.handleContactRequestIncomingDiscarded},
-			protocoltypes.EventTypeAccountContactRequestIncomingReceived:  {m.handleContactRequestIncomingReceived},
-			protocoltypes.EventTypeAccountContactRequestOutgoingEnqueued:  {m.handleContactRequestOutgoingEnqueued},
-			protocoltypes.EventTypeAccountContactRequestOutgoingSent:      {m.handleContactRequestOutgoingSent},
-			protocoltypes.EventTypeAccountContactRequestReferenceReset:    {m.handleContactRequestReferenceReset},
-			protocoltypes.EventTypeAccountContactUnblocked:                {m.handleContactUnblocked},
-			protocoltypes.EventTypeAccountGroupJoined:                     {m.handleGroupJoined},
-			protocoltypes.EventTypeAccountGroupLeft:                       {m.handleGroupLeft},
-			protocoltypes.EventTypeContactAliasKeyAdded:                   {m.handleContactAliasKeyAdded},
-			protocoltypes.EventTypeGroupDeviceChainKeyAdded:               {m.handleGroupDeviceChainKeyAdded},
-			protocoltypes.EventTypeGroupMemberDeviceAdded:                 {m.handleGroupMemberDeviceAdded},
-			protocoltypes.EventTypeMultiMemberGroupAdminRoleGranted:       {m.handleMultiMemberGrantAdminRole},
-			protocoltypes.EventTypeMultiMemberGroupInitialMemberAnnounced: {m.handleMultiMemberInitialMember},
-			protocoltypes.EventTypeGroupMetadataPayloadSent:               {m.handleGroupMetadataPayloadSent},
-			protocoltypes.EventTypeAccountVerifiedCredentialRegistered:    {m.handleAccountVerifiedCredentialRegistered},
+			protocoltypes.EventType_EventTypeAccountContactBlocked:                  {m.handleContactBlocked},
+			protocoltypes.EventType_EventTypeAccountContactRequestDisabled:          {m.handleContactRequestDisabled},
+			protocoltypes.EventType_EventTypeAccountContactRequestEnabled:           {m.handleContactRequestEnabled},
+			protocoltypes.EventType_EventTypeAccountContactRequestIncomingAccepted:  {m.handleContactRequestIncomingAccepted},
+			protocoltypes.EventType_EventTypeAccountContactRequestIncomingDiscarded: {m.handleContactRequestIncomingDiscarded},
+			protocoltypes.EventType_EventTypeAccountContactRequestIncomingReceived:  {m.handleContactRequestIncomingReceived},
+			protocoltypes.EventType_EventTypeAccountContactRequestOutgoingEnqueued:  {m.handleContactRequestOutgoingEnqueued},
+			protocoltypes.EventType_EventTypeAccountContactRequestOutgoingSent:      {m.handleContactRequestOutgoingSent},
+			protocoltypes.EventType_EventTypeAccountContactRequestReferenceReset:    {m.handleContactRequestReferenceReset},
+			protocoltypes.EventType_EventTypeAccountContactUnblocked:                {m.handleContactUnblocked},
+			protocoltypes.EventType_EventTypeAccountGroupJoined:                     {m.handleGroupJoined},
+			protocoltypes.EventType_EventTypeAccountGroupLeft:                       {m.handleGroupLeft},
+			protocoltypes.EventType_EventTypeContactAliasKeyAdded:                   {m.handleContactAliasKeyAdded},
+			protocoltypes.EventType_EventTypeGroupDeviceChainKeyAdded:               {m.handleGroupDeviceChainKeyAdded},
+			protocoltypes.EventType_EventTypeGroupMemberDeviceAdded:                 {m.handleGroupMemberDeviceAdded},
+			protocoltypes.EventType_EventTypeMultiMemberGroupAdminRoleGranted:       {m.handleMultiMemberGrantAdminRole},
+			protocoltypes.EventType_EventTypeMultiMemberGroupInitialMemberAnnounced: {m.handleMultiMemberInitialMember},
+			protocoltypes.EventType_EventTypeGroupMetadataPayloadSent:               {m.handleGroupMetadataPayloadSent},
+			protocoltypes.EventType_EventTypeAccountVerifiedCredentialRegistered:    {m.handleAccountVerifiedCredentialRegistered},
 		}
 
 		m.postIndexActions = []func() error{

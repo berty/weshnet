@@ -7,6 +7,7 @@ import (
 
 	"github.com/libp2p/go-libp2p/core/crypto"
 	"github.com/stretchr/testify/require"
+	"google.golang.org/protobuf/proto"
 
 	"berty.tech/weshnet/pkg/protocoltypes"
 )
@@ -30,12 +31,12 @@ func inviteAllPeersToGroup(ctx context.Context, t *testing.T, peers []*mockedPee
 
 			for e := range sub.Out() {
 				evt := e.(protocoltypes.GroupMetadataEvent)
-				if evt.Metadata.EventType != protocoltypes.EventTypeGroupMemberDeviceAdded {
+				if evt.Metadata.EventType != protocoltypes.EventType_EventTypeGroupMemberDeviceAdded {
 					continue
 				}
 
 				memdev := &protocoltypes.GroupMemberDeviceAdded{}
-				if err := memdev.Unmarshal(evt.Event); err != nil {
+				if err := proto.Unmarshal(evt.Event, memdev); err != nil {
 					errChan <- err
 					return
 				}
@@ -94,7 +95,7 @@ func waitForBertyEventType(ctx context.Context, t *testing.T, ms *MetadataStore,
 				continue
 			}
 
-			eID := string(evt.EventContext.ID)
+			eID := string(evt.EventContext.Id)
 
 			if _, ok := handledEvents[eID]; ok {
 				continue
@@ -103,7 +104,7 @@ func waitForBertyEventType(ctx context.Context, t *testing.T, ms *MetadataStore,
 			handledEvents[eID] = struct{}{}
 
 			e := &protocoltypes.GroupDeviceChainKeyAdded{}
-			if err := e.Unmarshal(evt.Event); err != nil {
+			if err := proto.Unmarshal(evt.Event, e); err != nil {
 				t.Fatalf(" err: %+v\n", err.Error())
 			}
 

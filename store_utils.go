@@ -38,13 +38,13 @@ func getEntriesInRange(entries []ipliface.IPFSLogEntry, since, until []byte) ([]
 	}
 
 	if !startFound {
-		return nil, errcode.ErrInvalidRange.Wrap(errors.New("since ID not found"))
+		return nil, errcode.ErrCode_ErrInvalidRange.Wrap(errors.New("since ID not found"))
 	}
 	if !stopFound {
-		return nil, errcode.ErrInvalidRange.Wrap(errors.New("until ID not found"))
+		return nil, errcode.ErrCode_ErrInvalidRange.Wrap(errors.New("until ID not found"))
 	}
 	if startIndex > stopIndex && len(entries) > 0 {
-		return nil, errcode.ErrInvalidRange.Wrap(errors.New("since ID is after until ID"))
+		return nil, errcode.ErrCode_ErrInvalidRange.Wrap(errors.New("since ID is after until ID"))
 	}
 
 	return entries[startIndex : stopIndex+1], nil
