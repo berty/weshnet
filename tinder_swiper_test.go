@@ -6,7 +6,7 @@ import (
 	"testing"
 	"time"
 
-	p2pmocknet "github.com/berty/go-libp2p-mock"
+	mocknet "github.com/libp2p/go-libp2p/p2p/net/mock"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
@@ -48,7 +48,7 @@ func TestAnnounceWatchForPeriod(t *testing.T) {
 			ctx, cancel := context.WithCancel(context.Background())
 			defer cancel()
 
-			mn := p2pmocknet.New()
+			mn := mocknet.New()
 			defer mn.Close()
 
 			opts := &ipfsutil.TestingAPIOpts{

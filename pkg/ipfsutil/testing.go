@@ -6,7 +6,6 @@ import (
 	"encoding/base64"
 	"testing"
 
-	p2p_mocknet "github.com/berty/go-libp2p-mock"
 	rendezvous "github.com/berty/go-libp2p-rendezvous"
 	p2p_rpdb "github.com/berty/go-libp2p-rendezvous/db/sqlcipher"
 	ds "github.com/ipfs/go-datastore"
@@ -23,6 +22,7 @@ import (
 	p2p_peer "github.com/libp2p/go-libp2p/core/peer"
 	"github.com/libp2p/go-libp2p/core/peerstore"
 	"github.com/libp2p/go-libp2p/core/protocol"
+	mocknet "github.com/libp2p/go-libp2p/p2p/net/mock"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap"
 
@@ -36,7 +36,7 @@ type CoreAPIMock interface {
 
 	PubSub() *pubsub.PubSub
 	Tinder() *tinder.Service
-	MockNetwork() p2p_mocknet.Mocknet
+	MockNetwork() mocknet.Mocknet
 	MockNode() *ipfs_core.IpfsNode
 	Close()
 }
@@ -108,7 +108,7 @@ func TestingRepo(t testing.TB, ctx context.Context, datastore ds.Datastore) ipfs
 
 type TestingAPIOpts struct {
 	Logger          *zap.Logger
-	Mocknet         p2p_mocknet.Mocknet
+	Mocknet         mocknet.Mocknet
 	Datastore       ds.Batching
 	DiscoveryServer *tinder.MockDriverServer
 }
@@ -185,7 +185,7 @@ func TestingCoreAPIUsingMockNet(ctx context.Context, t testing.TB, opts *Testing
 func TestingCoreAPI(ctx context.Context, t testing.TB) CoreAPIMock {
 	t.Helper()
 
-	m := p2p_mocknet.New()
+	m := mocknet.New()
 	t.Cleanup(func() { m.Close() })
 
 	api := TestingCoreAPIUsingMockNet(ctx, t, &TestingAPIOpts{
@@ -214,7 +214,7 @@ type coreAPIMock struct {
 	coreapi ExtendedCoreAPI
 
 	pubsub  *pubsub.PubSub
-	mocknet p2p_mocknet.Mocknet
+	mocknet mocknet.Mocknet
 	node    *ipfs_core.IpfsNode
 	tinder  *tinder.Service
 }
@@ -239,7 +239,7 @@ func (m *coreAPIMock) API() ExtendedCoreAPI {
 	return m.coreapi
 }
 
-func (m *coreAPIMock) MockNetwork() p2p_mocknet.Mocknet {
+func (m *coreAPIMock) MockNetwork() mocknet.Mocknet {
 	return m.mocknet
 }
 
@@ -259,8 +259,8 @@ func (m *coreAPIMock) Close() {
 	m.node.Close()
 }
 
-func MockHostOption(mn p2p_mocknet.Mocknet) ipfs_p2p.HostOption {
+func MockHostOption(mn mocknet.Mocknet) ipfs_p2p.HostOption {
 	return func(id p2p_peer.ID, ps peerstore.Peerstore, _ ...libp2p.Option) (host.Host, error) {
-		return mn.AddPeerWithPeerstore(id, ps)
+		return ipfs_p2p.DefaultHostOption(id, ps)
 	}
 }

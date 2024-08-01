@@ -6,7 +6,7 @@ import (
 	"testing"
 	"time"
 
-	libp2p_mocknet "github.com/berty/go-libp2p-mock"
+	mocknet "github.com/libp2p/go-libp2p/p2p/net/mock"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/protobuf/proto"
@@ -24,7 +24,7 @@ func TestContactRequestFlow(t *testing.T) {
 	defer cleanup()
 
 	opts := TestingOpts{
-		Mocknet: libp2p_mocknet.New(),
+		Mocknet: mocknet.New(),
 		Logger:  logger,
 	}
 
@@ -150,7 +150,7 @@ func TestContactRequestFlowWithoutIncoming(t *testing.T) {
 	logger, cleanup := testutil.Logger(t)
 	defer cleanup()
 
-	mn := libp2p_mocknet.New()
+	mn := mocknet.New()
 	defer mn.Close()
 
 	opts := TestingOpts{

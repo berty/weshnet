@@ -129,7 +129,7 @@ func (s *service) DebugInspectGroupStore(req *protocoltypes.DebugInspectGroupSto
 					p := proto.Clone(typeData.Message)
 					if err := proto.Unmarshal(metaEvent.Event, p); err == nil {
 						if msg, ok := p.(eventDeviceSigned); ok {
-							devicePK = msg.GetDevicePK()
+							devicePK = msg.GetDevicePk()
 						}
 					}
 				} else {

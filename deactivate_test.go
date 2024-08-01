@@ -5,9 +5,9 @@ import (
 	"testing"
 	"time"
 
-	libp2p_mocknet "github.com/berty/go-libp2p-mock"
 	ds "github.com/ipfs/go-datastore"
 	dsync "github.com/ipfs/go-datastore/sync"
+	mocknet "github.com/libp2p/go-libp2p/p2p/net/mock"
 	"github.com/stretchr/testify/require"
 
 	"berty.tech/weshnet"
@@ -25,7 +25,7 @@ func TestReactivateAccountGroup(t *testing.T) {
 	logger, cleanup := testutil.Logger(t)
 	defer cleanup()
 
-	mn := libp2p_mocknet.New()
+	mn := mocknet.New()
 	defer mn.Close()
 
 	msrv := tinder.NewMockDriverServer()
@@ -98,7 +98,7 @@ func TestRaceReactivateAccountGroup(t *testing.T) {
 	logger, cleanup := testutil.Logger(t)
 	defer cleanup()
 
-	mn := libp2p_mocknet.New()
+	mn := mocknet.New()
 	defer mn.Close()
 
 	msrv := tinder.NewMockDriverServer()
@@ -169,7 +169,7 @@ func TestReactivateContactGroup(t *testing.T) {
 	defer cleanup()
 
 	opts := weshnet.TestingOpts{
-		Mocknet:     libp2p_mocknet.New(),
+		Mocknet:     mocknet.New(),
 		Logger:      logger,
 		ConnectFunc: weshnet.ConnectAll,
 	}
@@ -211,7 +211,7 @@ func TestRaceReactivateContactGroup(t *testing.T) {
 	defer cleanup()
 
 	opts := weshnet.TestingOpts{
-		Mocknet:     libp2p_mocknet.New(),
+		Mocknet:     mocknet.New(),
 		Logger:      logger,
 		ConnectFunc: weshnet.ConnectAll,
 	}
@@ -265,7 +265,7 @@ func TestReactivateMultimemberGroup(t *testing.T) {
 	defer cleanup()
 
 	opts := weshnet.TestingOpts{
-		Mocknet:     libp2p_mocknet.New(),
+		Mocknet:     mocknet.New(),
 		Logger:      logger,
 		ConnectFunc: weshnet.ConnectAll,
 	}

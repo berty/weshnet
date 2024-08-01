@@ -12,7 +12,7 @@ import (
 	"testing"
 	"time"
 
-	libp2p_mocknet "github.com/berty/go-libp2p-mock"
+	mocknet "github.com/libp2p/go-libp2p/p2p/net/mock"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/goleak"
@@ -395,7 +395,7 @@ func testingScenario(t *testing.T, tcs []testCase, tf testFunc) {
 			logger, cleanup := testutil.Logger(t)
 			defer cleanup()
 
-			mn := libp2p_mocknet.New()
+			mn := mocknet.New()
 			defer mn.Close()
 
 			opts := weshnet.TestingOpts{
@@ -444,7 +444,7 @@ func testingScenarioNonMocked(t *testing.T, tcs []testCase, tf testFunc) {
 			logger, cleanup := testutil.Logger(t)
 			defer cleanup()
 
-			mn := libp2p_mocknet.New()
+			mn := mocknet.New()
 			defer mn.Close()
 
 			opts := weshnet.TestingOpts{

@@ -11,13 +11,11 @@ require (
 	filippo.io/edwards25519 v1.0.0
 	github.com/aead/ecdh v0.2.0
 	github.com/berty/emitter-go v0.0.0-20221031144724-5dae963c3622
-	github.com/berty/go-libp2p-mock v1.0.2-0.20240719150538-d7088679a8a7
 	github.com/berty/go-libp2p-rendezvous v0.5.1-0.20240719154654-269ed907d248
 	github.com/buicongtan1997/protoc-gen-swagger-config v0.0.0-20200705084907-1342b78c1a7e
 	github.com/daixiang0/gci v0.8.2
 	github.com/dgraph-io/badger/v2 v2.2007.3
 	github.com/gofrs/uuid v4.3.1+incompatible
-	github.com/gogo/protobuf v1.3.2
 	github.com/golang/protobuf v1.5.4
 	github.com/grpc-ecosystem/go-grpc-middleware v1.3.0
 	github.com/grpc-ecosystem/grpc-gateway v1.16.0
@@ -119,6 +117,7 @@ require (
 	github.com/go-logr/stdr v1.2.2 // indirect
 	github.com/go-task/slim-sprig/v3 v3.0.0 // indirect
 	github.com/godbus/dbus/v5 v5.1.0 // indirect
+	github.com/gogo/protobuf v1.3.2 // indirect
 	github.com/golang/glog v1.2.0 // indirect
 	github.com/golang/groupcache v0.0.0-20210331224755-41bb18bfe9da // indirect
 	github.com/golang/snappy v0.0.4 // indirect

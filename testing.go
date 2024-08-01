@@ -12,7 +12,6 @@ import (
 	"testing"
 	"time"
 
-	libp2p_mocknet "github.com/berty/go-libp2p-mock"
 	grpc_middleware "github.com/grpc-ecosystem/go-grpc-middleware"
 	grpc_zap "github.com/grpc-ecosystem/go-grpc-middleware/logging/zap"
 	grpc_ctxtags "github.com/grpc-ecosystem/go-grpc-middleware/tags"
@@ -20,6 +19,7 @@ import (
 	ds_sync "github.com/ipfs/go-datastore/sync"
 	"github.com/libp2p/go-libp2p/core/crypto"
 	"github.com/libp2p/go-libp2p/core/peer"
+	mocknet "github.com/libp2p/go-libp2p/p2p/net/mock"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap"
@@ -97,7 +97,7 @@ type TestingProtocol struct {
 
 type TestingOpts struct {
 	Logger          *zap.Logger
-	Mocknet         libp2p_mocknet.Mocknet
+	Mocknet         mocknet.Mocknet
 	DiscoveryServer *tinder.MockDriverServer
 	SecretStore     secretstore.SecretStore
 	CoreAPIMock     ipfsutil.CoreAPIMock
@@ -211,7 +211,7 @@ func (opts *TestingOpts) applyDefaults(ctx context.Context, t testing.TB) {
 	}
 
 	if opts.Mocknet == nil {
-		opts.Mocknet = libp2p_mocknet.New()
+		opts.Mocknet = mocknet.New()
 		t.Cleanup(func() { opts.Mocknet.Close() })
 	}
 
@@ -312,10 +312,10 @@ func TestingClient(ctx context.Context, t testing.TB, svc Service, clientOpts []
 }
 
 // Connect Peers Helper
-type ConnectTestingProtocolFunc func(testing.TB, libp2p_mocknet.Mocknet)
+type ConnectTestingProtocolFunc func(testing.TB, mocknet.Mocknet)
 
 // ConnectAll peers between themselves
-func ConnectAll(t testing.TB, m libp2p_mocknet.Mocknet) {
+func ConnectAll(t testing.TB, m mocknet.Mocknet) {
 	t.Helper()
 
 	err := m.LinkAll()
@@ -330,7 +330,7 @@ func ConnectAll(t testing.TB, m libp2p_mocknet.Mocknet) {
 // │ 1 │───▶│ 2 │───▶│ 3 │─ ─ ─ ─ ▶│ x │
 // └───┘    └───┘    └───┘         └───┘
 
-func ConnectInLine(t testing.TB, m libp2p_mocknet.Mocknet) {
+func ConnectInLine(t testing.TB, m mocknet.Mocknet) {
 	t.Helper()
 
 	peers := m.Peers()
@@ -358,7 +358,7 @@ func CreatePeersWithGroupTest(ctx context.Context, t testing.TB, pathBase string
 		t.Fatal(err)
 	}
 
-	mn := libp2p_mocknet.New()
+	mn := mocknet.New()
 	t.Cleanup(func() { mn.Close() })
 
 	ipfsopts := ipfsutil.TestingAPIOpts{
@@ -442,7 +442,7 @@ func CreatePeersWithGroupTest(ctx context.Context, t testing.TB, pathBase string
 	}
 }
 
-func connectPeers(ctx context.Context, t testing.TB, mn libp2p_mocknet.Mocknet) {
+func connectPeers(ctx context.Context, t testing.TB, mn mocknet.Mocknet) {
 	t.Helper()
 
 	err := mn.LinkAll()

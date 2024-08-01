@@ -30,7 +30,7 @@ func sigCheckerGroupSigned(g *protocoltypes.Group, metadata *protocoltypes.Group
 
 type eventDeviceSigned interface {
 	proto.Message
-	GetDevicePK() []byte
+	GetDevicePk() []byte
 }
 
 func sigCheckerDeviceSigned(g *protocoltypes.Group, metadata *protocoltypes.GroupMetadata, message proto.Message) error {
@@ -39,7 +39,7 @@ func sigCheckerDeviceSigned(g *protocoltypes.Group, metadata *protocoltypes.Grou
 		return errcode.ErrCode_ErrDeserialization
 	}
 
-	devPK, err := crypto.UnmarshalEd25519PublicKey(msg.GetDevicePK())
+	devPK, err := crypto.UnmarshalEd25519PublicKey(msg.GetDevicePk())
 	if err != nil {
 		return errcode.ErrCode_ErrDeserialization.Wrap(err)
 	}

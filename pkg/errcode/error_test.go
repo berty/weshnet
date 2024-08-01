@@ -102,7 +102,6 @@ func TestStatus(t *testing.T) {
 					assert.NotNil(t, st)
 					assert.Error(t, stErr)
 				}
-				fmt.Println("remi: ", stErr)
 				assert.Equal(t, st.Code().String(), test.expectedGrpcCode.String())
 				assert.Equal(t, Code(test.input), Code(stErr))
 				assert.Equal(t, LastCode(test.input), LastCode(stErr))
