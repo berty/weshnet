@@ -60,7 +60,13 @@ func Test_sealPushMessage_OutOfStoreReceive(t *testing.T) {
 	outOfStoreMessage, group, clearPayload, alreadyDecrypted, err := gc.SecretStore().OpenOutOfStoreMessage(ctx, oosMsgEnvBytes)
 	require.NoError(t, err)
 
-	require.Equal(t, g, group)
+	require.Equal(t, g.PublicKey, group.PublicKey)
+	require.Equal(t, g.Secret, group.Secret)
+	require.Equal(t, g.SecretSig, group.SecretSig)
+	require.Equal(t, g.GroupType, group.GroupType)
+	require.Equal(t, g.SignPub, group.SignPub)
+	require.Equal(t, g.LinkKey, group.LinkKey)
+	require.Equal(t, g.LinkKeySig, group.LinkKeySig)
 	require.Equal(t, []byte("test payload"), clearPayload)
 	require.False(t, alreadyDecrypted)
 
@@ -138,6 +144,7 @@ func createVirtualOtherPeerSecrets(t testing.TB, ctx context.Context, gc *GroupC
 
 	// Manually adding another member to the group
 	otherMD, err := secretStore.GetOwnMemberDeviceForGroup(gc.Group())
+	require.NoError(t, err)
 	_, err = MetadataStoreAddDeviceToGroup(ctx, gc.MetadataStore(), gc.Group(), otherMD)
 	require.NoError(t, err)
 
@@ -145,6 +152,7 @@ func createVirtualOtherPeerSecrets(t testing.TB, ctx context.Context, gc *GroupC
 	require.NoError(t, err)
 
 	ds, err := secretStore.GetShareableChainKey(ctx, gc.Group(), memberDevice.Member())
+	require.NoError(t, err)
 
 	_, err = MetadataStoreSendSecret(ctx, gc.MetadataStore(), gc.Group(), otherMD, memberDevice.Member(), ds)
 	require.NoError(t, err)
