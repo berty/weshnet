@@ -48,7 +48,7 @@ func (this *fullWriter) WriteMsg(msg proto.Message) (err error) {
 	if m, ok := msg.(marshaler); ok {
 		n, ok := getSize(m)
 		if !ok {
-			data, err = proto.Marshal(msg)
+			_, err = proto.Marshal(msg)
 			if err != nil {
 				return err
 			}

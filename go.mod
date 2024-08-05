@@ -11,7 +11,7 @@ require (
 	filippo.io/edwards25519 v1.0.0
 	github.com/aead/ecdh v0.2.0
 	github.com/berty/emitter-go v0.0.0-20221031144724-5dae963c3622
-	github.com/berty/go-libp2p-rendezvous v0.5.1-0.20240719154654-269ed907d248
+	github.com/berty/go-libp2p-rendezvous v0.5.1
 	github.com/buicongtan1997/protoc-gen-swagger-config v0.0.0-20200705084907-1342b78c1a7e
 	github.com/daixiang0/gci v0.8.2
 	github.com/dgraph-io/badger/v2 v2.2007.3
@@ -312,5 +312,3 @@ require (
 	moul.io/banner v1.0.1 // indirect
 	moul.io/motd v1.0.0 // indirect
 )
-
-replace github.com/berty/go-libp2p-rendezvous => /Users/remi/go-libp2p-rendezvous
