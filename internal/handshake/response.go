@@ -3,7 +3,6 @@ package handshake
 import (
 	"context"
 	"errors"
-	"io"
 
 	p2pcrypto "github.com/libp2p/go-libp2p/core/crypto"
 	"go.uber.org/zap"
@@ -168,7 +167,7 @@ func (hc *handshakeContext) receiveRequesterAcknowledge() error {
 	var acknowledge RequesterAcknowledgePayload
 
 	// Receive Acknowledge from requester
-	if err := hc.reader.ReadMsg(&acknowledge); err != nil && err != io.EOF {
+	if err := hc.reader.ReadMsg(&acknowledge); err != nil {
 		return errcode.ErrCode_ErrStreamRead.Wrap(err)
 	}
 
