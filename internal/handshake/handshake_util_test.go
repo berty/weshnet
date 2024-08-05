@@ -14,6 +14,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"berty.tech/weshnet/pkg/ipfsutil"
+	"berty.tech/weshnet/pkg/protoio"
 	"berty.tech/weshnet/pkg/tinder"
 )
 
@@ -93,8 +94,8 @@ func (mh *mockedHandshake) close(t *testing.T) {
 
 func newTestHandshakeContext(stream p2pnetwork.Stream, ownAccountID p2pcrypto.PrivKey, peerAccountID p2pcrypto.PubKey) *handshakeContext {
 	return &handshakeContext{
-		reader:          stream,
-		writer:          stream,
+		reader:          protoio.NewDelimitedReader(stream, 2048),
+		writer:          protoio.NewDelimitedWriter(stream),
 		ownAccountID:    ownAccountID,
 		peerAccountID:   peerAccountID,
 		sharedEphemeral: &[32]byte{},

@@ -6,7 +6,6 @@ import (
 	"encoding/base64"
 	"encoding/hex"
 	"fmt"
-	"io"
 	"strings"
 	"sync"
 	"time"
@@ -14,7 +13,6 @@ import (
 	ipfscid "github.com/ipfs/go-cid"
 	"github.com/libp2p/go-libp2p/core/crypto"
 	"github.com/libp2p/go-libp2p/core/network"
-	inet "github.com/libp2p/go-libp2p/core/network"
 	peer "github.com/libp2p/go-libp2p/core/peer"
 	"github.com/libp2p/go-libp2p/p2p/host/eventbus"
 	"go.uber.org/zap"
@@ -25,6 +23,7 @@ import (
 	"berty.tech/weshnet/pkg/ipfsutil"
 	"berty.tech/weshnet/pkg/logutil"
 	"berty.tech/weshnet/pkg/protocoltypes"
+	"berty.tech/weshnet/pkg/protoio"
 	"berty.tech/weshnet/pkg/tyber"
 )
 
@@ -450,20 +449,19 @@ func (c *contactRequestsManager) SendContactRequest(ctx context.Context, to *pro
 		}
 	}()
 
+	reader := protoio.NewDelimitedReader(stream, 2048)
+	writer := protoio.NewDelimitedWriter(stream)
+
 	c.logger.Debug("performing handshake")
 
 	tyber.LogStep(ctx, c.logger, "performing handshake")
-	if err := handshake.RequestUsingReaderWriter(ctx, c.logger, stream, stream, c.accountPrivateKey, otherPK); err != nil {
+	if err := handshake.RequestUsingReaderWriter(ctx, c.logger, reader, writer, c.accountPrivateKey, otherPK); err != nil {
 		return fmt.Errorf("an error occurred during handshake: %w", err)
 	}
 
 	tyber.LogStep(ctx, c.logger, "sending own contact")
-	ownBytes, err := proto.Marshal(own)
-	if err != nil {
-		return err
-	}
 	// send own contact information
-	if _, err := stream.Write(ownBytes); err != nil {
+	if err := writer.WriteMsg(own); err != nil {
 		return fmt.Errorf("an error occurred while sending own contact information: %w", err)
 	}
 
@@ -477,9 +475,12 @@ func (c *contactRequestsManager) SendContactRequest(ctx context.Context, to *pro
 }
 
 func (c *contactRequestsManager) handleIncomingRequest(ctx context.Context, stream network.Stream) (err error) {
+	reader := protoio.NewDelimitedReader(stream, 2048)
+	writer := protoio.NewDelimitedWriter(stream)
+
 	tyber.LogStep(ctx, c.logger, "responding to handshake")
 
-	otherPK, err := handshake.ResponseUsingReaderWriter(ctx, c.logger, stream, stream, c.accountPrivateKey)
+	otherPK, err := handshake.ResponseUsingReaderWriter(ctx, c.logger, reader, writer, c.accountPrivateKey)
 	if err != nil {
 		return fmt.Errorf("handshake failed: %w", err)
 	}
@@ -493,15 +494,9 @@ func (c *contactRequestsManager) handleIncomingRequest(ctx context.Context, stre
 
 	tyber.LogStep(ctx, c.logger, "checking remote contact information")
 
-	buffer := make([]byte, inet.MessageSizeMax)
 	// read remote contact information
-	n, err := stream.Read(buffer)
-	if err != nil && err != io.EOF {
+	if err := reader.ReadMsg(contact); err != nil {
 		return fmt.Errorf("failed to read contact information: %w", err)
-	}
-
-	if err := proto.Unmarshal(buffer[:n], contact); err != nil {
-		return fmt.Errorf("failed to unmarshal contact information: %w", err)
 	}
 
 	// validate contact pk

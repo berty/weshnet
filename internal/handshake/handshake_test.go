@@ -17,17 +17,24 @@ import (
 	"berty.tech/weshnet/pkg/cryptoutil"
 	"berty.tech/weshnet/pkg/errcode"
 	"berty.tech/weshnet/pkg/ipfsutil"
+	"berty.tech/weshnet/pkg/protoio"
 	"berty.tech/weshnet/pkg/testutil"
 )
 
 // Request init a handshake with the responder
 func Request(stream p2pnetwork.Stream, ownAccountID p2pcrypto.PrivKey, peerAccountID p2pcrypto.PubKey) error {
-	return RequestUsingReaderWriter(context.TODO(), zap.NewNop(), stream, stream, ownAccountID, peerAccountID)
+	reader := protoio.NewDelimitedReader(stream, 2048)
+	writer := protoio.NewDelimitedWriter(stream)
+
+	return RequestUsingReaderWriter(context.TODO(), zap.NewNop(), reader, writer, ownAccountID, peerAccountID)
 }
 
 // Response handle the handshake inited by the requester
 func Response(stream p2pnetwork.Stream, ownAccountID p2pcrypto.PrivKey) (p2pcrypto.PubKey, error) {
-	return ResponseUsingReaderWriter(context.TODO(), zap.NewNop(), stream, stream, ownAccountID)
+	reader := protoio.NewDelimitedReader(stream, 2048)
+	writer := protoio.NewDelimitedWriter(stream)
+
+	return ResponseUsingReaderWriter(context.TODO(), zap.NewNop(), reader, writer, ownAccountID)
 }
 
 func TestValidHandshake(t *testing.T) {
@@ -233,10 +240,7 @@ func TestInvalidRequesterAuthenticate(t *testing.T) {
 				boxKey,
 			)
 
-			boxBytes, err := proto.Marshal(&BoxEnvelope{Box: boxContent})
-			require.NoError(t, err, "box envelope marshaling failed")
-
-			hc.writer.Write(boxBytes)
+			hc.writer.WriteMsg(&BoxEnvelope{Box: boxContent})
 
 			ipfsutil.FullClose(stream)
 		}
@@ -304,10 +308,7 @@ func TestInvalidRequesterAuthenticate(t *testing.T) {
 				boxKey,
 			)
 
-			boxBytes, err := proto.Marshal(&BoxEnvelope{Box: boxContent})
-			require.NoError(t, err, "box envelope marshaling failed")
-
-			hc.writer.Write(boxBytes)
+			hc.writer.WriteMsg(&BoxEnvelope{Box: boxContent})
 
 			ipfsutil.FullClose(stream)
 		}
@@ -375,10 +376,7 @@ func TestInvalidRequesterAuthenticate(t *testing.T) {
 				boxKey,
 			)
 
-			boxBytes, err := proto.Marshal(&BoxEnvelope{Box: boxContent})
-			require.NoError(t, err, "box envelope marshaling failed")
-
-			hc.writer.Write(boxBytes)
+			hc.writer.WriteMsg(&BoxEnvelope{Box: boxContent})
 
 			ipfsutil.FullClose(stream)
 		}
@@ -443,10 +441,7 @@ func TestInvalidRequesterAuthenticate(t *testing.T) {
 				boxKey,
 			)
 
-			boxBytes, err := proto.Marshal(&BoxEnvelope{Box: boxContent})
-			require.NoError(t, err, "box envelope marshaling failed")
-
-			hc.writer.Write(boxBytes)
+			hc.writer.WriteMsg(&BoxEnvelope{Box: boxContent})
 
 			ipfsutil.FullClose(stream)
 		}
@@ -502,10 +497,7 @@ func TestInvalidRequesterAuthenticate(t *testing.T) {
 				boxKey,
 			)
 
-			boxBytes, err := proto.Marshal(&BoxEnvelope{Box: boxContent})
-			require.NoError(t, err, "box envelope marshaling failed")
-
-			hc.writer.Write(boxBytes)
+			hc.writer.WriteMsg(&BoxEnvelope{Box: boxContent})
 
 			ipfsutil.FullClose(stream)
 		}
@@ -570,10 +562,7 @@ func TestInvalidRequesterAuthenticate(t *testing.T) {
 				wrongBoxKey,
 			)
 
-			boxBytes, err := proto.Marshal(&BoxEnvelope{Box: boxContent})
-			require.NoError(t, err, "box envelope marshaling failed")
-
-			hc.writer.Write(boxBytes)
+			hc.writer.WriteMsg(&BoxEnvelope{Box: boxContent})
 
 			ipfsutil.FullClose(stream)
 		}
@@ -641,10 +630,7 @@ func TestInvalidRequesterAuthenticate(t *testing.T) {
 				boxKey,
 			)
 
-			boxBytes, err := proto.Marshal(&BoxEnvelope{Box: boxContent})
-			require.NoError(t, err, "box envelope marshaling failed")
-
-			hc.writer.Write(boxBytes)
+			hc.writer.WriteMsg(&BoxEnvelope{Box: boxContent})
 
 			ipfsutil.FullClose(stream)
 		}
@@ -688,10 +674,7 @@ func TestInvalidRequesterAuthenticate(t *testing.T) {
 			require.NoError(t, err, "receive ResponderHello failed")
 
 			// Send invalid box content
-			boxBytes, err := proto.Marshal(&BoxEnvelope{Box: []byte("WrongBoxContent")})
-			require.NoError(t, err, "box envelope marshaling failed")
-
-			hc.writer.Write(boxBytes)
+			hc.writer.WriteMsg(&BoxEnvelope{Box: []byte("WrongBoxContent")})
 
 			ipfsutil.FullClose(stream)
 		}
@@ -822,10 +805,7 @@ func TestInvalidResponderAccept(t *testing.T) {
 				boxKey,
 			)
 
-			boxBytes, err := proto.Marshal(&BoxEnvelope{Box: boxContent})
-			require.NoError(t, err, "box envelope marshaling failed")
-
-			hc.writer.Write(boxBytes)
+			hc.writer.WriteMsg(&BoxEnvelope{Box: boxContent})
 
 			ipfsutil.FullClose(stream)
 		}
@@ -891,10 +871,7 @@ func TestInvalidResponderAccept(t *testing.T) {
 				boxKey,
 			)
 
-			boxBytes, err := proto.Marshal(&BoxEnvelope{Box: boxContent})
-			require.NoError(t, err, "box envelope marshaling failed")
-
-			hc.writer.Write(boxBytes)
+			hc.writer.WriteMsg(&BoxEnvelope{Box: boxContent})
 
 			ipfsutil.FullClose(stream)
 		}
@@ -954,10 +931,7 @@ func TestInvalidResponderAccept(t *testing.T) {
 				boxKey,
 			)
 
-			boxBytes, err := proto.Marshal(&BoxEnvelope{Box: boxContent})
-			require.NoError(t, err, "box envelope marshaling failed")
-
-			hc.writer.Write(boxBytes)
+			hc.writer.WriteMsg(&BoxEnvelope{Box: boxContent})
 
 			ipfsutil.FullClose(stream)
 		}
@@ -1023,10 +997,7 @@ func TestInvalidResponderAccept(t *testing.T) {
 				wrongBoxKey,
 			)
 
-			boxBytes, err := proto.Marshal(&BoxEnvelope{Box: boxContent})
-			require.NoError(t, err, "box envelope marshaling failed")
-
-			hc.writer.Write(boxBytes)
+			hc.writer.WriteMsg(&BoxEnvelope{Box: boxContent})
 
 			ipfsutil.FullClose(stream)
 		}
@@ -1095,10 +1066,7 @@ func TestInvalidResponderAccept(t *testing.T) {
 				boxKey,
 			)
 
-			boxBytes, err := proto.Marshal(&BoxEnvelope{Box: boxContent})
-			require.NoError(t, err, "box envelope marshaling failed")
-
-			hc.writer.Write(boxBytes)
+			hc.writer.WriteMsg(&BoxEnvelope{Box: boxContent})
 
 			ipfsutil.FullClose(stream)
 		}
@@ -1146,10 +1114,7 @@ func TestInvalidResponderAccept(t *testing.T) {
 			require.NoError(t, err, "receive RequesterAuthenticate failed")
 
 			// Send wrong boxContent
-			boxBytes, err := proto.Marshal(&BoxEnvelope{Box: []byte("WrongBoxContent")})
-			require.NoError(t, err, "box envelope marshaling failed")
-
-			hc.writer.Write(boxBytes)
+			hc.writer.WriteMsg(&BoxEnvelope{Box: []byte("WrongBoxContent")})
 
 			ipfsutil.FullClose(stream)
 		}
@@ -1237,10 +1202,8 @@ func TestInvalidResponderAcceptAck(t *testing.T) {
 			require.NoError(t, err, "receive ResponderAccept failed")
 
 			acknowledge := &RequesterAcknowledgePayload{Success: false}
-			ackBytes, err := proto.Marshal(acknowledge)
-			require.NoError(t, err, "acknowledge marshaling failed")
 
-			hc.writer.Write(ackBytes)
+			hc.writer.WriteMsg(acknowledge)
 
 			ipfsutil.FullClose(stream)
 		}

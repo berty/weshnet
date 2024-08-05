@@ -5,7 +5,6 @@ import (
 	"context"
 	"encoding/hex"
 	"fmt"
-	"io"
 	"math/rand"
 	"sync"
 	"time"
@@ -20,12 +19,12 @@ import (
 	ma "github.com/multiformats/go-multiaddr"
 	manet "github.com/multiformats/go-multiaddr/net"
 	"go.uber.org/zap"
-	"google.golang.org/protobuf/proto"
 
 	nearby "berty.tech/weshnet/pkg/androidnearby"
 	ble "berty.tech/weshnet/pkg/ble-driver"
 	"berty.tech/weshnet/pkg/logutil"
 	mc "berty.tech/weshnet/pkg/multipeer-connectivity-driver"
+	"berty.tech/weshnet/pkg/protoio"
 )
 
 const (
@@ -319,16 +318,10 @@ func (ld *LocalDiscovery) sendRecordsToProximityPeers(ctx context.Context, recor
 func (ld *LocalDiscovery) handleStream(s network.Stream) {
 	defer s.Reset() // nolint:errcheck
 
+	reader := protoio.NewDelimitedReader(s, 2048)
 	records := Records{}
-	buffer := make([]byte, network.MessageSizeMax)
-	n, err := s.Read(buffer)
-	if err != nil && err != io.EOF {
+	if err := reader.ReadMsg(&records); err != nil {
 		ld.logger.Error("handleStream receive an invalid local record", zap.Error(err))
-		return
-	}
-
-	if err := proto.Unmarshal(buffer[:n], &records); err != nil {
-		ld.logger.Error("handleStream unable to unmarshal local record", zap.Error(err))
 		return
 	}
 
@@ -382,12 +375,8 @@ func (ld *LocalDiscovery) sendRecordsTo(ctx context.Context, p peer.ID, records 
 	}
 	defer s.Close()
 
-	recordsBytes, err := proto.Marshal(records)
-	if err != nil {
-		return fmt.Errorf("unable to marshal local record: %w", err)
-	}
-
-	if _, err := s.Write(recordsBytes); err != nil {
+	pbw := protoio.NewDelimitedWriter(s)
+	if err := pbw.WriteMsg(records); err != nil {
 		return fmt.Errorf("write error: %w", err)
 	}
 

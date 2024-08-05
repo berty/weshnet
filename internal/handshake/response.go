@@ -6,18 +6,18 @@ import (
 	"io"
 
 	p2pcrypto "github.com/libp2p/go-libp2p/core/crypto"
-	inet "github.com/libp2p/go-libp2p/core/network"
 	"go.uber.org/zap"
 	"golang.org/x/crypto/nacl/box"
 	"google.golang.org/protobuf/proto"
 
 	"berty.tech/weshnet/pkg/cryptoutil"
 	"berty.tech/weshnet/pkg/errcode"
+	"berty.tech/weshnet/pkg/protoio"
 	"berty.tech/weshnet/pkg/tyber"
 )
 
 // ResponseUsingReaderWriter handle the handshake inited by the requester, using provided io reader and writer
-func ResponseUsingReaderWriter(ctx context.Context, logger *zap.Logger, reader io.Reader, writer io.Writer, ownAccountID p2pcrypto.PrivKey) (p2pcrypto.PubKey, error) {
+func ResponseUsingReaderWriter(ctx context.Context, logger *zap.Logger, reader protoio.Reader, writer protoio.Writer, ownAccountID p2pcrypto.PrivKey) (p2pcrypto.PubKey, error) {
 	hc := &handshakeContext{
 		reader:          reader,
 		writer:          writer,
@@ -79,14 +79,8 @@ func (hc *handshakeContext) receiveRequesterAuthenticate() error {
 	)
 
 	// Receive BoxEnvelope from requester
-	buffer := make([]byte, inet.MessageSizeMax)
-	n, err := hc.reader.Read(buffer)
-	if err != nil && err != io.EOF {
+	if err := hc.reader.ReadMsg(&boxEnvelope); err != nil {
 		return errcode.ErrCode_ErrStreamRead.Wrap(err)
-	}
-
-	if err := proto.Unmarshal(buffer[:n], &boxEnvelope); err != nil {
-		return errcode.ErrCode_ErrSerialization.Wrap(err)
 	}
 
 	// Compute box key and open marshaled RequesterAuthenticatePayload using
@@ -161,13 +155,8 @@ func (hc *handshakeContext) sendResponderAccept() error {
 		boxKey,
 	)
 
-	boxBytes, err := proto.Marshal(&BoxEnvelope{Box: boxContent})
-	if err != nil {
-		return errcode.ErrCode_ErrSerialization.Wrap(err)
-	}
-
 	// Send BoxEnvelope to requester
-	if _, err = hc.writer.Write(boxBytes); err != nil {
+	if err = hc.writer.WriteMsg(&BoxEnvelope{Box: boxContent}); err != nil {
 		return errcode.ErrCode_ErrStreamWrite.Wrap(err)
 	}
 
@@ -179,14 +168,8 @@ func (hc *handshakeContext) receiveRequesterAcknowledge() error {
 	var acknowledge RequesterAcknowledgePayload
 
 	// Receive Acknowledge from requester
-	buffer := make([]byte, inet.MessageSizeMax)
-	n, err := hc.reader.Read(buffer)
-	if err != nil && err != io.EOF {
+	if err := hc.reader.ReadMsg(&acknowledge); err != nil && err != io.EOF {
 		return errcode.ErrCode_ErrStreamRead.Wrap(err)
-	}
-
-	if err := proto.Unmarshal(buffer[:n], &acknowledge); err != nil {
-		return errcode.ErrCode_ErrDeserialization.Wrap(err)
 	}
 
 	if !acknowledge.Success {

@@ -3,21 +3,20 @@ package handshake
 import (
 	"context"
 	"errors"
-	"io"
 
 	p2pcrypto "github.com/libp2p/go-libp2p/core/crypto"
-	inet "github.com/libp2p/go-libp2p/core/network"
 	"go.uber.org/zap"
 	"golang.org/x/crypto/nacl/box"
 	"google.golang.org/protobuf/proto"
 
 	"berty.tech/weshnet/pkg/cryptoutil"
 	"berty.tech/weshnet/pkg/errcode"
+	"berty.tech/weshnet/pkg/protoio"
 	"berty.tech/weshnet/pkg/tyber"
 )
 
 // RequestUsingReaderWriter init a handshake with the responder, using provided io reader and writer
-func RequestUsingReaderWriter(ctx context.Context, logger *zap.Logger, reader io.Reader, writer io.Writer, ownAccountID p2pcrypto.PrivKey, peerAccountID p2pcrypto.PubKey) error {
+func RequestUsingReaderWriter(ctx context.Context, logger *zap.Logger, reader protoio.Reader, writer protoio.Writer, ownAccountID p2pcrypto.PrivKey, peerAccountID p2pcrypto.PubKey) error {
 	hc := &handshakeContext{
 		reader:          reader,
 		writer:          writer,
@@ -108,12 +107,7 @@ func (hc *handshakeContext) sendRequesterAuthenticate() error {
 	)
 
 	// Send BoxEnvelope to responder
-	boxBytes, err := proto.Marshal(&BoxEnvelope{Box: boxContent})
-	if err != nil {
-		return errcode.ErrCode_ErrSerialization.Wrap(err)
-	}
-
-	if _, err = hc.writer.Write(boxBytes); err != nil {
+	if err = hc.writer.WriteMsg(&BoxEnvelope{Box: boxContent}); err != nil {
 		return errcode.ErrCode_ErrStreamWrite.Wrap(err)
 	}
 
@@ -128,14 +122,8 @@ func (hc *handshakeContext) receiveResponderAccept() error {
 	)
 
 	// Receive BoxEnvelope from responder
-	buffer := make([]byte, inet.MessageSizeMax)
-	n, err := hc.reader.Read(buffer)
-	if err != nil && err != io.EOF {
+	if err := hc.reader.ReadMsg(&boxEnvelope); err != nil {
 		return errcode.ErrCode_ErrStreamRead.Wrap(err)
-	}
-
-	if err := proto.Unmarshal(buffer[:n], &boxEnvelope); err != nil {
-		return errcode.ErrCode_ErrDeserialization.Wrap(err)
 	}
 
 	// Compute box key and open marshaled RequesterAuthenticatePayload using
@@ -181,13 +169,8 @@ func (hc *handshakeContext) receiveResponderAccept() error {
 func (hc *handshakeContext) sendRequesterAcknowledge() error {
 	acknowledge := &RequesterAcknowledgePayload{Success: true}
 
-	ackBytes, err := proto.Marshal(acknowledge)
-	if err != nil {
-		return errcode.ErrCode_ErrSerialization.Wrap(err)
-	}
-
 	// Send Acknowledge to responder
-	if _, err := hc.writer.Write(ackBytes); err != nil {
+	if err := hc.writer.WriteMsg(acknowledge); err != nil {
 		return errcode.ErrCode_ErrStreamWrite.Wrap(err)
 	}
 

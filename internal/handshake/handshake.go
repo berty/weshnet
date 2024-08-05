@@ -3,15 +3,13 @@ package handshake
 import (
 	crand "crypto/rand"
 	"encoding/base64"
-	"io"
 
 	p2pcrypto "github.com/libp2p/go-libp2p/core/crypto"
-	inet "github.com/libp2p/go-libp2p/core/network"
 	"golang.org/x/crypto/nacl/box"
-	"google.golang.org/protobuf/proto"
 
 	"berty.tech/weshnet/pkg/cryptoutil"
 	"berty.tech/weshnet/pkg/errcode"
+	"berty.tech/weshnet/pkg/protoio"
 	"berty.tech/weshnet/pkg/tyber"
 )
 
@@ -23,8 +21,8 @@ var (
 
 // Common struct and methods
 type handshakeContext struct {
-	reader          io.Reader
-	writer          io.Writer
+	reader          protoio.Reader
+	writer          protoio.Writer
 	ownAccountID    p2pcrypto.PrivKey
 	peerAccountID   p2pcrypto.PubKey
 	ownEphemeral    *[cryptoutil.KeySize]byte
@@ -71,12 +69,8 @@ func (hc *handshakeContext) generateOwnEphemeralAndSendPubKey() error {
 
 	// Send own Ephemeral pub key to peer
 	hello := HelloPayload{EphemeralPubKey: ownEphemeralPub[:]}
-	helloBytes, err := proto.Marshal(&hello)
-	if err != nil {
-		return errcode.ErrCode_ErrSerialization.Wrap(err)
-	}
 
-	if _, err := hc.writer.Write(helloBytes); err != nil {
+	if err := hc.writer.WriteMsg(&hello); err != nil {
 		return errcode.ErrCode_ErrStreamWrite.Wrap(err)
 	}
 
@@ -88,15 +82,9 @@ func (hc *handshakeContext) receivePeerEphemeralPubKey() error {
 	var err error
 
 	// Receive peer's Ephemeral pub key
-	buffer := make([]byte, inet.MessageSizeMax)
-	n, err := hc.reader.Read(buffer)
-	if err != nil && err != io.EOF {
-		return errcode.ErrCode_ErrStreamRead.Wrap(err)
-	}
-
 	hello := HelloPayload{}
-	if err := proto.Unmarshal(buffer[:n], &hello); err != nil {
-		return errcode.ErrCode_ErrSerialization.Wrap(err)
+	if err := hc.reader.ReadMsg(&hello); err != nil {
+		return errcode.ErrCode_ErrStreamRead.Wrap(err)
 	}
 
 	// Set peer's Ephemeral pub key in Handshake Context
