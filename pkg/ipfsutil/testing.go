@@ -4,6 +4,8 @@ import (
 	"context"
 	crand "crypto/rand"
 	"encoding/base64"
+	"fmt"
+	"net"
 	"testing"
 
 	rendezvous "github.com/berty/go-libp2p-rendezvous"
@@ -23,6 +25,7 @@ import (
 	"github.com/libp2p/go-libp2p/core/peerstore"
 	"github.com/libp2p/go-libp2p/core/protocol"
 	mocknet "github.com/libp2p/go-libp2p/p2p/net/mock"
+	ma "github.com/multiformats/go-multiaddr"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap"
 
@@ -261,6 +264,35 @@ func (m *coreAPIMock) Close() {
 
 func MockHostOption(mn mocknet.Mocknet) ipfs_p2p.HostOption {
 	return func(id p2p_peer.ID, ps peerstore.Peerstore, _ ...libp2p.Option) (host.Host, error) {
-		return ipfs_p2p.DefaultHostOption(id, ps)
+		blackholeIP6 := net.ParseIP("100::")
+
+		pkey := ps.PrivKey(id)
+		if pkey == nil {
+			return nil, fmt.Errorf("missing private key for node ID: %s", id)
+		}
+
+		suffix := id
+		if len(id) > 8 {
+			suffix = id[len(id)-8:]
+		}
+		ip := append(net.IP{}, blackholeIP6...)
+		copy(ip[net.IPv6len-len(suffix):], suffix)
+		a, err := ma.NewMultiaddr(fmt.Sprintf("/ip6/%s/tcp/4242", ip))
+		if err != nil {
+			return nil, fmt.Errorf("failed to create test multiaddr: %s", err)
+		}
+
+		ps.AddAddr(id, a, peerstore.PermanentAddrTTL)
+		err = ps.AddPrivKey(id, pkey)
+		if err != nil {
+			return nil, err
+		}
+
+		err = ps.AddPubKey(id, pkey.GetPublic())
+		if err != nil {
+			return nil, err
+		}
+
+		return mn.AddPeerWithPeerstore(id, ps)
 	}
 }
