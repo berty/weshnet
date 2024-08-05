@@ -63,7 +63,6 @@ func ExampleNewInMemoryServiceClient_basic() {
 	}
 
 	// Output:
-	// go-libp2p resource manager protection disabled
 	// /p2p-circuit
 }
 
@@ -120,8 +119,6 @@ func ExampleNewPersistentServiceClient_basic() {
 	}
 
 	// Output:
-	// go-libp2p resource manager protection disabled
-	// go-libp2p resource manager protection disabled
 }
 
 func ExampleNewServiceClient_basic() {
@@ -149,7 +146,6 @@ func ExampleNewServiceClient_basic() {
 	}
 
 	// Output:
-	// go-libp2p resource manager protection disabled
 	// /p2p-circuit
 }
 
@@ -178,7 +174,6 @@ func ExampleNewService_basic() {
 	}
 
 	// Output:
-	// go-libp2p resource manager protection disabled
 	// /p2p-circuit
 }
 
