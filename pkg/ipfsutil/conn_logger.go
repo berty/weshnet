@@ -55,15 +55,15 @@ func (cl *connLogger) getPeerTags(p peer.ID) []string {
 	return nil
 }
 
-func (cl *connLogger) Listen(n network.Network, m ma.Multiaddr) {
+func (cl *connLogger) Listen(_ network.Network, m ma.Multiaddr) {
 	cl.logger.Debug("Listener opened", logutil.PrivateString("Multiaddr", m.String()))
 }
 
-func (cl *connLogger) ListenClose(n network.Network, m ma.Multiaddr) {
+func (cl *connLogger) ListenClose(_ network.Network, m ma.Multiaddr) {
 	cl.logger.Debug("Listener closed", logutil.PrivateString("Multiaddr", m.String()))
 }
 
-func (cl *connLogger) Connected(net network.Network, c network.Conn) {
+func (cl *connLogger) Connected(_ network.Network, c network.Conn) {
 	// Wait 10 ms until the peer has been tagged by orbit-db
 	go func() {
 		<-time.After(10 * time.Millisecond)
@@ -78,7 +78,7 @@ func (cl *connLogger) Connected(net network.Network, c network.Conn) {
 	}()
 }
 
-func (cl *connLogger) Disconnected(n network.Network, c network.Conn) {
+func (cl *connLogger) Disconnected(_ network.Network, c network.Conn) {
 	if tags := cl.getPeerTags(c.RemotePeer()); tags != nil {
 		cl.logger.Info("Disconnected",
 			logutil.PrivateString("peer", c.RemotePeer().String()),
@@ -89,7 +89,7 @@ func (cl *connLogger) Disconnected(n network.Network, c network.Conn) {
 	}
 }
 
-func (cl *connLogger) OpenedStream(n network.Network, s network.Stream) {
+func (cl *connLogger) OpenedStream(_ network.Network, s network.Stream) {
 	if tags := cl.getPeerTags(s.Conn().RemotePeer()); tags != nil {
 		cl.logger.Debug("Stream opened",
 			logutil.PrivateString("peer", s.Conn().RemotePeer().String()),
@@ -101,7 +101,7 @@ func (cl *connLogger) OpenedStream(n network.Network, s network.Stream) {
 	}
 }
 
-func (cl *connLogger) ClosedStream(n network.Network, s network.Stream) {
+func (cl *connLogger) ClosedStream(_ network.Network, s network.Stream) {
 	if tags := cl.getPeerTags(s.Conn().RemotePeer()); tags != nil {
 		cl.logger.Debug("Stream closed",
 			logutil.PrivateString("peer", s.Conn().RemotePeer().String()),

@@ -53,7 +53,7 @@ func (s *service) GroupMetadataList(req *protocoltypes.GroupMetadataList_Request
 	if req.UntilId == nil && !req.UntilNow {
 		sub, err := cg.MetadataStore().EventBus().Subscribe([]interface{}{
 			// new(stores.EventReplicated),
-			new(protocoltypes.GroupMetadataEvent),
+			new(*protocoltypes.GroupMetadataEvent),
 		}, eventbus.Name("weshnet/api/group-metadata-list"), eventbus.BufSize(32))
 		if err != nil {
 			return fmt.Errorf("unable to subscribe to new events")
@@ -63,7 +63,7 @@ func (s *service) GroupMetadataList(req *protocoltypes.GroupMetadataList_Request
 	}
 
 	// Subscribe to previous metadata events and stream them if requested
-	previousEvents := make(chan protocoltypes.GroupMetadataEvent)
+	previousEvents := make(chan *protocoltypes.GroupMetadataEvent)
 	if !req.SinceNow {
 		pevt, err := cg.MetadataStore().ListEvents(ctx, req.SinceId, req.UntilId, req.ReverseOrder)
 		if err != nil {
@@ -84,7 +84,7 @@ func (s *service) GroupMetadataList(req *protocoltypes.GroupMetadataList_Request
 					if req.UntilNow {
 						cancel()
 					} else {
-						previousEvents <- protocoltypes.GroupMetadataEvent{EventContext: nil}
+						previousEvents <- &protocoltypes.GroupMetadataEvent{EventContext: nil}
 					}
 
 					cg.logger.Debug("GroupMetadataList: previous events stream ended")
@@ -92,7 +92,7 @@ func (s *service) GroupMetadataList(req *protocoltypes.GroupMetadataList_Request
 					return
 				}
 
-				previousEvents <- *evt
+				previousEvents <- evt
 			}
 		}()
 	}
@@ -107,12 +107,12 @@ func (s *service) GroupMetadataList(req *protocoltypes.GroupMetadataList_Request
 		case event = <-newEvents:
 		}
 
-		msg := event.(protocoltypes.GroupMetadataEvent)
+		msg := event.(*protocoltypes.GroupMetadataEvent)
 		if msg.EventContext == nil {
 			continue
 		}
 
-		if err := sub.Send(&msg); err != nil {
+		if err := sub.Send(msg); err != nil {
 			return err
 		}
 
@@ -140,7 +140,7 @@ func (s *service) GroupMessageList(req *protocoltypes.GroupMessageList_Request, 
 	var newEvents <-chan interface{}
 	if req.UntilId == nil && !req.UntilNow {
 		messageStoreSub, err := cg.MessageStore().EventBus().Subscribe([]interface{}{
-			new(protocoltypes.GroupMessageEvent),
+			new(*protocoltypes.GroupMessageEvent),
 		}, eventbus.Name("weshnet/api/group-message-list"))
 		if err != nil {
 			return fmt.Errorf("unable to subscribe to new events")
@@ -150,7 +150,7 @@ func (s *service) GroupMessageList(req *protocoltypes.GroupMessageList_Request, 
 	}
 
 	// Subscribe to previous message events and stream them if requested
-	previousEvents := make(chan protocoltypes.GroupMessageEvent)
+	previousEvents := make(chan *protocoltypes.GroupMessageEvent)
 	if !req.SinceNow {
 		pevt, err := cg.MessageStore().ListEvents(ctx, req.SinceId, req.UntilId, req.ReverseOrder)
 		if err != nil {
@@ -171,7 +171,7 @@ func (s *service) GroupMessageList(req *protocoltypes.GroupMessageList_Request, 
 					if req.UntilNow {
 						cancel()
 					} else {
-						previousEvents <- protocoltypes.GroupMessageEvent{EventContext: nil}
+						previousEvents <- &protocoltypes.GroupMessageEvent{EventContext: nil}
 					}
 
 					cg.logger.Debug("GroupMessageList: previous events stream ended")
@@ -179,7 +179,7 @@ func (s *service) GroupMessageList(req *protocoltypes.GroupMessageList_Request, 
 					return
 				}
 
-				previousEvents <- *evt
+				previousEvents <- evt
 			}
 		}()
 	}
@@ -195,12 +195,12 @@ func (s *service) GroupMessageList(req *protocoltypes.GroupMessageList_Request, 
 		case event = <-newEvents:
 		}
 
-		msg := event.(protocoltypes.GroupMessageEvent)
+		msg := event.(*protocoltypes.GroupMessageEvent)
 		if msg.EventContext == nil {
 			continue
 		}
 
-		if err := sub.Send(&msg); err != nil {
+		if err := sub.Send(msg); err != nil {
 			return err
 		}
 

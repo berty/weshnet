@@ -43,7 +43,7 @@ type fullWriter struct {
 	buffer []byte
 }
 
-func (this *fullWriter) WriteMsg(msg proto.Message) (err error) {
+func (writer *fullWriter) WriteMsg(msg proto.Message) (err error) {
 	var data []byte
 	if m, ok := msg.(marshaler); ok {
 		n, ok := getSize(m)
@@ -53,26 +53,26 @@ func (this *fullWriter) WriteMsg(msg proto.Message) (err error) {
 				return err
 			}
 		}
-		if n >= len(this.buffer) {
-			this.buffer = make([]byte, n)
+		if n >= len(writer.buffer) {
+			writer.buffer = make([]byte, n)
 		}
-		_, err = m.MarshalTo(this.buffer)
+		_, err = m.MarshalTo(writer.buffer)
 		if err != nil {
 			return err
 		}
-		data = this.buffer[:n]
+		data = writer.buffer[:n]
 	} else {
 		data, err = proto.Marshal(msg)
 		if err != nil {
 			return err
 		}
 	}
-	_, err = this.w.Write(data)
+	_, err = writer.w.Write(data)
 	return err
 }
 
-func (this *fullWriter) Close() error {
-	if closer, ok := this.w.(io.Closer); ok {
+func (writer *fullWriter) Close() error {
+	if closer, ok := writer.w.(io.Closer); ok {
 		return closer.Close()
 	}
 	return nil
@@ -87,16 +87,16 @@ func NewFullReader(r io.Reader, maxSize int) ReadCloser {
 	return &fullReader{r, make([]byte, maxSize)}
 }
 
-func (this *fullReader) ReadMsg(msg proto.Message) error {
-	length, err := this.r.Read(this.buf)
+func (reader *fullReader) ReadMsg(msg proto.Message) error {
+	length, err := reader.r.Read(reader.buf)
 	if err != nil {
 		return err
 	}
-	return proto.Unmarshal(this.buf[:length], msg)
+	return proto.Unmarshal(reader.buf[:length], msg)
 }
 
-func (this *fullReader) Close() error {
-	if closer, ok := this.r.(io.Closer); ok {
+func (reader *fullReader) Close() error {
+	if closer, ok := reader.r.(io.Closer); ok {
 		return closer.Close()
 	}
 	return nil

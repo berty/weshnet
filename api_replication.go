@@ -87,7 +87,7 @@ func (s *service) ReplicationServiceRegisterGroup(ctx context.Context, request *
 		gopts = append(gopts, grpc.WithTransportCredentials(tlsconfig))
 	}
 
-	cc, err := grpc.DialContext(context.Background(), request.ReplicationServer, gopts...)
+	cc, err := grpc.NewClient("passthrough://"+request.ReplicationServer, gopts...)
 	if err != nil {
 		return nil, errcode.ErrCode_ErrStreamWrite.Wrap(err)
 	}

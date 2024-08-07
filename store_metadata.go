@@ -107,7 +107,7 @@ func openMetadataEntry(log ipfslog.Log, e ipfslog.Entry, g *protocoltypes.Group)
 // }
 
 // FIXME: use iterator instead to reduce resource usage (require go-ipfs-log improvements)
-func (m *MetadataStore) ListEvents(ctx context.Context, since, until []byte, reverse bool) (<-chan *protocoltypes.GroupMetadataEvent, error) {
+func (m *MetadataStore) ListEvents(_ context.Context, since, until []byte, reverse bool) (<-chan *protocoltypes.GroupMetadataEvent, error) {
 	entries, err := getEntriesInRange(m.OpLog().GetEntries().Reverse().Slice(), since, until)
 	if err != nil {
 		return nil, err
@@ -1008,7 +1008,7 @@ func constructorFactoryGroupMetadata(s *WeshOrbitDB, logger *zap.Logger) iface.S
 						store.logger.Warn("unable to emit recv event", zap.Error(err))
 					}
 
-					if err := store.emitters.groupMetadata.Emit(*metaEvent); err != nil {
+					if err := store.emitters.groupMetadata.Emit(metaEvent); err != nil {
 						store.logger.Warn("unable to emit group metadata event", zap.Error(err))
 					}
 				}
@@ -1030,7 +1030,7 @@ func (m *MetadataStore) initEmitter() (err error) {
 		return
 	}
 
-	if m.emitters.groupMetadata, err = m.eventBus.Emitter(new(protocoltypes.GroupMetadataEvent)); err != nil {
+	if m.emitters.groupMetadata, err = m.eventBus.Emitter(new(*protocoltypes.GroupMetadataEvent)); err != nil {
 		return
 	}
 

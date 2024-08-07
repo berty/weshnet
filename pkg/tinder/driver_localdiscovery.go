@@ -74,7 +74,7 @@ func newLinkedCache() *linkedCache {
 	}
 }
 
-func NewLocalDiscovery(logger *zap.Logger, host host.Host, rng *rand.Rand) (*LocalDiscovery, error) {
+func NewLocalDiscovery(logger *zap.Logger, host host.Host, _ *rand.Rand) (*LocalDiscovery, error) {
 	ctx, cancel := context.WithCancel(context.Background())
 	ld := &LocalDiscovery{
 		rootctx:    ctx,
@@ -140,7 +140,7 @@ func (ld *LocalDiscovery) Advertise(ctx context.Context, cid string, opts ...dis
 	return ttl, nil
 }
 
-func (ld *LocalDiscovery) FindPeers(ctx context.Context, cid string, opts ...discovery.Option) (<-chan peer.AddrInfo, error) {
+func (ld *LocalDiscovery) FindPeers(_ context.Context, cid string, opts ...discovery.Option) (<-chan peer.AddrInfo, error) {
 	// Get options
 	var options discovery.Options
 	err := options.Apply(opts...)
@@ -283,7 +283,7 @@ func (ld *LocalDiscovery) getLocalReccord() *Records {
 	return &Records{Records: records}
 }
 
-func (ld *LocalDiscovery) Unregister(ctx context.Context, cid string, _ ...discovery.Option) error {
+func (ld *LocalDiscovery) Unregister(_ context.Context, cid string, _ ...discovery.Option) error {
 	ld.muRecs.Lock()
 	delete(ld.recs, cid)
 	ld.muRecs.Unlock()

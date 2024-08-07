@@ -44,6 +44,7 @@ type metadataStoreIndex struct {
 	logger                   *zap.Logger
 }
 
+//nolint:revive
 func (m *metadataStoreIndex) Get(key string) interface{} {
 	return nil
 }
@@ -641,6 +642,7 @@ func (m *metadataStoreIndex) handleMultiMemberInitialMember(event proto.Message)
 	return nil
 }
 
+//nolint:revive
 func (m *metadataStoreIndex) handleMultiMemberGrantAdminRole(event proto.Message) error {
 	// TODO:
 
@@ -760,7 +762,7 @@ func (m *metadataStoreIndex) postHandlerSentAliases() error {
 	return nil
 }
 
-// nolint:staticcheck
+// nolint:staticcheck,revive
 // newMetadataIndex returns a new index to manage the list of the group members
 func newMetadataIndex(ctx context.Context, g *protocoltypes.Group, md secretstore.MemberDevice, secretStore secretstore.SecretStore) iface.IndexConstructor {
 	return func(publicKey []byte) iface.StoreIndex {

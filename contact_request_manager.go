@@ -115,7 +115,7 @@ func (c *contactRequestsManager) metadataWatcher(ctx context.Context) {
 	}
 
 	// subscribe to new event
-	sub, err := c.metadataStore.EventBus().Subscribe(new(protocoltypes.GroupMetadataEvent),
+	sub, err := c.metadataStore.EventBus().Subscribe(new(*protocoltypes.GroupMetadataEvent),
 		eventbus.Name("weshnet/rqmngr/metadata-watcher"))
 	if err != nil {
 		c.logger.Warn("unable to subscribe to group metadata event", zap.Error(err))
@@ -153,7 +153,7 @@ func (c *contactRequestsManager) metadataWatcher(ctx context.Context) {
 		}
 
 		// handle new events
-		e := evt.(protocoltypes.GroupMetadataEvent)
+		e := evt.(*protocoltypes.GroupMetadataEvent)
 		typ := e.GetMetadata().GetEventType()
 		hctx, _, endSection := tyber.Section(ctx, c.logger, fmt.Sprintf("handling event - %s", typ.String()))
 
@@ -161,7 +161,7 @@ func (c *contactRequestsManager) metadataWatcher(ctx context.Context) {
 
 		var err error
 		if handler, ok := handlers[typ]; ok {
-			if err = handler(hctx, &e); err != nil {
+			if err = handler(hctx, e); err != nil {
 				c.logger.Error("metadata store event handler", zap.String("event", typ.String()), zap.Error(err))
 			}
 		}
@@ -421,7 +421,7 @@ func (c *contactRequestsManager) SendContactRequest(ctx context.Context, to *pro
 	_, own := c.metadataStore.GetIncomingContactRequestsStatus()
 	if own == nil {
 		err = fmt.Errorf("unable to retrieve own contact information")
-		return
+		return err
 	}
 
 	// get own metadata for contact
@@ -438,7 +438,7 @@ func (c *contactRequestsManager) SendContactRequest(ctx context.Context, to *pro
 	}
 
 	// create a new stream with the remote peer
-	stream, err := c.ipfs.NewStream(network.WithUseTransient(ctx, "req_mngr"), peer.ID, contactRequestV1)
+	stream, err := c.ipfs.NewStream(network.WithAllowLimitedConn(ctx, "req_mngr"), peer.ID, contactRequestV1)
 	if err != nil {
 		return fmt.Errorf("unable to open stream: %w", err)
 	}

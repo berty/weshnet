@@ -70,6 +70,7 @@ func NewEmitterServer(serverAddr string, adminKey string, options *EmitterOption
 	return ps, nil
 }
 
+// nolint:revive
 func (p *EmitterPubSub) Register(pid peer.ID, ns string, addrs [][]byte, ttlAsSeconds int, counter uint64) {
 	p.logger.Debug("register", zap.String("pid", pid.String()), zap.String("ns", ns))
 

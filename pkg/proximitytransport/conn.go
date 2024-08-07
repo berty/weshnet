@@ -191,10 +191,10 @@ func (c *Conn) RemoteMultiaddr() ma.Multiaddr { return c.remoteMa }
 // Noop deadline methods, handled by the native driver.
 
 // SetDeadline does nothing
-func (c *Conn) SetDeadline(t time.Time) error { return nil }
+func (c *Conn) SetDeadline(time.Time) error { return nil }
 
 // SetReadDeadline does nothing
-func (c *Conn) SetReadDeadline(t time.Time) error { return nil }
+func (c *Conn) SetReadDeadline(time.Time) error { return nil }
 
 // SetWriteDeadline does nothing
-func (c *Conn) SetWriteDeadline(t time.Time) error { return nil }
+func (c *Conn) SetWriteDeadline(time.Time) error { return nil }

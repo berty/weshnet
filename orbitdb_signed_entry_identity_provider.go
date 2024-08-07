@@ -23,10 +23,11 @@ func (b *bertySignedIdentityProvider) UnmarshalPublicKey(data []byte) (crypto.Pu
 	return crypto.UnmarshalPublicKey(data)
 }
 
-func (b *bertySignedIdentityProvider) GetID(ctx context.Context, opts *identityprovider.CreateIdentityOptions) (string, error) {
+func (b *bertySignedIdentityProvider) GetID(_ context.Context, opts *identityprovider.CreateIdentityOptions) (string, error) {
 	return opts.ID, nil
 }
 
+//nolint:revive
 func (b *bertySignedIdentityProvider) SignIdentity(ctx context.Context, data []byte, id string) ([]byte, error) {
 	return nil, nil
 }
@@ -35,7 +36,7 @@ func (b *bertySignedIdentityProvider) GetType() string {
 	return identityType
 }
 
-func (b *bertySignedIdentityProvider) VerifyIdentity(identity *identityprovider.Identity) error {
+func (b *bertySignedIdentityProvider) VerifyIdentity(*identityprovider.Identity) error {
 	return nil
 }
 

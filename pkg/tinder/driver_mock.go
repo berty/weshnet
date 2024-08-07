@@ -77,7 +77,7 @@ func (s *MockDriverServer) Unregister(ctx context.Context, topic string, p peer.
 	s.mx.Unlock()
 }
 
-func (s *MockDriverServer) Exist(topic string, p peer.ID) (ok bool) {
+func (s *MockDriverServer) Exist(topic string, _ peer.ID) (ok bool) {
 	peers := s.pc.GetPeersForTopics(topic)
 	return len(peers) == 1
 }
@@ -153,7 +153,7 @@ func (s *MockIDriverClient) Name() string {
 	return "mock"
 }
 
-func (s *MockIDriverClient) FindPeers(ctx context.Context, topic string, opts ...discovery.Option) (<-chan peer.AddrInfo, error) {
+func (s *MockIDriverClient) FindPeers(_ context.Context, topic string, opts ...discovery.Option) (<-chan peer.AddrInfo, error) {
 	var options discovery.Options
 	err := options.Apply(opts...)
 	if err != nil {
@@ -167,7 +167,7 @@ func (s *MockIDriverClient) FindPeers(ctx context.Context, topic string, opts ..
 	return s.serv.FindPeers(topic, options.Limit), nil
 }
 
-func (s *MockIDriverClient) Advertise(ctx context.Context, topic string, opts ...discovery.Option) (time.Duration, error) {
+func (s *MockIDriverClient) Advertise(_ context.Context, topic string, opts ...discovery.Option) (time.Duration, error) {
 	var options discovery.Options
 	err := options.Apply(opts...)
 	if err != nil {
@@ -201,7 +201,7 @@ func (s *MockIDriverClient) Subscribe(ctx context.Context, topic string, opts ..
 	return out, nil
 }
 
-func (s *MockIDriverClient) Unregister(ctx context.Context, topic string, opts ...discovery.Option) error {
+func (s *MockIDriverClient) Unregister(ctx context.Context, topic string, _ ...discovery.Option) error {
 	s.serv.Unregister(ctx, topic, s.h.ID())
 	return nil
 }

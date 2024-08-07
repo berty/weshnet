@@ -9,5 +9,8 @@ var _ MetricsTracer[any] = (*noopTracer[any])(nil)
 
 type noopTracer[T any] struct{}
 
+// nolint:revive
 func (*noopTracer[T]) ItemQueued(name string, item T) {}
-func (*noopTracer[T]) ItemPop(name string, item T)    {}
+
+// nolint:revive
+func (*noopTracer[T]) ItemPop(name string, item T) {}

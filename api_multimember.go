@@ -12,7 +12,7 @@ import (
 )
 
 // MultiMemberGroupCreate creates a new MultiMember group
-func (s *service) MultiMemberGroupCreate(ctx context.Context, req *protocoltypes.MultiMemberGroupCreate_Request) (_ *protocoltypes.MultiMemberGroupCreate_Reply, err error) {
+func (s *service) MultiMemberGroupCreate(ctx context.Context, _ *protocoltypes.MultiMemberGroupCreate_Request) (_ *protocoltypes.MultiMemberGroupCreate_Reply, err error) {
 	ctx, _, endSection := tyber.Section(ctx, s.logger, "Creating MultiMember group")
 	defer func() { endSection(err, "") }()
 
@@ -120,7 +120,7 @@ func (s *service) MultiMemberGroupAdminRoleGrant(context.Context, *protocoltypes
 }
 
 // MultiMemberGroupInvitationCreate creates a group invitation
-func (s *service) MultiMemberGroupInvitationCreate(ctx context.Context, req *protocoltypes.MultiMemberGroupInvitationCreate_Request) (*protocoltypes.MultiMemberGroupInvitationCreate_Reply, error) {
+func (s *service) MultiMemberGroupInvitationCreate(_ context.Context, req *protocoltypes.MultiMemberGroupInvitationCreate_Request) (*protocoltypes.MultiMemberGroupInvitationCreate_Reply, error) {
 	cg, err := s.GetContextGroupForID(req.GroupPk)
 	if err != nil {
 		return nil, errcode.ErrCode_ErrGroupMemberUnknownGroupID.Wrap(err)

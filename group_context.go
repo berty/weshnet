@@ -113,7 +113,7 @@ func (gc *GroupContext) ActivateGroupContext(contactPK crypto.PubKey) (err error
 	// chainkey of new members.
 	{
 		m := gc.MetadataStore()
-		sub, err := m.EventBus().Subscribe(new(protocoltypes.GroupMetadataEvent))
+		sub, err := m.EventBus().Subscribe(new(*protocoltypes.GroupMetadataEvent))
 		if err != nil {
 			return fmt.Errorf("unable to subscribe to group metadata event: %w", err)
 		}
@@ -132,9 +132,9 @@ func (gc *GroupContext) ActivateGroupContext(contactPK crypto.PubKey) (err error
 				}
 
 				// @TODO(gfanton): should we handle this in a sub gorouting ?
-				e := evt.(protocoltypes.GroupMetadataEvent)
+				e := evt.(*protocoltypes.GroupMetadataEvent)
 				// start := time.Now()
-				if err := gc.handleGroupMetadataEvent(&e); err != nil {
+				if err := gc.handleGroupMetadataEvent(e); err != nil {
 					gc.logger.Error("unable to handle EventTypeGroupDeviceSecretAdded", zap.Error(err))
 				}
 

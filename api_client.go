@@ -56,7 +56,7 @@ func (s *service) ServiceExportData(_ *protocoltypes.ServiceExportData_Request, 
 	return nil
 }
 
-func (s *service) ServiceGetConfiguration(ctx context.Context, req *protocoltypes.ServiceGetConfiguration_Request) (*protocoltypes.ServiceGetConfiguration_Reply, error) {
+func (s *service) ServiceGetConfiguration(ctx context.Context, _ *protocoltypes.ServiceGetConfiguration_Request) (*protocoltypes.ServiceGetConfiguration_Reply, error) {
 	key, err := s.ipfsCoreAPI.Key().Self(ctx)
 	if err != nil {
 		return nil, errcode.ErrCode_TODO.Wrap(err)

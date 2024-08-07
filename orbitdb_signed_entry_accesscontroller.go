@@ -37,14 +37,17 @@ func (o *simpleAccessController) Logger() *zap.Logger {
 	return o.logger
 }
 
+//nolint:revive
 func (o *simpleAccessController) Grant(ctx context.Context, capability string, keyID string) error {
 	return nil
 }
 
+//nolint:revive
 func (o *simpleAccessController) Revoke(ctx context.Context, capability string, keyID string) error {
 	return nil
 }
 
+//nolint:revive
 func (o *simpleAccessController) Load(ctx context.Context, address string) error {
 	return nil
 }
@@ -68,7 +71,7 @@ func simpleAccessControllerCID(allowedKeys map[string][]string) (cid.Cid, error)
 	return c, nil
 }
 
-func (o *simpleAccessController) Save(ctx context.Context) (accesscontroller.ManifestParams, error) {
+func (o *simpleAccessController) Save(context.Context) (accesscontroller.ManifestParams, error) {
 	c, err := simpleAccessControllerCID(o.allowedKeys)
 	if err != nil {
 		return nil, errcode.ErrCode_ErrInvalidInput.Wrap(err)
@@ -89,7 +92,7 @@ func (o *simpleAccessController) GetAuthorizedByRole(role string) ([]string, err
 	return o.allowedKeys[role], nil
 }
 
-func (o *simpleAccessController) CanAppend(e logac.LogEntry, p identityprovider.Interface, additionalContext accesscontroller.CanAppendAdditionalContext) error {
+func (o *simpleAccessController) CanAppend(e logac.LogEntry, _ identityprovider.Interface, _ accesscontroller.CanAppendAdditionalContext) error {
 	for _, id := range o.allowedKeys["write"] {
 		if e.GetIdentity().ID == id || id == "*" {
 			return nil

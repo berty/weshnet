@@ -21,7 +21,7 @@ type PubSubAPI struct {
 	topics   map[string]*p2p_pubsub.Topic
 }
 
-func NewPubSubAPI(ctx context.Context, logger *zap.Logger, ps *p2p_pubsub.PubSub) coreiface.PubSubAPI {
+func NewPubSubAPI(_ context.Context, logger *zap.Logger, ps *p2p_pubsub.PubSub) coreiface.PubSubAPI {
 	return &PubSubAPI{
 		PubSub: ps,
 
@@ -65,12 +65,12 @@ func (ps *PubSubAPI) topicJoin(topic string, opts ...p2p_pubsub.TopicOpt) (*p2p_
 // }
 
 // Ls lists subscribed topics by name
-func (ps *PubSubAPI) Ls(ctx context.Context) ([]string, error) {
+func (ps *PubSubAPI) Ls(context.Context) ([]string, error) {
 	return ps.PubSub.GetTopics(), nil
 }
 
 // Peers list peers we are currently pubsubbing with
-func (ps *PubSubAPI) Peers(ctx context.Context, opts ...coreiface_options.PubSubPeersOption) ([]p2p_peer.ID, error) {
+func (ps *PubSubAPI) Peers(_ context.Context, opts ...coreiface_options.PubSubPeersOption) ([]p2p_peer.ID, error) {
 	s, err := coreiface_options.PubSubPeersOptions(opts...)
 	if err != nil {
 		return nil, err
@@ -92,7 +92,7 @@ func (ps *PubSubAPI) Publish(ctx context.Context, topic string, msg []byte) erro
 }
 
 // Subscribe to messages on a given topic
-func (ps *PubSubAPI) Subscribe(ctx context.Context, topic string, opts ...coreiface_options.PubSubSubscribeOption) (coreiface.PubSubSubscription, error) {
+func (ps *PubSubAPI) Subscribe(_ context.Context, topic string, _ ...coreiface_options.PubSubSubscribeOption) (coreiface.PubSubSubscription, error) {
 	t, err := ps.topicJoin(topic)
 	if err != nil {
 		return nil, err

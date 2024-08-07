@@ -52,48 +52,48 @@ type uint32Writer struct {
 	lenBuf    []byte
 }
 
-func (this *uint32Writer) writeFallback(msg proto.Message) error {
+func (writer *uint32Writer) writeFallback(msg proto.Message) error {
 	data, err := proto.Marshal(msg)
 	if err != nil {
 		return err
 	}
 
 	length := uint32(len(data))
-	this.byteOrder.PutUint32(this.lenBuf, length)
-	if _, err = this.w.Write(this.lenBuf); err != nil {
+	writer.byteOrder.PutUint32(writer.lenBuf, length)
+	if _, err = writer.w.Write(writer.lenBuf); err != nil {
 		return err
 	}
-	_, err = this.w.Write(data)
+	_, err = writer.w.Write(data)
 	return err
 }
 
-func (this *uint32Writer) WriteMsg(msg proto.Message) error {
+func (writer *uint32Writer) WriteMsg(msg proto.Message) error {
 	m, ok := msg.(marshaler)
 	if !ok {
-		return this.writeFallback(msg)
+		return writer.writeFallback(msg)
 	}
 
 	n, ok := getSize(m)
 	if !ok {
-		return this.writeFallback(msg)
+		return writer.writeFallback(msg)
 	}
 
 	size := n + uint32BinaryLen
-	if size > len(this.buffer) {
-		this.buffer = make([]byte, size)
+	if size > len(writer.buffer) {
+		writer.buffer = make([]byte, size)
 	}
 
-	this.byteOrder.PutUint32(this.buffer, uint32(n))
-	if _, err := m.MarshalTo(this.buffer[uint32BinaryLen:]); err != nil {
+	writer.byteOrder.PutUint32(writer.buffer, uint32(n))
+	if _, err := m.MarshalTo(writer.buffer[uint32BinaryLen:]); err != nil {
 		return err
 	}
 
-	_, err := this.w.Write(this.buffer[:size])
+	_, err := writer.w.Write(writer.buffer[:size])
 	return err
 }
 
-func (this *uint32Writer) Close() error {
-	if closer, ok := this.w.(io.Closer); ok {
+func (writer *uint32Writer) Close() error {
+	if closer, ok := writer.w.(io.Closer); ok {
 		return closer.Close()
 	}
 	return nil
@@ -111,27 +111,27 @@ func NewUint32DelimitedReader(r io.Reader, byteOrder binary.ByteOrder, maxSize i
 	return &uint32Reader{r, byteOrder, make([]byte, 4), nil, maxSize}
 }
 
-func (this *uint32Reader) ReadMsg(msg proto.Message) error {
-	if _, err := io.ReadFull(this.r, this.lenBuf); err != nil {
+func (reader *uint32Reader) ReadMsg(msg proto.Message) error {
+	if _, err := io.ReadFull(reader.r, reader.lenBuf); err != nil {
 		return err
 	}
-	length32 := this.byteOrder.Uint32(this.lenBuf)
+	length32 := reader.byteOrder.Uint32(reader.lenBuf)
 	length := int(length32)
-	if length < 0 || length > this.maxSize {
+	if length < 0 || length > reader.maxSize {
 		return io.ErrShortBuffer
 	}
-	if length > len(this.buf) {
-		this.buf = make([]byte, length)
+	if length > len(reader.buf) {
+		reader.buf = make([]byte, length)
 	}
-	_, err := io.ReadFull(this.r, this.buf[:length])
+	_, err := io.ReadFull(reader.r, reader.buf[:length])
 	if err != nil {
 		return err
 	}
-	return proto.Unmarshal(this.buf[:length], msg)
+	return proto.Unmarshal(reader.buf[:length], msg)
 }
 
-func (this *uint32Reader) Close() error {
-	if closer, ok := this.r.(io.Closer); ok {
+func (reader *uint32Reader) Close() error {
+	if closer, ok := reader.r.(io.Closer); ok {
 		return closer.Close()
 	}
 	return nil

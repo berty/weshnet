@@ -46,20 +46,20 @@ type varintWriter struct {
 	buffer []byte
 }
 
-func (this *varintWriter) WriteMsg(msg proto.Message) (err error) {
+func (writer *varintWriter) WriteMsg(msg proto.Message) (err error) {
 	var data []byte
 	if m, ok := msg.(marshaler); ok {
 		n, ok := getSize(m)
 		if ok {
-			if n+binary.MaxVarintLen64 >= len(this.buffer) {
-				this.buffer = make([]byte, n+binary.MaxVarintLen64)
+			if n+binary.MaxVarintLen64 >= len(writer.buffer) {
+				writer.buffer = make([]byte, n+binary.MaxVarintLen64)
 			}
-			lenOff := binary.PutUvarint(this.buffer, uint64(n))
-			_, err = m.MarshalTo(this.buffer[lenOff:])
+			lenOff := binary.PutUvarint(writer.buffer, uint64(n))
+			_, err = m.MarshalTo(writer.buffer[lenOff:])
 			if err != nil {
 				return err
 			}
-			_, err = this.w.Write(this.buffer[:lenOff+n])
+			_, err = writer.w.Write(writer.buffer[:lenOff+n])
 			return err
 		}
 	}
@@ -70,17 +70,17 @@ func (this *varintWriter) WriteMsg(msg proto.Message) (err error) {
 		return err
 	}
 	length := uint64(len(data))
-	n := binary.PutUvarint(this.lenBuf, length)
-	_, err = this.w.Write(this.lenBuf[:n])
+	n := binary.PutUvarint(writer.lenBuf, length)
+	_, err = writer.w.Write(writer.lenBuf[:n])
 	if err != nil {
 		return err
 	}
-	_, err = this.w.Write(data)
+	_, err = writer.w.Write(data)
 	return err
 }
 
-func (this *varintWriter) Close() error {
-	if closer, ok := this.w.(io.Closer); ok {
+func (writer *varintWriter) Close() error {
+	if closer, ok := writer.w.(io.Closer); ok {
 		return closer.Close()
 	}
 	return nil
@@ -101,28 +101,28 @@ type varintReader struct {
 	closer  io.Closer
 }
 
-func (this *varintReader) ReadMsg(msg proto.Message) error {
-	length64, err := binary.ReadUvarint(this.r)
+func (reader *varintReader) ReadMsg(msg proto.Message) error {
+	length64, err := binary.ReadUvarint(reader.r)
 	if err != nil {
 		return err
 	}
 	length := int(length64)
-	if length < 0 || length > this.maxSize {
+	if length < 0 || length > reader.maxSize {
 		return io.ErrShortBuffer
 	}
-	if len(this.buf) < length {
-		this.buf = make([]byte, length)
+	if len(reader.buf) < length {
+		reader.buf = make([]byte, length)
 	}
-	buf := this.buf[:length]
-	if _, err := io.ReadFull(this.r, buf); err != nil {
+	buf := reader.buf[:length]
+	if _, err := io.ReadFull(reader.r, buf); err != nil {
 		return err
 	}
 	return proto.Unmarshal(buf, msg)
 }
 
-func (this *varintReader) Close() error {
-	if this.closer != nil {
-		return this.closer.Close()
+func (reader *varintReader) Close() error {
+	if reader.closer != nil {
+		return reader.closer.Close()
 	}
 	return nil
 }

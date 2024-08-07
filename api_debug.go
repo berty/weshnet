@@ -19,7 +19,7 @@ import (
 	"berty.tech/weshnet/pkg/protocoltypes"
 )
 
-func (s *service) DebugListGroups(req *protocoltypes.DebugListGroups_Request, srv protocoltypes.ProtocolService_DebugListGroupsServer) error {
+func (s *service) DebugListGroups(_ *protocoltypes.DebugListGroups_Request, srv protocoltypes.ProtocolService_DebugListGroupsServer) error {
 	accountGroup := s.getAccountGroup()
 	if accountGroup == nil {
 		return errcode.ErrCode_ErrGroupMissing
@@ -176,7 +176,7 @@ func (s *service) DebugGroup(ctx context.Context, request *protocoltypes.DebugGr
 	return rep, nil
 }
 
-func (s *service) SystemInfo(ctx context.Context, request *protocoltypes.SystemInfo_Request) (*protocoltypes.SystemInfo_Reply, error) {
+func (s *service) SystemInfo(ctx context.Context, _ *protocoltypes.SystemInfo_Request) (*protocoltypes.SystemInfo_Reply, error) {
 	reply := protocoltypes.SystemInfo_Reply{}
 
 	// process
@@ -232,7 +232,7 @@ func (s *service) SystemInfo(ctx context.Context, request *protocoltypes.SystemI
 	return &reply, nil
 }
 
-func (s *service) PeerList(ctx context.Context, request *protocoltypes.PeerList_Request) (*protocoltypes.PeerList_Reply, error) {
+func (s *service) PeerList(ctx context.Context, _ *protocoltypes.PeerList_Request) (*protocoltypes.PeerList_Reply, error) {
 	reply := protocoltypes.PeerList_Reply{}
 	api := s.IpfsCoreAPI()
 	if api == nil {

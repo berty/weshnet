@@ -10,7 +10,7 @@ import (
 
 type sigChecker func(g *protocoltypes.Group, metadata *protocoltypes.GroupMetadata, message proto.Message) error
 
-func sigCheckerGroupSigned(g *protocoltypes.Group, metadata *protocoltypes.GroupMetadata, message proto.Message) error {
+func sigCheckerGroupSigned(g *protocoltypes.Group, metadata *protocoltypes.GroupMetadata, _ proto.Message) error {
 	pk, err := g.GetPubKey()
 	if err != nil {
 		return err
@@ -33,7 +33,7 @@ type eventDeviceSigned interface {
 	GetDevicePk() []byte
 }
 
-func sigCheckerDeviceSigned(g *protocoltypes.Group, metadata *protocoltypes.GroupMetadata, message proto.Message) error {
+func sigCheckerDeviceSigned(_ *protocoltypes.Group, metadata *protocoltypes.GroupMetadata, message proto.Message) error {
 	msg, ok := message.(eventDeviceSigned)
 	if !ok {
 		return errcode.ErrCode_ErrDeserialization

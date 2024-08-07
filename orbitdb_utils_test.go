@@ -21,7 +21,7 @@ func inviteAllPeersToGroup(ctx context.Context, t *testing.T, peers []*mockedPee
 	errChan := make(chan error, len(peers))
 
 	for i, p := range peers {
-		sub, err := p.GC.MetadataStore().EventBus().Subscribe(new(protocoltypes.GroupMetadataEvent))
+		sub, err := p.GC.MetadataStore().EventBus().Subscribe(new(*protocoltypes.GroupMetadataEvent))
 		require.NoError(t, err)
 		go func(p *mockedPeer, peerIndex int) {
 			defer sub.Close()
@@ -30,7 +30,7 @@ func inviteAllPeersToGroup(ctx context.Context, t *testing.T, peers []*mockedPee
 			eventReceived := 0
 
 			for e := range sub.Out() {
-				evt := e.(protocoltypes.GroupMetadataEvent)
+				evt := e.(*protocoltypes.GroupMetadataEvent)
 				if evt.Metadata.EventType != protocoltypes.EventType_EventTypeGroupMemberDeviceAdded {
 					continue
 				}
@@ -76,7 +76,7 @@ func waitForBertyEventType(ctx context.Context, t *testing.T, ms *MetadataStore,
 
 	handledEvents := map[string]struct{}{}
 
-	sub, err := ms.EventBus().Subscribe(new(protocoltypes.GroupMetadataEvent))
+	sub, err := ms.EventBus().Subscribe(new(*protocoltypes.GroupMetadataEvent))
 	require.NoError(t, err)
 	defer sub.Close()
 
@@ -90,7 +90,7 @@ func waitForBertyEventType(ctx context.Context, t *testing.T, ms *MetadataStore,
 		}
 
 		switch evt := e.(type) {
-		case protocoltypes.GroupMetadataEvent:
+		case *protocoltypes.GroupMetadataEvent:
 			if evt.Metadata.EventType != eventType {
 				continue
 			}

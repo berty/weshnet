@@ -192,7 +192,7 @@ func (m *MessageStore) processMessageLoop(ctx context.Context, tracer *messageMe
 		m.processDeviceMessagesInQueue(device)
 
 		// emit new message event
-		if err := m.emitters.groupMessage.Emit(*evt); err != nil {
+		if err := m.emitters.groupMessage.Emit(evt); err != nil {
 			m.logger.Warn("unable to emit group message event", zap.Error(err))
 		}
 	}
@@ -415,7 +415,7 @@ func constructorFactoryGroupMessage(s *WeshOrbitDB, logger *zap.Logger) iface.St
 			logger.Debug("store message process loop ended", zap.Error(store.ctx.Err()))
 		}()
 
-		if store.emitters.groupMessage, err = store.eventBus.Emitter(new(protocoltypes.GroupMessageEvent)); err != nil {
+		if store.emitters.groupMessage, err = store.eventBus.Emitter(new(*protocoltypes.GroupMessageEvent)); err != nil {
 			store.cancel()
 			return nil, errcode.ErrCode_ErrOrbitDBInit.Wrap(err)
 		}
@@ -498,7 +498,7 @@ func (m *MessageStore) GetMessageByCID(c cid.Cid) (operation.Operation, error) {
 	return op, nil
 }
 
-func (m *MessageStore) GetOutOfStoreMessageEnvelope(ctx context.Context, c cid.Cid) (*protocoltypes.OutOfStoreMessageEnvelope, error) {
+func (m *MessageStore) GetOutOfStoreMessageEnvelope(_ context.Context, c cid.Cid) (*protocoltypes.OutOfStoreMessageEnvelope, error) {
 	op, err := m.GetMessageByCID(c)
 	if err != nil {
 		return nil, errcode.ErrCode_ErrInvalidInput.Wrap(err)

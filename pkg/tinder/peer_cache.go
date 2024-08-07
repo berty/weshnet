@@ -62,7 +62,7 @@ func (c *peersCache) UpdatePeer(topic string, p peer.AddrInfo) (isNew bool) {
 			c.peers[p.ID] = *combined
 		} else if exist {
 			// we already know this peer, and no change have been provided
-			return
+			return isNew
 		}
 	} else {
 		c.peers[p.ID] = p
@@ -126,7 +126,7 @@ func (c *peersCache) WaitForPeerUpdate(ctx context.Context, topic string, curren
 	return
 }
 
-func (c *peersCache) RemoveFromCache(ctx context.Context, topic string, p peer.ID) (ok bool) {
+func (c *peersCache) RemoveFromCache(_ context.Context, topic string, p peer.ID) (ok bool) {
 	c.muCache.Lock()
 	var tu *topicUpdate
 	if tu, ok = c.topics[topic]; ok {

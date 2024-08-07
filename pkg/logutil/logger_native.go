@@ -16,11 +16,11 @@ func NewNativeDriverCore(subsystem string, enc zapcore.Encoder) zapcore.Core {
 	return &nativeCore{subsystem: subsystem, enc: enc}
 }
 
-func (nc *nativeCore) Enabled(level zapcore.Level) bool {
+func (nc *nativeCore) Enabled(zapcore.Level) bool {
 	return true
 }
 
-func (nc *nativeCore) With(fields []zapcore.Field) zapcore.Core {
+func (nc *nativeCore) With([]zapcore.Field) zapcore.Core {
 	return &nativeCore{enc: nc.enc}
 }
 

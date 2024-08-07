@@ -183,7 +183,7 @@ func (c *rendezvousDiscovery) Subscribe(ctx context.Context, topic string, _ ...
 	return ch, err
 }
 
-func (c *rendezvousDiscovery) Unregister(ctx context.Context, topic string, opts ...discovery.Option) error {
+func (c *rendezvousDiscovery) Unregister(ctx context.Context, topic string, _ ...discovery.Option) error {
 	c.peerCacheMux.RLock()
 	cache, ok := c.peerCache[topic]
 	if ok {

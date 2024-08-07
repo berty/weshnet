@@ -71,7 +71,7 @@ func (s *Swiper) RefreshContactRequest(ctx context.Context, topic []byte) (addrs
 	if !ok {
 		err = fmt.Errorf("unknown topic")
 		s.muRequest.Unlock()
-		return
+		return addrs, err
 	}
 
 	// add a refresh job process

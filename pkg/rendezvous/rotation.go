@@ -103,12 +103,12 @@ func (r *RotationInterval) registerPoint(point *Point) {
 }
 
 func (r *RotationInterval) rotate(old *Point, graceperiod time.Duration) *Point {
-	new := old.NextPoint()
+	newPoint := old.NextPoint()
 
 	// register new point
-	r.registerPoint(new)
+	r.registerPoint(newPoint)
 
-	cleanuptime := time.Until(new.Deadline().Add(graceperiod))
+	cleanuptime := time.Until(newPoint.Deadline().Add(graceperiod))
 	if cleanuptime < 0 {
 		cleanuptime = 0
 	}
@@ -120,7 +120,7 @@ func (r *RotationInterval) rotate(old *Point, graceperiod time.Duration) *Point 
 		r.muCache.Unlock()
 	})
 
-	return new
+	return newPoint
 }
 
 type Point struct {

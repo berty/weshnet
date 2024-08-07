@@ -64,7 +64,7 @@ func (e *emitterClient) Close() (err error) {
 
 func (e *emitterClient) subscribeToServerUpdates(inChan chan *registrationMessage, psDetails *EmitterPubSubSubscriptionDetails) (err error) {
 	e.logger.Debug("subscribing", zap.String("chan", psDetails.ChannelName))
-	return e.client.Subscribe(psDetails.ReadKey, psDetails.ChannelName, func(client *emitter.Client, message emitter.Message) {
+	return e.client.Subscribe(psDetails.ReadKey, psDetails.ChannelName, func(_ *emitter.Client, message emitter.Message) {
 		reg := &pb.RegistrationRecord{}
 
 		e.logger.Debug("receiving a message", zap.Any("topic", message.Topic()))
@@ -117,7 +117,7 @@ func (e *emitterClientManager) getClient(psDetails *EmitterPubSubSubscriptionDet
 		return
 	}
 
-	noophandler := func(client *emitter.Client, message emitter.Message) {}
+	noophandler := func(*emitter.Client, emitter.Message) {}
 	cl, err := emitter.Connect(psDetails.ServerAddr, noophandler, emitter.WithLogger(e.logger.Named("cl")))
 	if err != nil {
 		return

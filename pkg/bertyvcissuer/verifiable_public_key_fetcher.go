@@ -47,10 +47,12 @@ func embeddedPublicKeyFetcher(issuerID string, allowList []string) (*verifier.Pu
 	}, nil
 }
 
+// nolint:revive
 func EmbeddedPublicKeyFetcher(issuerID, keyID string) (*verifier.PublicKey, error) {
 	return embeddedPublicKeyFetcher(issuerID, nil)
 }
 
+// nolint:revive
 func EmbeddedPublicKeyFetcherAllowList(allowList []string) func(issuerID, keyID string) (*verifier.PublicKey, error) {
 	return func(issuerID, keyID string) (*verifier.PublicKey, error) {
 		return embeddedPublicKeyFetcher(issuerID, allowList)
