@@ -154,7 +154,7 @@ $(gen_sum): $(gen_src)
 		--workdir="/go/src/berty.tech/weshnet" \
 		--entrypoint="sh" \
 		--rm \
-		bertytech/buf:3 \
+		bertytech/buf:4 \
 		-xec 'make generate_local'; \
 	  $(MAKE) tidy \
 	)

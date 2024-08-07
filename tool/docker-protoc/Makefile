@@ -1,5 +1,5 @@
 IMAGE ?=	bertytech/buf
-VERSION ?=	3
+VERSION ?=	4
 
 build:
 	cd ../../ && docker build -f ./tool/docker-protoc/Dockerfile -t $(IMAGE):$(VERSION) -t $(IMAGE):latest .

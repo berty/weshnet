@@ -1,5 +1,5 @@
-version: v1
-name: buf.build/berty/weshnet
+version: v2
+name: buf.build/berty-technologies/weshnet
 deps:
     - buf.build/srikrsna/protoc-gen-gotag
 breaking:

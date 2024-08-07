@@ -1,10 +1,8 @@
-version: v1
-name: buf.build/berty/weshnet
-deps:
-  - buf.build/gogo/protobuf
+version: v2
+name: buf.build/berty-technologies/weshnet
 breaking:
-  use:
-    - FILE
+    use:
+        - FILE
 lint:
-  use:
-    - DEFAULT
+    use:
+        - DEFAULT
