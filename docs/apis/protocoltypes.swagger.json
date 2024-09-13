@@ -12,6 +12,16 @@
   ],
   "paths": {},
   "definitions": {
+    "GroupDeviceStatusType": {
+      "type": "string",
+      "enum": [
+        "TypeUnknown",
+        "TypePeerDisconnected",
+        "TypePeerConnected",
+        "TypePeerReconnecting"
+      ],
+      "default": "TypeUnknown"
+    },
     "OrbitDBReplicationStatus": {
       "type": "object",
       "properties": {
@@ -569,23 +579,13 @@
       "type": "object",
       "properties": {
         "type": {
-          "$ref": "#/definitions/v1GroupDeviceStatusType"
+          "$ref": "#/definitions/GroupDeviceStatusType"
         },
         "event": {
           "type": "string",
           "format": "byte"
         }
       }
-    },
-    "v1GroupDeviceStatusType": {
-      "type": "string",
-      "enum": [
-        "TypeUnknown",
-        "TypePeerDisconnected",
-        "TypePeerConnected",
-        "TypePeerReconnecting"
-      ],
-      "default": "TypeUnknown"
     },
     "v1GroupInfoReply": {
       "type": "object",

@@ -22,7 +22,7 @@ $(gen_sum): $(gen_src)
 	    --workdir="/go/src/berty.tech/berty/docs" \
 	    --entrypoint="sh" \
 	    --rm \
-	    bertytech/buf:2 \
+	    bertytech/buf:5 \
 	    -xec 'make generate_local' \
 	)
 .PHONY: generate
