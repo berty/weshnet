@@ -107,10 +107,17 @@ func LogfileList(logDir string) ([]*Logfile, error) {
 			errs = multierr.Append(errs, err)
 		}
 
+		// use os.Stat to get the file size (updated than fs.FileInfo.Size()
+		filepath := filepath.Join(logDir, info.Name())
+		fi, err := os.Stat(filepath)
+		if err != nil {
+			errs = multierr.Append(errs, err)
+		}
+
 		logfiles = append(logfiles, &Logfile{
 			Dir:  logDir,
 			Name: info.Name(),
-			Size: info.Size(),
+			Size: fi.Size(),
 			Kind: sub[1],
 			Time: t,
 			Errs: errs,
