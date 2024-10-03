@@ -137,8 +137,8 @@ func (c *contactRequestsManager) metadataWatcher(ctx context.Context) {
 	c.muManager.Unlock()
 
 	// enqueue all contact with the `ToRequest` state
-	if err := c.enqueueRequest(ctx, contact); err != nil {
-		for _, contact := range c.metadataStore.ListContactsByStatus(protocoltypes.ContactState_ContactStateToRequest) {
+	for _, contact := range c.metadataStore.ListContactsByStatus(protocoltypes.ContactState_ContactStateToRequest) {
+		if err := c.enqueueRequest(ctx, contact); err != nil {
 			c.logger.Warn("unable to enqueue contact request", logutil.PrivateBinary("pk", contact.Pk), zap.Error(err))
 		}
 	}
