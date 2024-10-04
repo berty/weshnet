@@ -1,6 +1,7 @@
 package rendezvous
 
 import (
+	"encoding/base64"
 	"fmt"
 	"sync"
 	"time"
@@ -49,7 +50,7 @@ func (r *RotationInterval) NextTimePeriod(at time.Time) time.Time {
 }
 
 func (r *RotationInterval) PointForRawRotation(rotation []byte) (*Point, error) {
-	return r.PointForRotation(string(rotation))
+	return r.PointForRotation(base64.StdEncoding.EncodeToString(rotation))
 }
 
 func (r *RotationInterval) PointForRotation(rotation string) (*Point, error) {
@@ -158,7 +159,7 @@ func (p *Point) RawTopic() []byte {
 }
 
 func (p *Point) RotationTopic() string {
-	return string(p.rotation)
+	return base64.StdEncoding.EncodeToString(p.rotation)
 }
 
 func (p *Point) RawRotationTopic() []byte {

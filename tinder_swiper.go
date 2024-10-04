@@ -2,6 +2,7 @@ package weshnet
 
 import (
 	"context"
+	"encoding/base64"
 	"encoding/hex"
 	"fmt"
 	mrand "math/rand"
@@ -67,7 +68,7 @@ func (s *Swiper) RefreshContactRequest(ctx context.Context, topic []byte) (addrs
 
 	// canceling find peers
 	s.muRequest.Lock()
-	req, ok := s.inprogressLookup[string(topic)]
+	req, ok := s.inprogressLookup[base64.StdEncoding.EncodeToString(topic)]
 	if !ok {
 		err = fmt.Errorf("unknown topic")
 		s.muRequest.Unlock()
@@ -109,7 +110,7 @@ func (s *Swiper) WatchTopic(ctx context.Context, topic, seed []byte) <-chan peer
 	defer s.muRequest.Unlock()
 
 	s.logger.Debug("start watch for peer with",
-		logutil.PrivateString("topic", string(topic)),
+		logutil.PrivateString("topic", base64.StdEncoding.EncodeToString(topic)),
 		zap.String("seed", string(seed)))
 
 	var point *rendezvous.Point
@@ -124,7 +125,7 @@ func (s *Swiper) WatchTopic(ctx context.Context, topic, seed []byte) <-chan peer
 
 		for ctx.Err() == nil {
 			if point == nil || time.Now().After(point.Deadline()) {
-				point = s.rp.NewRendezvousPointForPeriod(time.Now(), string(topic), seed)
+				point = s.rp.NewRendezvousPointForPeriod(time.Now(), base64.StdEncoding.EncodeToString(topic), seed)
 			}
 
 			bstrat := s.backoffFactory()
@@ -132,7 +133,7 @@ func (s *Swiper) WatchTopic(ctx context.Context, topic, seed []byte) <-chan peer
 			// store watch peers informations to be later use by the refresh method to force a lookup
 			s.muRequest.Lock()
 			wctx, cancel := context.WithCancel(ctx)
-			s.inprogressLookup[string(topic)] = &swiperRequest{
+			s.inprogressLookup[base64.StdEncoding.EncodeToString(topic)] = &swiperRequest{
 				bstrat:    bstrat,
 				wgRefresh: &wgRefresh,
 				ctx:       wctx,
@@ -156,7 +157,7 @@ func (s *Swiper) WatchTopic(ctx context.Context, topic, seed []byte) <-chan peer
 		}
 
 		s.muRequest.Lock()
-		delete(s.inprogressLookup, string(topic))
+		delete(s.inprogressLookup, base64.StdEncoding.EncodeToString(topic))
 		s.muRequest.Unlock()
 
 		// wait all refresh job are done before closing the channel
@@ -212,13 +213,13 @@ func (s *Swiper) Announce(ctx context.Context, topic, seed []byte) {
 	var point *rendezvous.Point
 
 	s.logger.Debug("start announce for peer with",
-		logutil.PrivateString("topic", string(topic)),
+		logutil.PrivateString("topic", base64.StdEncoding.EncodeToString(topic)),
 		logutil.PrivateString("seed", string(seed)))
 
 	go func() {
 		for ctx.Err() == nil {
 			if point == nil || time.Now().After(point.Deadline()) {
-				point = s.rp.NewRendezvousPointForPeriod(time.Now(), string(topic), seed)
+				point = s.rp.NewRendezvousPointForPeriod(time.Now(), base64.StdEncoding.EncodeToString(topic), seed)
 			}
 
 			s.logger.Debug("self announce topic for time", logutil.PrivateString("topic", point.RotationTopic()))
