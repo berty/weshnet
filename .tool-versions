@@ -6,19 +6,12 @@
 # major version of Go which is allowed by kubo.
 # There is no contraindication for updating it.
 #-----
-golang 1.19.7
+golang 1.22.5
 
 #-----
 # This is simply the most recent golangci-lint version available to date.
-#
-# @TODO(gfanton): check if we still have this issue
-# The current version of golangci-lint also has a problem displaying logs on
-# Github actions, see: https://github.com/golangci/golangci-lint-action/issues/119
-#
-# It would be good to update it (when possible) to a version that fixes this log
-# issue and to update the golangci-lint Github Actions step accordingly.
 #-----
-golangci-lint 1.51.2
+golangci-lint 1.59.1
 
 #-----
 # This is simply the most recent jq version available to date.
@@ -30,4 +23,4 @@ jq 1.6
 # This is simply the most recent buf version available to date.
 # There is no contraindication for updating it.
 #-----
-buf 1.15.1
+buf 1.39.0

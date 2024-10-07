@@ -12,14 +12,6 @@ import (
 	// required by Makefile
 	_ "github.com/daixiang0/gci"
 	// required by protoc
-	_ "github.com/gogo/protobuf/gogoproto"
-	// required by protoc
-	_ "github.com/gogo/protobuf/protoc-gen-gogo"
-	// required by protoc
-	_ "github.com/gogo/protobuf/types"
-	// required by protoc
-	_ "github.com/golang/protobuf/proto"
-	// required by protoc
 	_ "github.com/grpc-ecosystem/grpc-gateway/protoc-gen-grpc-gateway"
 	// required by protoc
 	_ "github.com/grpc-ecosystem/grpc-gateway/protoc-gen-swagger"
@@ -28,11 +20,17 @@ import (
 	// required by protoc
 	_ "github.com/pseudomuto/protoc-gen-doc/cmd/protoc-gen-doc"
 	// required by protoc
+	_ "github.com/srikrsna/protoc-gen-gotag"
+	// required by protoc
+	_ "github.com/srikrsna/protoc-gen-gotag/tagger"
+	// required by protoc
 	_ "golang.org/x/tools/cmd/goimports"
 	// required by protoc
 	_ "google.golang.org/grpc/cmd/protoc-gen-go-grpc"
 	// required by protoc
 	_ "google.golang.org/protobuf/cmd/protoc-gen-go"
+	// required by protoc
+	_ "google.golang.org/protobuf/proto"
 	// required by Makefile
 	_ "moul.io/testman"
 	// required by Makefile

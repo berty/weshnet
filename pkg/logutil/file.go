@@ -40,7 +40,7 @@ func newFileWriteCloser(target, kind string) (io.WriteCloser, error) {
 	if dir := filepath.Dir(filename); !u.DirExists(dir) {
 		err := os.MkdirAll(dir, 0o711)
 		if err != nil {
-			return nil, errcode.TODO.Wrap(err)
+			return nil, errcode.ErrCode_TODO.Wrap(err)
 		}
 	}
 
@@ -49,13 +49,13 @@ func newFileWriteCloser(target, kind string) (io.WriteCloser, error) {
 		var err error
 		writer, err = os.OpenFile(filename, os.O_APPEND|os.O_WRONLY, os.ModeAppend)
 		if err != nil {
-			return nil, errcode.TODO.Wrap(err)
+			return nil, errcode.ErrCode_TODO.Wrap(err)
 		}
 	} else {
 		var err error
 		writer, err = os.Create(filename)
 		if err != nil {
-			return nil, errcode.TODO.Wrap(err)
+			return nil, errcode.ErrCode_TODO.Wrap(err)
 		}
 	}
 
@@ -83,14 +83,14 @@ var filePatternRegex = regexp.MustCompile(`(?m)^(.*)-(\d{4}-\d{2}-\d{2}T\d{2}-\d
 func LogfileList(logDir string) ([]*Logfile, error) {
 	files, err := os.ReadDir(logDir)
 	if err != nil {
-		return nil, errcode.TODO.Wrap(err)
+		return nil, errcode.ErrCode_TODO.Wrap(err)
 	}
 
 	infos := make([]fs.FileInfo, 0, len(files))
 	for _, entry := range files {
 		info, err := entry.Info()
 		if err != nil {
-			return nil, errcode.TODO.Wrap(err)
+			return nil, errcode.ErrCode_TODO.Wrap(err)
 		}
 		infos = append(infos, info)
 	}
@@ -107,10 +107,17 @@ func LogfileList(logDir string) ([]*Logfile, error) {
 			errs = multierr.Append(errs, err)
 		}
 
+		// use os.Stat to get the file size (updated than fs.FileInfo.Size()
+		filepath := filepath.Join(logDir, info.Name())
+		fi, err := os.Stat(filepath)
+		if err != nil {
+			errs = multierr.Append(errs, err)
+		}
+
 		logfiles = append(logfiles, &Logfile{
 			Dir:  logDir,
 			Name: info.Name(),
-			Size: info.Size(),
+			Size: fi.Size(),
 			Kind: sub[1],
 			Time: t,
 			Errs: errs,
@@ -164,7 +171,7 @@ func LogfileGC(logDir string, max int) error {
 	}
 	files, err := LogfileList(logDir)
 	if err != nil {
-		return errcode.TODO.Wrap(err)
+		return errcode.ErrCode_TODO.Wrap(err)
 	}
 	if len(files) < max {
 		return nil

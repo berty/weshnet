@@ -1,7 +1,7 @@
 FROM    moul/protoc-gen-gotemplate:latest as pgg
 
 # build image
-FROM    golang:1.19-alpine as builder
+FROM    golang:1.22-alpine as builder
 # install deps
 RUN     apk --no-cache add make git go rsync libc-dev openssh docker npm bash curl
 # ensure we use bash for all RUN commands
@@ -16,7 +16,7 @@ ENV     BASH_ENV=~/.bashrc
 # @TODO(gfanton): use asdf version
 RUN     go install -mod=readonly \
           google.golang.org/protobuf/cmd/protoc-gen-go \
-          github.com/gogo/protobuf/protoc-gen-gogo \
+          github.com/srikrsna/protoc-gen-gotag \
           google.golang.org/grpc/cmd/protoc-gen-go-grpc \
           github.com/grpc-ecosystem/grpc-gateway/protoc-gen-grpc-gateway \
           github.com/grpc-ecosystem/grpc-gateway/protoc-gen-swagger \
@@ -26,7 +26,7 @@ RUN     asdf plugin add buf && asdf install buf && \
         cp $(asdf which buf) /go/bin/buf
 
 # runtime
-FROM    golang:1.19-alpine
+FROM    golang:1.22-alpine
 RUN     apk --no-cache add git openssh make protobuf gcc libc-dev nodejs npm yarn sudo perl-utils tar sed grep \
  &&     mkdir -p /.cache/go-build \
  &&     chmod -R 777 /.cache \

@@ -27,7 +27,7 @@ func embeddedPublicKeyFetcher(issuerID string, allowList []string) (*verifier.Pu
 		}
 
 		if !found {
-			return nil, errcode.ErrServicesDirectoryInvalidVerifiedCredentialID.Wrap(fmt.Errorf("issuer is not allowed"))
+			return nil, errcode.ErrCode_ErrServicesDirectoryInvalidVerifiedCredentialID.Wrap(fmt.Errorf("issuer is not allowed"))
 		}
 	}
 
@@ -37,7 +37,7 @@ func embeddedPublicKeyFetcher(issuerID string, allowList []string) (*verifier.Pu
 	}
 
 	if len(rawData) != ed25519.PublicKeySize+2 {
-		return nil, errcode.ErrInvalidInput
+		return nil, errcode.ErrCode_ErrInvalidInput
 	}
 
 	return &verifier.PublicKey{
@@ -47,10 +47,12 @@ func embeddedPublicKeyFetcher(issuerID string, allowList []string) (*verifier.Pu
 	}, nil
 }
 
+// nolint:revive
 func EmbeddedPublicKeyFetcher(issuerID, keyID string) (*verifier.PublicKey, error) {
 	return embeddedPublicKeyFetcher(issuerID, nil)
 }
 
+// nolint:revive
 func EmbeddedPublicKeyFetcherAllowList(allowList []string) func(issuerID, keyID string) (*verifier.PublicKey, error) {
 	return func(issuerID, keyID string) (*verifier.PublicKey, error) {
 		return embeddedPublicKeyFetcher(issuerID, allowList)

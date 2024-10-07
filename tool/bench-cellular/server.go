@@ -192,7 +192,7 @@ func printHint(h host.Host, gOpts *globalOpts, sOpts *serverOpts) {
 		}
 
 		if serverAddr != nil {
-			hostAddr, err := ma.NewMultiaddr(fmt.Sprintf("/ipfs/%s", h.ID().Pretty()))
+			hostAddr, err := ma.NewMultiaddr(fmt.Sprintf("/ipfs/%s", h.ID().String()))
 			if err != nil {
 				panic(err)
 			}
@@ -222,7 +222,7 @@ func runServer(ctx context.Context, gOpts *globalOpts, sOpts *serverOpts) error 
 	h.SetStreamHandler(benchDownloadPID, func(s network.Stream) {
 		defer s.Close()
 
-		remotePeerID := s.Conn().RemotePeer().Pretty()
+		remotePeerID := s.Conn().RemotePeer().String()
 		log.Printf("New download stream from: %s\n", remotePeerID)
 
 		_, err := s.Write([]byte("\n"))
@@ -256,7 +256,7 @@ func runServer(ctx context.Context, gOpts *globalOpts, sOpts *serverOpts) error 
 	h.SetStreamHandler(benchUploadPID, func(s network.Stream) {
 		defer s.Close()
 
-		remotePeerID := s.Conn().RemotePeer().Pretty()
+		remotePeerID := s.Conn().RemotePeer().String()
 		log.Printf("New upload stream from: %s\n", remotePeerID)
 
 		_, err := s.Write([]byte("\n"))

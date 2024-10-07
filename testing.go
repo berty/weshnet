@@ -12,7 +12,6 @@ import (
 	"testing"
 	"time"
 
-	libp2p_mocknet "github.com/berty/go-libp2p-mock"
 	grpc_middleware "github.com/grpc-ecosystem/go-grpc-middleware"
 	grpc_zap "github.com/grpc-ecosystem/go-grpc-middleware/logging/zap"
 	grpc_ctxtags "github.com/grpc-ecosystem/go-grpc-middleware/tags"
@@ -20,10 +19,12 @@ import (
 	ds_sync "github.com/ipfs/go-datastore/sync"
 	"github.com/libp2p/go-libp2p/core/crypto"
 	"github.com/libp2p/go-libp2p/core/peer"
+	mocknet "github.com/libp2p/go-libp2p/p2p/net/mock"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
+	"google.golang.org/protobuf/proto"
 
 	encrepo "berty.tech/go-ipfs-repo-encrypted"
 	orbitdb "berty.tech/go-orbit-db"
@@ -96,7 +97,7 @@ type TestingProtocol struct {
 
 type TestingOpts struct {
 	Logger          *zap.Logger
-	Mocknet         libp2p_mocknet.Mocknet
+	Mocknet         mocknet.Mocknet
 	DiscoveryServer *tinder.MockDriverServer
 	SecretStore     secretstore.SecretStore
 	CoreAPIMock     ipfsutil.CoreAPIMock
@@ -210,7 +211,7 @@ func (opts *TestingOpts) applyDefaults(ctx context.Context, t testing.TB) {
 	}
 
 	if opts.Mocknet == nil {
-		opts.Mocknet = libp2p_mocknet.New()
+		opts.Mocknet = mocknet.New()
 		t.Cleanup(func() { opts.Mocknet.Close() })
 	}
 
@@ -311,10 +312,10 @@ func TestingClient(ctx context.Context, t testing.TB, svc Service, clientOpts []
 }
 
 // Connect Peers Helper
-type ConnectTestingProtocolFunc func(testing.TB, libp2p_mocknet.Mocknet)
+type ConnectTestingProtocolFunc func(testing.TB, mocknet.Mocknet)
 
 // ConnectAll peers between themselves
-func ConnectAll(t testing.TB, m libp2p_mocknet.Mocknet) {
+func ConnectAll(t testing.TB, m mocknet.Mocknet) {
 	t.Helper()
 
 	err := m.LinkAll()
@@ -329,7 +330,7 @@ func ConnectAll(t testing.TB, m libp2p_mocknet.Mocknet) {
 // │ 1 │───▶│ 2 │───▶│ 3 │─ ─ ─ ─ ▶│ x │
 // └───┘    └───┘    └───┘         └───┘
 
-func ConnectInLine(t testing.TB, m libp2p_mocknet.Mocknet) {
+func ConnectInLine(t testing.TB, m mocknet.Mocknet) {
 	t.Helper()
 
 	peers := m.Peers()
@@ -357,7 +358,7 @@ func CreatePeersWithGroupTest(ctx context.Context, t testing.TB, pathBase string
 		t.Fatal(err)
 	}
 
-	mn := libp2p_mocknet.New()
+	mn := mocknet.New()
 	t.Cleanup(func() { mn.Close() })
 
 	ipfsopts := ipfsutil.TestingAPIOpts{
@@ -441,7 +442,7 @@ func CreatePeersWithGroupTest(ctx context.Context, t testing.TB, pathBase string
 	}
 }
 
-func connectPeers(ctx context.Context, t testing.TB, mn libp2p_mocknet.Mocknet) {
+func connectPeers(ctx context.Context, t testing.TB, mn mocknet.Mocknet) {
 	t.Helper()
 
 	err := mn.LinkAll()
@@ -488,14 +489,14 @@ func GetRootDatastoreForPath(dir string, key []byte, salt []byte, logger *zap.Lo
 	} else {
 		err := os.MkdirAll(dir, os.ModePerm)
 		if err != nil {
-			return nil, errcode.TODO.Wrap(err)
+			return nil, errcode.ErrCode_TODO.Wrap(err)
 		}
 
 		dbPath := filepath.Join(dir, "datastore.sqlite")
 		sqldsOpts := encrepo.SQLCipherDatastoreOptions{JournalMode: "WAL", PlaintextHeader: len(salt) != 0, Salt: salt}
 		ds, err = encrepo.NewSQLCipherDatastore("sqlite3", dbPath, "blocks", key, sqldsOpts)
 		if err != nil {
-			return nil, errcode.TODO.Wrap(err)
+			return nil, errcode.ErrCode_TODO.Wrap(err)
 		}
 	}
 
@@ -555,13 +556,13 @@ func CreateMultiMemberGroupInstance(ctx context.Context, t *testing.T, tps ...*T
 
 		for i, pt := range tps {
 			res, err := pt.Client.GroupInfo(ctx, &protocoltypes.GroupInfo_Request{
-				GroupPK: group.PublicKey,
+				GroupPk: group.PublicKey,
 			})
 			require.NoError(t, err)
 			assert.Equal(t, group.PublicKey, res.Group.PublicKey)
 
-			memberPKs[i] = res.MemberPK
-			devicePKs[i] = res.DevicePK
+			memberPKs[i] = res.MemberPk
+			devicePKs[i] = res.DevicePk
 		}
 
 		testutil.LogTree(t, "duration: %s", 1, false, time.Since(start))
@@ -574,7 +575,7 @@ func CreateMultiMemberGroupInstance(ctx context.Context, t *testing.T, tps ...*T
 
 		for i, pt := range tps {
 			_, err := pt.Client.ActivateGroup(ctx, &protocoltypes.ActivateGroup_Request{
-				GroupPK: group.PublicKey,
+				GroupPk: group.PublicKey,
 			})
 
 			assert.NoError(t, err, fmt.Sprintf("error for client %d", i))
@@ -606,7 +607,7 @@ func CreateMultiMemberGroupInstance(ctx context.Context, t *testing.T, tps ...*T
 				defer cancel()
 
 				sub, inErr := tp.Client.GroupMetadataList(ctx, &protocoltypes.GroupMetadataList_Request{
-					GroupPK: group.PublicKey,
+					GroupPk: group.PublicKey,
 				})
 				if inErr != nil {
 					assert.NoError(t, err, fmt.Sprintf("error for client %d", i))
@@ -668,20 +669,20 @@ func CreateMultiMemberGroupInstance(ctx context.Context, t *testing.T, tps ...*T
 
 func isEventAddSecretTargetedToMember(ownRawPK []byte, evt *protocoltypes.GroupMetadataEvent) ([]byte, error) {
 	// Only count EventTypeGroupDeviceChainKeyAdded events
-	if evt.Metadata.EventType != protocoltypes.EventTypeGroupDeviceChainKeyAdded {
+	if evt.Metadata.EventType != protocoltypes.EventType_EventTypeGroupDeviceChainKeyAdded {
 		return nil, nil
 	}
 
 	sec := &protocoltypes.GroupDeviceChainKeyAdded{}
-	err := sec.Unmarshal(evt.Event)
+	err := proto.Unmarshal(evt.Event, sec)
 	if err != nil {
 		return nil, err
 	}
 
 	// Filter out events targeted at other members
-	if !bytes.Equal(ownRawPK, sec.DestMemberPK) {
+	if !bytes.Equal(ownRawPK, sec.DestMemberPk) {
 		return nil, nil
 	}
 
-	return sec.DevicePK, nil
+	return sec.DevicePk, nil
 }

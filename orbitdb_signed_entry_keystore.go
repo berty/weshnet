@@ -18,7 +18,7 @@ type BertySignedKeyStore struct {
 func (s *BertySignedKeyStore) SetKey(pk crypto.PrivKey) error {
 	pubKeyBytes, err := pk.GetPublic().Raw()
 	if err != nil {
-		return errcode.TODO.Wrap(err)
+		return errcode.ErrCode_TODO.Wrap(err)
 	}
 
 	keyID := hex.EncodeToString(pubKeyBytes)
@@ -28,7 +28,7 @@ func (s *BertySignedKeyStore) SetKey(pk crypto.PrivKey) error {
 	return nil
 }
 
-func (s *BertySignedKeyStore) HasKey(ctx context.Context, id string) (bool, error) {
+func (s *BertySignedKeyStore) HasKey(_ context.Context, id string) (bool, error) {
 	_, ok := s.Load(id)
 
 	return ok, nil
@@ -38,14 +38,14 @@ func (s *BertySignedKeyStore) CreateKey(ctx context.Context, id string) (crypto.
 	return s.GetKey(ctx, id)
 }
 
-func (s *BertySignedKeyStore) GetKey(ctx context.Context, id string) (crypto.PrivKey, error) {
+func (s *BertySignedKeyStore) GetKey(_ context.Context, id string) (crypto.PrivKey, error) {
 	if privKey, ok := s.Load(id); ok {
 		if pk, ok := privKey.(crypto.PrivKey); ok {
 			return pk, nil
 		}
 	}
 
-	return nil, errcode.ErrGroupMemberUnknownGroupID
+	return nil, errcode.ErrCode_ErrGroupMemberUnknownGroupID
 }
 
 func (s *BertySignedKeyStore) Sign(privKey crypto.PrivKey, bytes []byte) ([]byte, error) {
@@ -59,7 +59,7 @@ func (s *BertySignedKeyStore) Verify(signature []byte, publicKey crypto.PubKey, 
 	}
 
 	if !ok {
-		return errcode.ErrGroupMemberLogEventSignature
+		return errcode.ErrCode_ErrGroupMemberLogEventSignature
 	}
 
 	return nil

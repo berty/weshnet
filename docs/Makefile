@@ -22,12 +22,12 @@ $(gen_sum): $(gen_src)
 	    --workdir="/go/src/berty.tech/berty/docs" \
 	    --entrypoint="sh" \
 	    --rm \
-	    bertytech/buf:2 \
+	    bertytech/buf:5 \
 	    -xec 'make generate_local' \
 	)
 .PHONY: generate
 
-protoc_opts := -I ../api:`go list -m -mod=mod -f {{.Dir}} github.com/grpc-ecosystem/grpc-gateway`/third_party/googleapis:`go list -m -mod=mod -f {{.Dir}} github.com/gogo/protobuf`:/protobuf
+protoc_opts := -I ../api:`go list -m -mod=mod -f {{.Dir}} github.com/grpc-ecosystem/grpc-gateway`/third_party/googleapis
 
 generate_local:
 	mkdir -p protocol

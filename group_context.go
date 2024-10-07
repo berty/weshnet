@@ -10,6 +10,7 @@ import (
 
 	"github.com/libp2p/go-libp2p/core/crypto"
 	"go.uber.org/zap"
+	"google.golang.org/protobuf/proto"
 
 	"berty.tech/go-orbit-db/stores"
 	"berty.tech/weshnet/pkg/errcode"
@@ -112,7 +113,7 @@ func (gc *GroupContext) ActivateGroupContext(contactPK crypto.PubKey) (err error
 	// chainkey of new members.
 	{
 		m := gc.MetadataStore()
-		sub, err := m.EventBus().Subscribe(new(protocoltypes.GroupMetadataEvent))
+		sub, err := m.EventBus().Subscribe(new(*protocoltypes.GroupMetadataEvent))
 		if err != nil {
 			return fmt.Errorf("unable to subscribe to group metadata event: %w", err)
 		}
@@ -131,9 +132,9 @@ func (gc *GroupContext) ActivateGroupContext(contactPK crypto.PubKey) (err error
 				}
 
 				// @TODO(gfanton): should we handle this in a sub gorouting ?
-				e := evt.(protocoltypes.GroupMetadataEvent)
+				e := evt.(*protocoltypes.GroupMetadataEvent)
 				// start := time.Now()
-				if err := gc.handleGroupMetadataEvent(&e); err != nil {
+				if err := gc.handleGroupMetadataEvent(e); err != nil {
 					gc.logger.Error("unable to handle EventTypeGroupDeviceSecretAdded", zap.Error(err))
 				}
 
@@ -189,13 +190,13 @@ func (gc *GroupContext) ActivateGroupContext(contactPK crypto.PubKey) (err error
 
 func (gc *GroupContext) handleGroupMetadataEvent(e *protocoltypes.GroupMetadataEvent) (err error) {
 	switch e.Metadata.EventType {
-	case protocoltypes.EventTypeGroupMemberDeviceAdded:
+	case protocoltypes.EventType_EventTypeGroupMemberDeviceAdded:
 		event := &protocoltypes.GroupMemberDeviceAdded{}
-		if err := event.Unmarshal(e.Event); err != nil {
+		if err := proto.Unmarshal(e.Event, event); err != nil {
 			gc.logger.Error("unable to unmarshal payload", zap.Error(err))
 		}
 
-		memberPK, err := crypto.UnmarshalEd25519PublicKey(event.MemberPK)
+		memberPK, err := crypto.UnmarshalEd25519PublicKey(event.MemberPk)
 		if err != nil {
 			return fmt.Errorf("unable to unmarshal sender member pk: %w", err)
 		}
@@ -205,16 +206,16 @@ func (gc *GroupContext) handleGroupMetadataEvent(e *protocoltypes.GroupMetadataE
 		}
 
 		if _, err := gc.MetadataStore().SendSecret(gc.ctx, memberPK); err != nil {
-			if !errcode.Is(err, errcode.ErrGroupSecretAlreadySentToMember) {
+			if !errcode.Is(err, errcode.ErrCode_ErrGroupSecretAlreadySentToMember) {
 				return fmt.Errorf("unable to send secret to member: %w", err)
 			}
 		}
 
-	case protocoltypes.EventTypeGroupDeviceChainKeyAdded:
+	case protocoltypes.EventType_EventTypeGroupDeviceChainKeyAdded:
 		senderPublicKey, encryptedDeviceChainKey, err := getAndFilterGroupDeviceChainKeyAddedPayload(e.Metadata, gc.ownMemberDevice.Member())
 		switch err {
 		case nil: // ok
-		case errcode.ErrInvalidInput, errcode.ErrGroupSecretOtherDestMember:
+		case errcode.ErrCode_ErrInvalidInput, errcode.ErrCode_ErrGroupSecretOtherDestMember:
 			// @FIXME(gfanton): should we log this ?
 			return nil
 		default:
@@ -266,7 +267,7 @@ func (gc *GroupContext) metadataStoreListSecrets() map[crypto.PubKey][]byte {
 		}
 
 		pk, encryptedDeviceChainKey, err := getAndFilterGroupDeviceChainKeyAddedPayload(metadata.Metadata, gc.MemberPubKey())
-		if errcode.Is(err, errcode.ErrInvalidInput) || errcode.Is(err, errcode.ErrGroupSecretOtherDestMember) {
+		if errcode.Is(err, errcode.ErrCode_ErrInvalidInput) || errcode.Is(err, errcode.ErrCode_ErrGroupSecretOtherDestMember) {
 			continue
 		}
 
@@ -285,7 +286,7 @@ func (gc *GroupContext) sendSecretsToExistingMembers(contact crypto.PubKey) {
 	members := gc.MetadataStore().ListMembers()
 
 	// Force sending secret to contact member in contact group
-	if gc.group.GroupType == protocoltypes.GroupTypeContact && len(members) < 2 && contact != nil {
+	if gc.group.GroupType == protocoltypes.GroupType_GroupTypeContact && len(members) < 2 && contact != nil {
 		// Check if contact member is already listed
 		found := false
 		for _, member := range members {
@@ -308,7 +309,7 @@ func (gc *GroupContext) sendSecretsToExistingMembers(contact crypto.PubKey) {
 		}
 
 		if _, err := gc.MetadataStore().SendSecret(gc.ctx, pk); err != nil {
-			if !errcode.Is(err, errcode.ErrGroupSecretAlreadySentToMember) {
+			if !errcode.Is(err, errcode.ErrCode_ErrGroupSecretAlreadySentToMember) {
 				gc.logger.Info("secret already sent secret to member", logutil.PrivateString("memberpk", base64.StdEncoding.EncodeToString(rawPK)))
 				continue
 			}

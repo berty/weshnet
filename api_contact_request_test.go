@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	libp2p_mocknet "github.com/berty/go-libp2p-mock"
+	mocknet "github.com/libp2p/go-libp2p/p2p/net/mock"
 	"github.com/stretchr/testify/require"
 
 	"berty.tech/weshnet/pkg/protocoltypes"
@@ -19,7 +19,7 @@ func TestShareContact(t *testing.T) {
 	defer cleanup()
 
 	opts := TestingOpts{
-		Mocknet: libp2p_mocknet.New(),
+		Mocknet: mocknet.New(),
 		Logger:  logger,
 	}
 
@@ -47,6 +47,6 @@ func TestShareContact(t *testing.T) {
 	config, err := pts[0].Client.ServiceGetConfiguration(ctx,
 		&protocoltypes.ServiceGetConfiguration_Request{})
 	require.NoError(t, err)
-	require.Equal(t, contact.Contact.PK, config.AccountPK)
+	require.Equal(t, contact.Contact.Pk, config.AccountPk)
 	require.Equal(t, contact.Contact.PublicRendezvousSeed, contactRequestRef.PublicRendezvousSeed)
 }

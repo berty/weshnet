@@ -21,7 +21,8 @@ func NewUnsecureSimpleAuthAccess(scheme, token string) credentials.PerRPCCredent
 	return &unsecureSimpleAuthAccess{token: token, scheme: scheme}
 }
 
-func (sa *unsecureSimpleAuthAccess) GetRequestMetadata(ctx context.Context, uri ...string) (map[string]string, error) {
+// nolint:revive
+func (sa *unsecureSimpleAuthAccess) GetRequestMetadata(_ context.Context, uri ...string) (map[string]string, error) {
 	return map[string]string{
 		headerAuthorize: "bearer " + sa.token,
 	}, nil

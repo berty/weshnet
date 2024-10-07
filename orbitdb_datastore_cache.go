@@ -15,6 +15,7 @@ type datastoreCache struct {
 	ds datastore.Batching
 }
 
+//nolint:revive
 func (d *datastoreCache) Load(directory string, dbAddress address.Address) (datastore.Datastore, error) {
 	return datastoreutil.NewNamespacedDatastore(d.ds, datastore.NewKey(dbAddress.String())), nil
 }
@@ -23,6 +24,7 @@ func (d *datastoreCache) Close() error {
 	return nil
 }
 
+//nolint:revive
 func (d *datastoreCache) Destroy(directory string, dbAddress address.Address) error {
 	keys, err := datastoreutil.NewNamespacedDatastore(d.ds, datastore.NewKey(dbAddress.String())).Query(context.TODO(), query.Query{KeysOnly: true})
 	if err != nil {

@@ -79,7 +79,7 @@ func (a *deviceKeystore) devicePrivateKey() (crypto.PrivKey, error) {
 func (a *deviceKeystore) contactGroupPrivateKey(contactPublicKey crypto.PubKey) (crypto.PrivKey, error) {
 	accountPrivateKey, err := a.getAccountPrivateKey()
 	if err != nil {
-		return nil, errcode.ErrInternal.Wrap(err)
+		return nil, errcode.ErrCode_ErrInternal.Wrap(err)
 	}
 
 	return a.getOrComputeECDH(keyContactGroup, contactPublicKey, accountPrivateKey)
@@ -90,12 +90,12 @@ func (a *deviceKeystore) contactGroupPrivateKey(contactPublicKey crypto.PubKey) 
 func (a *deviceKeystore) memberDeviceForMultiMemberGroup(groupPublicKey crypto.PubKey) (*ownMemberDevice, error) {
 	memberPrivateKey, err := a.computeMemberKeyForMultiMemberGroup(groupPublicKey)
 	if err != nil {
-		return nil, errcode.ErrInternal.Wrap(fmt.Errorf("unable to get or generate a device key for group member: %w", err))
+		return nil, errcode.ErrCode_ErrInternal.Wrap(fmt.Errorf("unable to get or generate a device key for group member: %w", err))
 	}
 
 	devicePrivateKey, err := a.getOrGenerateDeviceKeyForMultiMemberGroup(groupPublicKey)
 	if err != nil {
-		return nil, errcode.ErrInternal.Wrap(err)
+		return nil, errcode.ErrCode_ErrInternal.Wrap(err)
 	}
 
 	return newOwnMemberDevice(memberPrivateKey, devicePrivateKey), nil
@@ -106,28 +106,28 @@ func (a *deviceKeystore) memberDeviceForMultiMemberGroup(groupPublicKey crypto.P
 func (a *deviceKeystore) memberDeviceForGroup(group *protocoltypes.Group) (*ownMemberDevice, error) {
 	publicKey, err := group.GetPubKey()
 	if err != nil {
-		return nil, errcode.ErrInvalidInput.Wrap(fmt.Errorf("unable to get public key for group: %w", err))
+		return nil, errcode.ErrCode_ErrInvalidInput.Wrap(fmt.Errorf("unable to get public key for group: %w", err))
 	}
 
 	switch group.GetGroupType() {
-	case protocoltypes.GroupTypeAccount, protocoltypes.GroupTypeContact:
+	case protocoltypes.GroupType_GroupTypeAccount, protocoltypes.GroupType_GroupTypeContact:
 		memberPrivateKey, err := a.getAccountPrivateKey()
 		if err != nil {
-			return nil, errcode.ErrInternal.Wrap(err)
+			return nil, errcode.ErrCode_ErrInternal.Wrap(err)
 		}
 
 		devicePrivateKey, err := a.devicePrivateKey()
 		if err != nil {
-			return nil, errcode.ErrInternal.Wrap(err)
+			return nil, errcode.ErrCode_ErrInternal.Wrap(err)
 		}
 
 		return newOwnMemberDevice(memberPrivateKey, devicePrivateKey), nil
 
-	case protocoltypes.GroupTypeMultiMember:
+	case protocoltypes.GroupType_GroupTypeMultiMember:
 		return a.memberDeviceForMultiMemberGroup(publicKey)
 	}
 
-	return nil, errcode.ErrInvalidInput.Wrap(fmt.Errorf("unknown group type"))
+	return nil, errcode.ErrCode_ErrInvalidInput.Wrap(fmt.Errorf("unknown group type"))
 }
 
 // getOrGenerateNamedKey retrieves a private key by its name, or generate it
@@ -137,16 +137,16 @@ func (a *deviceKeystore) getOrGenerateNamedKey(name string) (crypto.PrivKey, err
 	if err == nil {
 		return privateKey, nil
 	} else if err.Error() != keystore.ErrNoSuchKey.Error() {
-		return nil, errcode.ErrDBRead.Wrap(fmt.Errorf("unable to perform get operation on keystore: %w", err))
+		return nil, errcode.ErrCode_ErrDBRead.Wrap(fmt.Errorf("unable to perform get operation on keystore: %w", err))
 	}
 
 	privateKey, _, err = crypto.GenerateEd25519Key(crand.Reader)
 	if err != nil {
-		return nil, errcode.ErrCryptoKeyGeneration.Wrap(fmt.Errorf("unable to generate an ed25519 key: %w", err))
+		return nil, errcode.ErrCode_ErrCryptoKeyGeneration.Wrap(fmt.Errorf("unable to generate an ed25519 key: %w", err))
 	}
 
 	if err := a.keystore.Put(name, privateKey); err != nil {
-		return nil, errcode.ErrDBWrite.Wrap(fmt.Errorf("unable to perform put operation on keystore: %w", err))
+		return nil, errcode.ErrCode_ErrDBWrite.Wrap(fmt.Errorf("unable to perform put operation on keystore: %w", err))
 	}
 
 	return privateKey, nil
@@ -161,7 +161,7 @@ func (a *deviceKeystore) getOrGenerateDeviceKeyForMultiMemberGroup(groupPublicKe
 
 	groupPublicKeyRaw, err := groupPublicKey.Raw()
 	if err != nil {
-		return nil, errcode.ErrSerialization.Wrap(err)
+		return nil, errcode.ErrCode_ErrSerialization.Wrap(err)
 	}
 
 	name := strings.Join([]string{keyMemberDevice, hex.EncodeToString(groupPublicKeyRaw)}, "_")
@@ -177,7 +177,7 @@ func (a *deviceKeystore) getOrComputeECDH(nameSpace string, publicKey crypto.Pub
 
 	publicKeyRaw, err := publicKey.Raw()
 	if err != nil {
-		return nil, errcode.ErrSerialization.Wrap(err)
+		return nil, errcode.ErrCode_ErrSerialization.Wrap(err)
 	}
 
 	name := strings.Join([]string{nameSpace, hex.EncodeToString(publicKeyRaw)}, "_")
@@ -186,12 +186,12 @@ func (a *deviceKeystore) getOrComputeECDH(nameSpace string, publicKey crypto.Pub
 	if err == nil {
 		return privateKey, nil
 	} else if err.Error() != keystore.ErrNoSuchKey.Error() {
-		return nil, errcode.ErrDBRead.Wrap(fmt.Errorf("unable to perform get operation on keystore: %w", err))
+		return nil, errcode.ErrCode_ErrDBRead.Wrap(fmt.Errorf("unable to perform get operation on keystore: %w", err))
 	}
 
 	privateKeyBytes, publicKeyBytes, err := cryptoutil.EdwardsToMontgomery(ownPrivateKey, publicKey)
 	if err != nil {
-		return nil, errcode.ErrCryptoKeyConversion.Wrap(err)
+		return nil, errcode.ErrCode_ErrCryptoKeyConversion.Wrap(err)
 	}
 
 	secret := ecdh.X25519().ComputeSecret(privateKeyBytes, publicKeyBytes)
@@ -199,11 +199,11 @@ func (a *deviceKeystore) getOrComputeECDH(nameSpace string, publicKey crypto.Pub
 
 	privateKey, _, err = crypto.KeyPairFromStdKey(&groupSecretPrivateKey)
 	if err != nil {
-		return nil, errcode.ErrCryptoKeyConversion.Wrap(err)
+		return nil, errcode.ErrCode_ErrCryptoKeyConversion.Wrap(err)
 	}
 
 	if err := a.keystore.Put(name, privateKey); err != nil {
-		return nil, errcode.ErrDBWrite.Wrap(err)
+		return nil, errcode.ErrCode_ErrDBWrite.Wrap(err)
 	}
 
 	return privateKey, nil
@@ -215,7 +215,7 @@ func (a *deviceKeystore) getOrComputeECDH(nameSpace string, publicKey crypto.Pub
 func (a *deviceKeystore) computeMemberKeyForMultiMemberGroup(groupPublicKey crypto.PubKey) (crypto.PrivKey, error) {
 	accountProofPrivateKey, err := a.getAccountProofPrivateKey()
 	if err != nil {
-		return nil, errcode.ErrInternal.Wrap(err)
+		return nil, errcode.ErrCode_ErrInternal.Wrap(err)
 	}
 
 	return a.getOrComputeECDH(keyMember, groupPublicKey, accountProofPrivateKey)
@@ -233,25 +233,25 @@ func (a *deviceKeystore) restoreAccountKeys(accountPrivateKeyBytes []byte, accou
 		var err error
 		privateKeys[keyName], err = getEd25519PrivateKeyFromLibP2PFormattedBytes(keyBytes)
 		if err != nil {
-			return errcode.ErrDeserialization.Wrap(err)
+			return errcode.ErrCode_ErrDeserialization.Wrap(err)
 		}
 	}
 
 	if privateKeys[keyAccount].Equals(privateKeys[keyAccountProof]) {
-		return errcode.ErrInvalidInput.Wrap(fmt.Errorf("the account key cannot be the same value as the account proof key"))
+		return errcode.ErrCode_ErrInvalidInput.Wrap(fmt.Errorf("the account key cannot be the same value as the account proof key"))
 	}
 
 	for keyName := range privateKeys {
 		if exists, err := a.keystore.Has(keyName); err != nil {
-			return errcode.ErrDBRead.Wrap(err)
+			return errcode.ErrCode_ErrDBRead.Wrap(err)
 		} else if exists {
-			return errcode.ErrInvalidInput.Wrap(fmt.Errorf("an account is already set in this keystore"))
+			return errcode.ErrCode_ErrInvalidInput.Wrap(fmt.Errorf("an account is already set in this keystore"))
 		}
 	}
 
 	for keyName, privateKey := range privateKeys {
 		if err := a.keystore.Put(keyName, privateKey); err != nil {
-			return errcode.ErrDBWrite.Wrap(err)
+			return errcode.ErrCode_ErrDBWrite.Wrap(err)
 		}
 	}
 

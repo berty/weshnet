@@ -63,7 +63,6 @@ func ExampleNewInMemoryServiceClient_basic() {
 	}
 
 	// Output:
-	// go-libp2p resource manager protection disabled
 	// /p2p-circuit
 }
 
@@ -94,7 +93,7 @@ func ExampleNewPersistentServiceClient_basic() {
 			panic(err)
 		}
 
-		peerid = ret.PeerID
+		peerid = ret.PeerId
 
 		if err := client.Close(); err != nil {
 			panic(err)
@@ -114,14 +113,12 @@ func ExampleNewPersistentServiceClient_basic() {
 			panic(err)
 		}
 
-		if peerid != ret.PeerID {
+		if peerid != ret.PeerId {
 			panic("peerid should be identical")
 		}
 	}
 
 	// Output:
-	// go-libp2p resource manager protection disabled
-	// go-libp2p resource manager protection disabled
 }
 
 func ExampleNewServiceClient_basic() {
@@ -149,7 +146,6 @@ func ExampleNewServiceClient_basic() {
 	}
 
 	// Output:
-	// go-libp2p resource manager protection disabled
 	// /p2p-circuit
 }
 
@@ -178,7 +174,6 @@ func ExampleNewService_basic() {
 	}
 
 	// Output:
-	// go-libp2p resource manager protection disabled
 	// /p2p-circuit
 }
 

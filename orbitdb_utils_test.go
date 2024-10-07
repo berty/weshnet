@@ -7,6 +7,7 @@ import (
 
 	"github.com/libp2p/go-libp2p/core/crypto"
 	"github.com/stretchr/testify/require"
+	"google.golang.org/protobuf/proto"
 
 	"berty.tech/weshnet/pkg/protocoltypes"
 )
@@ -20,7 +21,7 @@ func inviteAllPeersToGroup(ctx context.Context, t *testing.T, peers []*mockedPee
 	errChan := make(chan error, len(peers))
 
 	for i, p := range peers {
-		sub, err := p.GC.MetadataStore().EventBus().Subscribe(new(protocoltypes.GroupMetadataEvent))
+		sub, err := p.GC.MetadataStore().EventBus().Subscribe(new(*protocoltypes.GroupMetadataEvent))
 		require.NoError(t, err)
 		go func(p *mockedPeer, peerIndex int) {
 			defer sub.Close()
@@ -29,13 +30,13 @@ func inviteAllPeersToGroup(ctx context.Context, t *testing.T, peers []*mockedPee
 			eventReceived := 0
 
 			for e := range sub.Out() {
-				evt := e.(protocoltypes.GroupMetadataEvent)
-				if evt.Metadata.EventType != protocoltypes.EventTypeGroupMemberDeviceAdded {
+				evt := e.(*protocoltypes.GroupMetadataEvent)
+				if evt.Metadata.EventType != protocoltypes.EventType_EventTypeGroupMemberDeviceAdded {
 					continue
 				}
 
 				memdev := &protocoltypes.GroupMemberDeviceAdded{}
-				if err := memdev.Unmarshal(evt.Event); err != nil {
+				if err := proto.Unmarshal(evt.Event, memdev); err != nil {
 					errChan <- err
 					return
 				}
@@ -75,7 +76,7 @@ func waitForBertyEventType(ctx context.Context, t *testing.T, ms *MetadataStore,
 
 	handledEvents := map[string]struct{}{}
 
-	sub, err := ms.EventBus().Subscribe(new(protocoltypes.GroupMetadataEvent))
+	sub, err := ms.EventBus().Subscribe(new(*protocoltypes.GroupMetadataEvent))
 	require.NoError(t, err)
 	defer sub.Close()
 
@@ -89,12 +90,12 @@ func waitForBertyEventType(ctx context.Context, t *testing.T, ms *MetadataStore,
 		}
 
 		switch evt := e.(type) {
-		case protocoltypes.GroupMetadataEvent:
+		case *protocoltypes.GroupMetadataEvent:
 			if evt.Metadata.EventType != eventType {
 				continue
 			}
 
-			eID := string(evt.EventContext.ID)
+			eID := string(evt.EventContext.Id)
 
 			if _, ok := handledEvents[eID]; ok {
 				continue
@@ -103,7 +104,7 @@ func waitForBertyEventType(ctx context.Context, t *testing.T, ms *MetadataStore,
 			handledEvents[eID] = struct{}{}
 
 			e := &protocoltypes.GroupDeviceChainKeyAdded{}
-			if err := e.Unmarshal(evt.Event); err != nil {
+			if err := proto.Unmarshal(evt.Event, e); err != nil {
 				t.Fatalf(" err: %+v\n", err.Error())
 			}
 

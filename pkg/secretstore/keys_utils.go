@@ -21,16 +21,16 @@ import (
 // private key into a crypto.PrivKey instance, ensuring it is an ed25519 key
 func getEd25519PrivateKeyFromLibP2PFormattedBytes(rawKeyBytes []byte) (crypto.PrivKey, error) {
 	if len(rawKeyBytes) == 0 {
-		return nil, errcode.ErrInvalidInput.Wrap(fmt.Errorf("missing key data"))
+		return nil, errcode.ErrCode_ErrInvalidInput.Wrap(fmt.Errorf("missing key data"))
 	}
 
 	privateKey, err := crypto.UnmarshalPrivateKey(rawKeyBytes)
 	if err != nil {
-		return nil, errcode.ErrInvalidInput.Wrap(err)
+		return nil, errcode.ErrCode_ErrInvalidInput.Wrap(err)
 	}
 
 	if privateKey.Type() != crypto_pb.KeyType_Ed25519 {
-		return nil, errcode.ErrInvalidInput.Wrap(fmt.Errorf("invalid key format"))
+		return nil, errcode.ErrCode_ErrInvalidInput.Wrap(fmt.Errorf("invalid key format"))
 	}
 
 	return privateKey, nil
@@ -44,13 +44,13 @@ func getKeysForGroupOfContact(contactPairPrivateKey crypto.PrivKey) (crypto.Priv
 
 	contactPairPrivateKeyBytes, err := contactPairPrivateKey.Raw()
 	if err != nil {
-		return nil, nil, errcode.ErrSerialization.Wrap(err)
+		return nil, nil, errcode.ErrCode_ErrSerialization.Wrap(err)
 	}
 
 	// Generate Pseudo Random Key using contactPairPrivateKeyBytes as IKM and salt
 	prk := hkdf.Extract(hash, contactPairPrivateKeyBytes, nil)
 	if len(prk) == 0 {
-		return nil, nil, errcode.ErrInternal.Wrap(fmt.Errorf("unable to instantiate pseudo random key"))
+		return nil, nil, errcode.ErrCode_ErrInternal.Wrap(fmt.Errorf("unable to instantiate pseudo random key"))
 	}
 
 	// Expand using extracted prk and groupID as info (kind of namespace)
@@ -59,24 +59,24 @@ func getKeysForGroupOfContact(contactPairPrivateKey crypto.PrivKey) (crypto.Priv
 	// Generate next KDF and message keys
 	groupSeed, err := io.ReadAll(io.LimitReader(kdf, 32))
 	if err != nil {
-		return nil, nil, errcode.ErrCryptoKeyGeneration.Wrap(err)
+		return nil, nil, errcode.ErrCode_ErrCryptoKeyGeneration.Wrap(err)
 	}
 
 	groupSecretSeed, err := io.ReadAll(io.LimitReader(kdf, 32))
 	if err != nil {
-		return nil, nil, errcode.ErrCryptoKeyGeneration.Wrap(err)
+		return nil, nil, errcode.ErrCode_ErrCryptoKeyGeneration.Wrap(err)
 	}
 
 	stdGroupPrivateKey := ed25519.NewKeyFromSeed(groupSeed)
 	groupPrivateKey, _, err := crypto.KeyPairFromStdKey(&stdGroupPrivateKey)
 	if err != nil {
-		return nil, nil, errcode.ErrCryptoKeyGeneration.Wrap(err)
+		return nil, nil, errcode.ErrCode_ErrCryptoKeyGeneration.Wrap(err)
 	}
 
 	stdGroupSecretPrivateKey := ed25519.NewKeyFromSeed(groupSecretSeed)
 	groupSecretPrivateKey, _, err := crypto.KeyPairFromStdKey(&stdGroupSecretPrivateKey)
 	if err != nil {
-		return nil, nil, errcode.ErrCryptoKeyGeneration.Wrap(err)
+		return nil, nil, errcode.ErrCode_ErrCryptoKeyGeneration.Wrap(err)
 	}
 
 	return groupPrivateKey, groupSecretPrivateKey, nil
@@ -87,38 +87,38 @@ func getKeysForGroupOfContact(contactPairPrivateKey crypto.PrivKey) (crypto.Priv
 func getGroupForContact(contactPairPrivateKey crypto.PrivKey) (*protocoltypes.Group, error) {
 	groupPrivateKey, groupSecretPrivateKey, err := getKeysForGroupOfContact(contactPairPrivateKey)
 	if err != nil {
-		return nil, errcode.ErrCryptoKeyGeneration.Wrap(err)
+		return nil, errcode.ErrCode_ErrCryptoKeyGeneration.Wrap(err)
 	}
 
 	pubBytes, err := groupPrivateKey.GetPublic().Raw()
 	if err != nil {
-		return nil, errcode.ErrSerialization.Wrap(err)
+		return nil, errcode.ErrCode_ErrSerialization.Wrap(err)
 	}
 
 	signingBytes, err := cryptoutil.SeedFromEd25519PrivateKey(groupSecretPrivateKey)
 	if err != nil {
-		return nil, errcode.ErrSerialization.Wrap(err)
+		return nil, errcode.ErrCode_ErrSerialization.Wrap(err)
 	}
 
 	return &protocoltypes.Group{
 		PublicKey: pubBytes,
 		Secret:    signingBytes,
 		SecretSig: nil,
-		GroupType: protocoltypes.GroupTypeContact,
+		GroupType: protocoltypes.GroupType_GroupTypeContact,
 	}, nil
 }
 
 // getGroupOutOfStoreSecret retrieves the out of store group secret
 func getGroupOutOfStoreSecret(m *protocoltypes.Group) ([]byte, error) {
 	if len(m.GetSecret()) == 0 {
-		return nil, errcode.ErrInvalidInput.Wrap(fmt.Errorf("no secret known for group"))
+		return nil, errcode.ErrCode_ErrInvalidInput.Wrap(fmt.Errorf("no secret known for group"))
 	}
 
 	arr := [cryptoutil.KeySize]byte{}
 
 	kdf := hkdf.New(sha3.New256, m.GetSecret(), nil, []byte(namespaceOutOfStoreSecret))
 	if _, err := io.ReadFull(kdf, arr[:]); err != nil {
-		return nil, errcode.ErrStreamRead.Wrap(err)
+		return nil, errcode.ErrCode_ErrStreamRead.Wrap(err)
 	}
 
 	return arr[:], nil
@@ -129,7 +129,7 @@ func getGroupOutOfStoreSecret(m *protocoltypes.Group) ([]byte, error) {
 func createOutOfStoreGroupReference(m *protocoltypes.Group, sender []byte, counter uint64) ([]byte, error) {
 	secret, err := getGroupOutOfStoreSecret(m)
 	if err != nil {
-		return nil, errcode.ErrInvalidInput.Wrap(err)
+		return nil, errcode.ErrCode_ErrInvalidInput.Wrap(err)
 	}
 
 	arr := [cryptoutil.KeySize]byte{}
@@ -139,7 +139,7 @@ func createOutOfStoreGroupReference(m *protocoltypes.Group, sender []byte, count
 
 	kdf := hkdf.New(sha3.New256, secret, nil, append(sender, buf...))
 	if _, err := io.ReadFull(kdf, arr[:]); err != nil {
-		return nil, errcode.ErrStreamRead.Wrap(err)
+		return nil, errcode.ErrCode_ErrStreamRead.Wrap(err)
 	}
 
 	return arr[:], nil

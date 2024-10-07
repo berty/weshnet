@@ -55,7 +55,7 @@ func NewDiscoveryAdaptater(logger *zap.Logger, service *Service, defaultOpts ...
 	}
 }
 
-func (a *DiscoveryAdaptater) FindPeers(ctx context.Context, topic string, opts ...discovery.Option) (<-chan peer.AddrInfo, error) {
+func (a *DiscoveryAdaptater) FindPeers(_ context.Context, topic string, _ ...discovery.Option) (<-chan peer.AddrInfo, error) {
 	a.muDiscover.Lock()
 	defer a.muDiscover.Unlock()
 
@@ -104,7 +104,7 @@ func (a *DiscoveryAdaptater) FindPeers(ctx context.Context, topic string, opts .
 	return sub.Out(), nil
 }
 
-func (a *DiscoveryAdaptater) Advertise(_ context.Context, topic string, opts ...discovery.Option) (time.Duration, error) {
+func (a *DiscoveryAdaptater) Advertise(_ context.Context, topic string, _ ...discovery.Option) (time.Duration, error) {
 	ctx := a.ctx
 
 	a.muAdvertiser.Lock()

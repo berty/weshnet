@@ -79,16 +79,16 @@ func (cc *HostCollector) Describe(ch chan<- *prometheus.Desc) {
 func (cc *HostCollector) Listen(network.Network, ma.Multiaddr)      {}
 func (cc *HostCollector) ListenClose(network.Network, ma.Multiaddr) {}
 
-func (cc *HostCollector) Connected(n network.Network, c network.Conn) {
+func (cc *HostCollector) Connected(network.Network, network.Conn) {
 	cc.connsCollector.Inc()
 }
 
-func (cc *HostCollector) Disconnected(n network.Network, c network.Conn) {
+func (cc *HostCollector) Disconnected(network.Network, network.Conn) {
 	cc.connsCollector.Dec()
 }
 
-func (cc *HostCollector) OpenedStream(n network.Network, s network.Stream) {}
-func (cc *HostCollector) ClosedStream(n network.Network, s network.Stream) {
+func (cc *HostCollector) OpenedStream(network.Network, network.Stream) {}
+func (cc *HostCollector) ClosedStream(network.Network, network.Stream) {
 	// elpased := time.Since(s.Stat().Opened)
 	// cc.streamsCollector.WithLabelValues(string(s.Protocol())).Observe(elpased.Seconds())
 }

@@ -63,7 +63,7 @@ func (n *NetworkUpdate) WaitForUpdate(ctx context.Context, currentAddrs []ma.Mul
 	}
 }
 
-func (n *NetworkUpdate) GetLastUpdatedAddrs(ctx context.Context) (addrs []ma.Multiaddr) {
+func (n *NetworkUpdate) GetLastUpdatedAddrs(context.Context) (addrs []ma.Multiaddr) {
 	n.locker.Lock()
 	addrs = n.currentAddrs
 	n.locker.Unlock()

@@ -16,7 +16,7 @@ import (
 func (s *service) getContactGroup(key crypto.PubKey) (*protocoltypes.Group, error) {
 	group, err := s.secretStore.GetGroupForContact(key)
 	if err != nil {
-		return nil, errcode.ErrOrbitDBOpen.Wrap(err)
+		return nil, errcode.ErrCode_ErrOrbitDBOpen.Wrap(err)
 	}
 
 	return group, nil
@@ -26,33 +26,33 @@ func (s *service) getGroupForPK(ctx context.Context, pk crypto.PubKey) (*protoco
 	group, err := s.secretStore.FetchGroupByPublicKey(ctx, pk)
 	if err == nil {
 		return group, nil
-	} else if !errcode.Is(err, errcode.ErrMissingMapKey) {
-		return nil, errcode.ErrInternal.Wrap(err)
+	} else if !errcode.Is(err, errcode.ErrCode_ErrMissingMapKey) {
+		return nil, errcode.ErrCode_ErrInternal.Wrap(err)
 	}
 
 	accountGroup := s.getAccountGroup()
 	if accountGroup == nil {
-		return nil, errcode.ErrGroupMissing
+		return nil, errcode.ErrCode_ErrGroupMissing
 	}
 
 	if err = reindexGroupDatastore(ctx, s.secretStore, accountGroup.metadataStore); err != nil {
-		return nil, errcode.TODO.Wrap(err)
+		return nil, errcode.ErrCode_TODO.Wrap(err)
 	}
 
 	group, err = s.secretStore.FetchGroupByPublicKey(ctx, pk)
 	if err == nil {
 		return group, nil
-	} else if errcode.Is(err, errcode.ErrMissingMapKey) {
-		return nil, errcode.ErrInvalidInput.Wrap(fmt.Errorf("unknown group specified"))
+	} else if errcode.Is(err, errcode.ErrCode_ErrMissingMapKey) {
+		return nil, errcode.ErrCode_ErrInvalidInput.Wrap(fmt.Errorf("unknown group specified"))
 	}
 
-	return nil, errcode.ErrInternal.Wrap(err)
+	return nil, errcode.ErrCode_ErrInternal.Wrap(err)
 }
 
 func (s *service) deactivateGroup(pk crypto.PubKey) error {
 	id, err := pk.Raw()
 	if err != nil {
-		return errcode.ErrSerialization.Wrap(err)
+		return errcode.ErrCode_ErrSerialization.Wrap(err)
 	}
 
 	cg, err := s.GetContextGroupForID(id)
@@ -71,7 +71,7 @@ func (s *service) deactivateGroup(pk crypto.PubKey) error {
 
 	delete(s.openedGroups, string(id))
 
-	if cg.group.GroupType == protocoltypes.GroupTypeAccount {
+	if cg.group.GroupType == protocoltypes.GroupType_GroupTypeAccount {
 		s.accountGroupCtx = nil
 	}
 
@@ -81,17 +81,17 @@ func (s *service) deactivateGroup(pk crypto.PubKey) error {
 func (s *service) activateGroup(ctx context.Context, pk crypto.PubKey, localOnly bool) error {
 	id, err := pk.Raw()
 	if err != nil {
-		return errcode.ErrSerialization.Wrap(err)
+		return errcode.ErrCode_ErrSerialization.Wrap(err)
 	}
 
 	_, err = s.GetContextGroupForID(id)
-	if err != nil && err != errcode.ErrGroupUnknown {
+	if err != nil && err != errcode.ErrCode_ErrGroupUnknown {
 		return err
 	}
 
 	g, err := s.getGroupForPK(ctx, pk)
 	if err != nil {
-		return errcode.ErrInternal.Wrap(err)
+		return errcode.ErrCode_ErrInternal.Wrap(err)
 	}
 
 	s.lock.Lock()
@@ -100,22 +100,22 @@ func (s *service) activateGroup(ctx context.Context, pk crypto.PubKey, localOnly
 	// @WIP(gfanton): do we need to use contactPK
 	var contactPK crypto.PubKey
 	switch g.GroupType {
-	case protocoltypes.GroupTypeMultiMember:
+	case protocoltypes.GroupType_GroupTypeMultiMember:
 		// nothing to get here, simply continue, open and activate the group
 
-	case protocoltypes.GroupTypeContact:
+	case protocoltypes.GroupType_GroupTypeContact:
 		if s.accountGroupCtx == nil {
-			return errcode.ErrGroupActivate.Wrap(fmt.Errorf("accountGroupCtx is deactivated"))
+			return errcode.ErrCode_ErrGroupActivate.Wrap(fmt.Errorf("accountGroupCtx is deactivated"))
 		}
 
 		contact := s.accountGroupCtx.metadataStore.GetContactFromGroupPK(id)
 		if contact != nil {
 			contactPK, err = contact.GetPubKey()
 			if err != nil {
-				return errcode.TODO.Wrap(err)
+				return errcode.ErrCode_TODO.Wrap(err)
 			}
 		}
-	case protocoltypes.GroupTypeAccount:
+	case protocoltypes.GroupType_GroupTypeAccount:
 		localOnly = true
 		if s.accountGroupCtx, err = s.odb.openAccountGroup(ctx, &iface.CreateDBOptions{EventBus: s.accountEventBus, LocalOnly: &localOnly}, s.ipfsCoreAPI); err != nil {
 			return err
@@ -127,23 +127,23 @@ func (s *service) activateGroup(ctx context.Context, pk crypto.PubKey, localOnly
 			s.contactRequestsManager.close()
 
 			if s.contactRequestsManager, err = newContactRequestsManager(s.swiper, s.accountGroupCtx.metadataStore, s.ipfsCoreAPI, s.logger); err != nil {
-				return errcode.TODO.Wrap(err)
+				return errcode.ErrCode_TODO.Wrap(err)
 			}
 		}
 		return nil
 	default:
-		return errcode.ErrInternal.Wrap(fmt.Errorf("unknown group type"))
+		return errcode.ErrCode_ErrInternal.Wrap(fmt.Errorf("unknown group type"))
 	}
 
 	dbOpts := &iface.CreateDBOptions{LocalOnly: &localOnly}
 	gc, err := s.odb.OpenGroup(ctx, g, dbOpts)
 	if err != nil {
-		return errcode.ErrGroupOpen.Wrap(err)
+		return errcode.ErrCode_ErrGroupOpen.Wrap(err)
 	}
 
 	if err = gc.ActivateGroupContext(contactPK); err != nil {
 		gc.Close()
-		return errcode.ErrGroupActivate.Wrap(err)
+		return errcode.ErrCode_ErrGroupActivate.Wrap(err)
 	}
 
 	s.openedGroups[string(id)] = gc
@@ -154,7 +154,7 @@ func (s *service) activateGroup(ctx context.Context, pk crypto.PubKey, localOnly
 
 func (s *service) GetContextGroupForID(id []byte) (*GroupContext, error) {
 	if len(id) == 0 {
-		return nil, errcode.ErrInternal.Wrap(fmt.Errorf("no group id provided"))
+		return nil, errcode.ErrCode_ErrInternal.Wrap(fmt.Errorf("no group id provided"))
 	}
 
 	s.lock.RLock()
@@ -166,40 +166,40 @@ func (s *service) GetContextGroupForID(id []byte) (*GroupContext, error) {
 		return cg, nil
 	}
 
-	return nil, errcode.ErrGroupUnknown
+	return nil, errcode.ErrCode_ErrGroupUnknown
 }
 
 func reindexGroupDatastore(ctx context.Context, secretStore secretstore.SecretStore, m *MetadataStore) error {
 	if secretStore == nil {
-		return errcode.ErrInvalidInput.Wrap(fmt.Errorf("missing device keystore"))
+		return errcode.ErrCode_ErrInvalidInput.Wrap(fmt.Errorf("missing device keystore"))
 	}
 
 	for _, g := range m.ListMultiMemberGroups() {
 		if err := secretStore.PutGroup(ctx, g); err != nil {
-			return errcode.ErrInternal.Wrap(err)
+			return errcode.ErrCode_ErrInternal.Wrap(err)
 		}
 	}
 
 	for _, contact := range m.ListContactsByStatus(
-		protocoltypes.ContactStateToRequest,
-		protocoltypes.ContactStateReceived,
-		protocoltypes.ContactStateAdded,
-		protocoltypes.ContactStateRemoved,
-		protocoltypes.ContactStateDiscarded,
-		protocoltypes.ContactStateBlocked,
+		protocoltypes.ContactState_ContactStateToRequest,
+		protocoltypes.ContactState_ContactStateReceived,
+		protocoltypes.ContactState_ContactStateAdded,
+		protocoltypes.ContactState_ContactStateRemoved,
+		protocoltypes.ContactState_ContactStateDiscarded,
+		protocoltypes.ContactState_ContactStateBlocked,
 	) {
 		cPK, err := contact.GetPubKey()
 		if err != nil {
-			return errcode.TODO.Wrap(err)
+			return errcode.ErrCode_TODO.Wrap(err)
 		}
 
 		group, err := secretStore.GetGroupForContact(cPK)
 		if err != nil {
-			return errcode.ErrInternal.Wrap(err)
+			return errcode.ErrCode_ErrInternal.Wrap(err)
 		}
 
 		if err := secretStore.PutGroup(ctx, group); err != nil {
-			return errcode.ErrInternal.Wrap(err)
+			return errcode.ErrCode_ErrInternal.Wrap(err)
 		}
 	}
 

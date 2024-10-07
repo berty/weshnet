@@ -71,12 +71,12 @@ func dsKeyForPrecomputedMessageKey(groupPublicKey, devicePublicKey []byte, count
 func dsKeyForCurrentChainKey(groupPublicKey crypto.PubKey, devicePublicKey crypto.PubKey) (datastore.Key, error) {
 	devicePublicKeyBytes, err := devicePublicKey.Raw()
 	if err != nil {
-		return datastore.Key{}, errcode.ErrSerialization.Wrap(err)
+		return datastore.Key{}, errcode.ErrCode_ErrSerialization.Wrap(err)
 	}
 
 	groupPublicKeyBytes, err := groupPublicKey.Raw()
 	if err != nil {
-		return datastore.Key{}, errcode.ErrSerialization.Wrap(err)
+		return datastore.Key{}, errcode.ErrCode_ErrSerialization.Wrap(err)
 	}
 
 	return datastore.KeyWithNamespaces([]string{

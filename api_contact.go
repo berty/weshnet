@@ -16,13 +16,13 @@ func (s *service) ContactAliasKeySend(ctx context.Context, req *protocoltypes.Co
 	ctx, _, endSection := tyber.Section(ctx, s.logger, "Sending contact alias key")
 	defer func() { endSection(err, "") }()
 
-	g, err := s.GetContextGroupForID(req.GroupPK)
+	g, err := s.GetContextGroupForID(req.GroupPk)
 	if err != nil {
-		return nil, errcode.ErrGroupMissing.Wrap(err)
+		return nil, errcode.ErrCode_ErrGroupMissing.Wrap(err)
 	}
 
 	if _, err := g.MetadataStore().ContactSendAliasKey(ctx); err != nil {
-		return nil, errcode.ErrOrbitDBAppend.Wrap(err)
+		return nil, errcode.ErrCode_ErrOrbitDBAppend.Wrap(err)
 	}
 
 	return &protocoltypes.ContactAliasKeySend_Reply{}, nil
@@ -32,13 +32,13 @@ func (s *service) ContactBlock(ctx context.Context, req *protocoltypes.ContactBl
 	ctx, _, endSection := tyber.Section(ctx, s.logger, "Blocking contact")
 	defer func() { endSection(err, "") }()
 
-	pk, err := crypto.UnmarshalEd25519PublicKey(req.ContactPK)
+	pk, err := crypto.UnmarshalEd25519PublicKey(req.ContactPk)
 	if err != nil {
-		return nil, errcode.ErrDeserialization.Wrap(err)
+		return nil, errcode.ErrCode_ErrDeserialization.Wrap(err)
 	}
 
 	if _, err := s.getAccountGroup().MetadataStore().ContactBlock(ctx, pk); err != nil {
-		return nil, errcode.ErrOrbitDBAppend.Wrap(err)
+		return nil, errcode.ErrCode_ErrOrbitDBAppend.Wrap(err)
 	}
 
 	return &protocoltypes.ContactBlock_Reply{}, nil
@@ -48,21 +48,21 @@ func (s *service) ContactUnblock(ctx context.Context, req *protocoltypes.Contact
 	ctx, _, endSection := tyber.Section(ctx, s.logger, "Unblocking contact")
 	defer func() { endSection(err, "") }()
 
-	pk, err := crypto.UnmarshalEd25519PublicKey(req.ContactPK)
+	pk, err := crypto.UnmarshalEd25519PublicKey(req.ContactPk)
 	if err != nil {
-		return nil, errcode.ErrDeserialization.Wrap(err)
+		return nil, errcode.ErrCode_ErrDeserialization.Wrap(err)
 	}
 
 	if _, err := s.getAccountGroup().MetadataStore().ContactUnblock(ctx, pk); err != nil {
-		return nil, errcode.ErrOrbitDBAppend.Wrap(err)
+		return nil, errcode.ErrCode_ErrOrbitDBAppend.Wrap(err)
 	}
 
 	return &protocoltypes.ContactUnblock_Reply{}, nil
 }
 
 func (s *service) RefreshContactRequest(ctx context.Context, req *protocoltypes.RefreshContactRequest_Request) (*protocoltypes.RefreshContactRequest_Reply, error) {
-	if len(req.ContactPK) == 0 {
-		return nil, errcode.ErrInternal
+	if len(req.ContactPk) == 0 {
+		return nil, errcode.ErrCode_ErrInternal
 	}
 
 	var cancel context.CancelFunc
@@ -73,7 +73,7 @@ func (s *service) RefreshContactRequest(ctx context.Context, req *protocoltypes.
 	}
 	defer cancel()
 
-	key := string(req.ContactPK)
+	key := string(req.ContactPk)
 	s.muRefreshprocess.Lock()
 	if clfn, ok := s.refreshprocess[key]; ok {
 		clfn() // close previous refresh method
@@ -81,7 +81,7 @@ func (s *service) RefreshContactRequest(ctx context.Context, req *protocoltypes.
 	s.refreshprocess[key] = cancel
 	s.muRefreshprocess.Unlock()
 
-	peers, err := s.swiper.RefreshContactRequest(ctx, req.ContactPK)
+	peers, err := s.swiper.RefreshContactRequest(ctx, req.ContactPk)
 	if err != nil {
 		return nil, fmt.Errorf("unable to refresh group: %w", err)
 	}
@@ -101,7 +101,7 @@ func (s *service) RefreshContactRequest(ctx context.Context, req *protocoltypes.
 		}
 
 		res.PeersFound = append(res.PeersFound, &protocoltypes.RefreshContactRequest_Peer{
-			ID:    p.ID.Pretty(),
+			Id:    p.ID.String(),
 			Addrs: addrs,
 		})
 	}

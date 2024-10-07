@@ -10,7 +10,7 @@ import (
 	"github.com/ipfs/go-cid"
 	"github.com/ipfs/go-datastore"
 	ds_sync "github.com/ipfs/go-datastore/sync"
-	coreapi "github.com/ipfs/interface-go-ipfs-core"
+	coreiface "github.com/ipfs/kubo/core/coreiface"
 	"github.com/libp2p/go-libp2p/core/crypto"
 	peer "github.com/libp2p/go-libp2p/core/peer"
 	"github.com/libp2p/go-libp2p/p2p/host/eventbus"
@@ -128,15 +128,15 @@ func (s *WeshOrbitDB) registerGroupPrivateKey(g *protocoltypes.Group) error {
 
 	gSigSK, err := g.GetSigningPrivKey()
 	if err != nil {
-		return errcode.TODO.Wrap(err)
+		return errcode.ErrCode_TODO.Wrap(err)
 	}
 
 	if err := s.SetGroupSigPubKey(groupID, gSigSK.GetPublic()); err != nil {
-		return errcode.TODO.Wrap(err)
+		return errcode.ErrCode_TODO.Wrap(err)
 	}
 
 	if err := s.keyStore.SetKey(gSigSK); err != nil {
-		return errcode.TODO.Wrap(err)
+		return errcode.ErrCode_TODO.Wrap(err)
 	}
 
 	return nil
@@ -153,18 +153,18 @@ func (s *WeshOrbitDB) registerGroupSigningPubKey(g *protocoltypes.Group) error {
 	} else {
 		gSigPK, err = g.GetSigningPubKey()
 		if err != nil {
-			return errcode.TODO.Wrap(err)
+			return errcode.ErrCode_TODO.Wrap(err)
 		}
 	}
 
 	if err := s.SetGroupSigPubKey(groupID, gSigPK); err != nil {
-		return errcode.TODO.Wrap(err)
+		return errcode.ErrCode_TODO.Wrap(err)
 	}
 
 	return nil
 }
 
-func NewWeshOrbitDB(ctx context.Context, ipfs coreapi.CoreAPI, options *NewOrbitDBOptions) (*WeshOrbitDB, error) {
+func NewWeshOrbitDB(ctx context.Context, ipfs coreiface.CoreAPI, options *NewOrbitDBOptions) (*WeshOrbitDB, error) {
 	var err error
 
 	if options == nil {
@@ -191,7 +191,7 @@ func NewWeshOrbitDB(ctx context.Context, ipfs coreapi.CoreAPI, options *NewOrbit
 
 	orbitDB, err := baseorbitdb.NewOrbitDB(ctx, ipfs, &options.NewOrbitDBOptions)
 	if err != nil {
-		return nil, errcode.TODO.Wrap(err)
+		return nil, errcode.ErrCode_TODO.Wrap(err)
 	}
 
 	bertyDB := &WeshOrbitDB{
@@ -212,7 +212,7 @@ func NewWeshOrbitDB(ctx context.Context, ipfs coreapi.CoreAPI, options *NewOrbit
 	}
 
 	if err := bertyDB.RegisterAccessControllerType(NewSimpleAccessController); err != nil {
-		return nil, errcode.TODO.Wrap(err)
+		return nil, errcode.ErrCode_TODO.Wrap(err)
 	}
 	bertyDB.RegisterStoreType(bertyDB.groupMetadataStoreType, constructorFactoryGroupMetadata(bertyDB, options.Logger))
 	bertyDB.RegisterStoreType(bertyDB.groupMessageStoreType, constructorFactoryGroupMessage(bertyDB, options.Logger))
@@ -233,21 +233,21 @@ func (s *WeshOrbitDB) openAccountGroup(ctx context.Context, options *orbitdb.Cre
 
 	group, _, err := s.secretStore.GetGroupForAccount()
 	if err != nil {
-		return nil, errcode.ErrOrbitDBOpen.Wrap(err)
+		return nil, errcode.ErrCode_ErrOrbitDBOpen.Wrap(err)
 	}
 
 	l.Debug("Got account group", tyber.FormatStepLogFields(ctx, []tyber.Detail{{Name: "Group", Description: group.String()}})...)
 
 	gc, err := s.OpenGroup(ctx, group, options)
 	if err != nil {
-		return nil, errcode.ErrGroupOpen.Wrap(err)
+		return nil, errcode.ErrCode_ErrGroupOpen.Wrap(err)
 	}
 	l.Debug("Opened account group", tyber.FormatStepLogFields(ctx, []tyber.Detail{})...)
 
 	gc.TagGroupContextPeers(ipfsCoreAPI, 84)
 
 	if err := gc.ActivateGroupContext(nil); err != nil {
-		return nil, errcode.TODO.Wrap(err)
+		return nil, errcode.ErrCode_TODO.Wrap(err)
 	}
 	l.Debug("TagGroupContextPeers done", tyber.FormatStepLogFields(ctx, []tyber.Detail{})...)
 	return gc, nil
@@ -262,8 +262,8 @@ func (s *WeshOrbitDB) setHeadsForGroup(ctx context.Context, g *protocoltypes.Gro
 	)
 
 	existingGC, err := s.getGroupContext(groupID)
-	if err != nil && !errcode.Is(err, errcode.ErrMissingMapKey) {
-		return errcode.ErrInternal.Wrap(err)
+	if err != nil && !errcode.Is(err, errcode.ErrCode_ErrMissingMapKey) {
+		return errcode.ErrCode_ErrInternal.Wrap(err)
 	}
 	if err == nil {
 		metaImpl = existingGC.metadataStore
@@ -273,7 +273,7 @@ func (s *WeshOrbitDB) setHeadsForGroup(ctx context.Context, g *protocoltypes.Gro
 		s.groups.Store(groupID, g)
 
 		if err := s.registerGroupSigningPubKey(g); err != nil {
-			return errcode.ErrInternal.Wrap(err)
+			return errcode.ErrCode_ErrInternal.Wrap(err)
 		}
 
 		s.Logger().Debug("OpenGroup", zap.Any("public key", g.PublicKey), zap.Any("secret", g.Secret), zap.Stringer("type", g.GroupType))
@@ -281,7 +281,7 @@ func (s *WeshOrbitDB) setHeadsForGroup(ctx context.Context, g *protocoltypes.Gro
 		if metaImpl == nil {
 			metaImpl, err = s.storeForGroup(ctx, s, g, nil, s.groupMetadataStoreType, GroupOpenModeReplicate)
 			if err != nil {
-				return errcode.ErrOrbitDBOpen.Wrap(err)
+				return errcode.ErrCode_ErrOrbitDBOpen.Wrap(err)
 			}
 
 			defer func() { _ = metaImpl.Close() }()
@@ -290,7 +290,7 @@ func (s *WeshOrbitDB) setHeadsForGroup(ctx context.Context, g *protocoltypes.Gro
 		if messagesImpl == nil {
 			messagesImpl, err = s.storeForGroup(ctx, s, g, nil, s.groupMessageStoreType, GroupOpenModeReplicate)
 			if err != nil {
-				return errcode.ErrOrbitDBOpen.Wrap(err)
+				return errcode.ErrCode_ErrOrbitDBOpen.Wrap(err)
 			}
 
 			defer func() { _ = messagesImpl.Close() }()
@@ -298,11 +298,11 @@ func (s *WeshOrbitDB) setHeadsForGroup(ctx context.Context, g *protocoltypes.Gro
 	}
 
 	if messagesImpl == nil {
-		return errcode.ErrInternal.Wrap(fmt.Errorf("message store is nil"))
+		return errcode.ErrCode_ErrInternal.Wrap(fmt.Errorf("message store is nil"))
 	}
 
 	if metaImpl == nil {
-		return errcode.ErrInternal.Wrap(fmt.Errorf("metadata store is nil"))
+		return errcode.ErrCode_ErrInternal.Wrap(fmt.Errorf("metadata store is nil"))
 	}
 
 	var wg sync.WaitGroup
@@ -381,14 +381,14 @@ func (s *WeshOrbitDB) loadHeads(ctx context.Context, store iface.Store, heads []
 
 func (s *WeshOrbitDB) OpenGroup(ctx context.Context, g *protocoltypes.Group, options *orbitdb.CreateDBOptions) (*GroupContext, error) {
 	if s.secretStore == nil {
-		return nil, errcode.ErrInvalidInput.Wrap(fmt.Errorf("db open in naive mode"))
+		return nil, errcode.ErrCode_ErrInvalidInput.Wrap(fmt.Errorf("db open in naive mode"))
 	}
 
 	groupID := g.GroupIDAsString()
 
 	existingGC, err := s.getGroupContext(groupID)
-	if err != nil && !errcode.Is(err, errcode.ErrMissingMapKey) {
-		return nil, errcode.ErrInternal.Wrap(err)
+	if err != nil && !errcode.Is(err, errcode.ErrCode_ErrMissingMapKey) {
+		return nil, errcode.ErrCode_ErrInternal.Wrap(err)
 	}
 	if err == nil {
 		return existingGC, nil
@@ -404,7 +404,7 @@ func (s *WeshOrbitDB) OpenGroup(ctx context.Context, g *protocoltypes.Group, opt
 
 	memberDevice, err := s.secretStore.GetOwnMemberDeviceForGroup(g)
 	if err != nil {
-		return nil, errcode.ErrCryptoKeyGeneration.Wrap(err)
+		return nil, errcode.ErrCode_ErrCryptoKeyGeneration.Wrap(err)
 	}
 
 	mpkb, err := crypto.MarshalPublicKey(memberDevice.Member())
@@ -415,14 +415,14 @@ func (s *WeshOrbitDB) OpenGroup(ctx context.Context, g *protocoltypes.Group, opt
 
 	// Force secret generation if missing
 	if _, err := s.secretStore.GetShareableChainKey(s.ctx, g, memberDevice.Member()); err != nil {
-		return nil, errcode.ErrCryptoKeyGeneration.Wrap(err)
+		return nil, errcode.ErrCode_ErrCryptoKeyGeneration.Wrap(err)
 	}
 
 	s.Logger().Debug("Got device chain key", tyber.FormatStepLogFields(s.ctx, []tyber.Detail{})...)
 
 	metaImpl, err := s.groupMetadataStore(ctx, g, options)
 	if err != nil {
-		return nil, errcode.ErrOrbitDBOpen.Wrap(err)
+		return nil, errcode.ErrCode_ErrOrbitDBOpen.Wrap(err)
 	}
 	s.messageMarshaler.RegisterGroup(metaImpl.Address().String(), g)
 
@@ -438,7 +438,7 @@ func (s *WeshOrbitDB) OpenGroup(ctx context.Context, g *protocoltypes.Group, opt
 	messagesImpl, err := s.groupMessageStore(ctx, g, options)
 	if err != nil {
 		metaImpl.Close()
-		return nil, errcode.ErrOrbitDBOpen.Wrap(err)
+		return nil, errcode.ErrCode_ErrOrbitDBOpen.Wrap(err)
 	}
 	s.messageMarshaler.RegisterGroup(messagesImpl.Address().String(), g)
 
@@ -457,14 +457,14 @@ func (s *WeshOrbitDB) OpenGroup(ctx context.Context, g *protocoltypes.Group, opt
 
 func (s *WeshOrbitDB) OpenGroupReplication(ctx context.Context, g *protocoltypes.Group, options *orbitdb.CreateDBOptions) (iface.Store, iface.Store, error) {
 	if g == nil || len(g.PublicKey) == 0 {
-		return nil, nil, errcode.ErrInvalidInput.Wrap(fmt.Errorf("missing group or group pubkey"))
+		return nil, nil, errcode.ErrCode_ErrInvalidInput.Wrap(fmt.Errorf("missing group or group pubkey"))
 	}
 
 	groupID := g.GroupIDAsString()
 
 	gc, err := s.getGroupContext(groupID)
-	if err != nil && !errcode.Is(err, errcode.ErrMissingMapKey) {
-		return nil, nil, errcode.ErrInternal.Wrap(err)
+	if err != nil && !errcode.Is(err, errcode.ErrCode_ErrMissingMapKey) {
+		return nil, nil, errcode.ErrCode_ErrInternal.Wrap(err)
 	}
 	if err == nil {
 		return gc.metadataStore, gc.messageStore, nil
@@ -493,7 +493,7 @@ func (s *WeshOrbitDB) OpenGroupReplication(ctx context.Context, g *protocoltypes
 func (s *WeshOrbitDB) getGroupContext(id string) (*GroupContext, error) {
 	g, ok := s.groupContexts.Load(id)
 	if !ok {
-		return nil, errcode.ErrMissingMapKey
+		return nil, errcode.ErrCode_ErrMissingMapKey
 	}
 
 	gc, ok := g.(*GroupContext)
@@ -504,7 +504,7 @@ func (s *WeshOrbitDB) getGroupContext(id string) (*GroupContext, error) {
 
 	if gc.IsClosed() {
 		s.groupContexts.Delete(id)
-		return nil, errcode.ErrMissingMapKey
+		return nil, errcode.ErrCode_ErrMissingMapKey
 	}
 
 	return g.(*GroupContext), nil
@@ -514,7 +514,7 @@ func (s *WeshOrbitDB) getGroupContext(id string) (*GroupContext, error) {
 // replicate a store data without needing to access to its content
 func (s *WeshOrbitDB) SetGroupSigPubKey(groupID string, pubKey crypto.PubKey) error {
 	if pubKey == nil {
-		return errcode.ErrInvalidInput
+		return errcode.ErrCode_ErrInvalidInput
 	}
 
 	s.groupsSigPubKey.Store(groupID, pubKey)
@@ -574,7 +574,7 @@ func (s *WeshOrbitDB) storeForGroup(ctx context.Context, o iface.BaseOrbitDB, g 
 
 	store, err := o.Open(ctx, name, options)
 	if err != nil {
-		return nil, errcode.ErrOrbitDBOpen.Wrap(err)
+		return nil, errcode.ErrCode_ErrOrbitDBOpen.Wrap(err)
 	}
 
 	l.Debug("Loading store", tyber.FormatStepLogFields(ctx, []tyber.Detail{{Name: "Group", Description: g.String()}, {Name: "StoreType", Description: store.Type()}, {Name: "Store", Description: store.Address().String()}}, tyber.Status(tyber.Running))...)
@@ -639,21 +639,21 @@ func (s *WeshOrbitDB) groupMessageStore(ctx context.Context, g *protocoltypes.Gr
 func (s *WeshOrbitDB) getGroupFromOptions(options *iface.NewStoreOptions) (*protocoltypes.Group, error) {
 	groupIDs, err := options.AccessController.GetAuthorizedByRole(identityGroupIDKey)
 	if err != nil {
-		return nil, errcode.TODO.Wrap(err)
+		return nil, errcode.ErrCode_TODO.Wrap(err)
 	}
 
 	if len(groupIDs) != 1 {
-		return nil, errcode.ErrInvalidInput
+		return nil, errcode.ErrCode_ErrInvalidInput
 	}
 
 	g, ok := s.groups.Load(groupIDs[0])
 	if !ok {
-		return nil, errcode.ErrInvalidInput
+		return nil, errcode.ErrCode_ErrInvalidInput
 	}
 
 	typed, ok := g.(*protocoltypes.Group)
 	if !ok {
-		return nil, errcode.ErrInvalidInput
+		return nil, errcode.ErrCode_ErrInvalidInput
 	}
 
 	return typed, nil

@@ -12,11 +12,12 @@ import (
 	"testing"
 	"time"
 
-	libp2p_mocknet "github.com/berty/go-libp2p-mock"
+	mocknet "github.com/libp2p/go-libp2p/p2p/net/mock"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/goleak"
 	"go.uber.org/zap"
+	"google.golang.org/protobuf/proto"
 
 	weshnet "berty.tech/weshnet"
 	"berty.tech/weshnet/pkg/errcode"
@@ -120,7 +121,7 @@ func testGroupDeviceStatus(ctx context.Context, t *testing.T, groupID []byte, tp
 				defer cancel()
 
 				sub, inErr := tp.Client.GroupDeviceStatus(ctx, &protocoltypes.GroupDeviceStatus_Request{
-					GroupPK: groupID,
+					GroupPk: groupID,
 				})
 				if inErr != nil {
 					assert.NoError(t, inErr, fmt.Sprintf("error for client %d", i))
@@ -137,13 +138,13 @@ func testGroupDeviceStatus(ctx context.Context, t *testing.T, groupID []byte, tp
 						break
 					}
 
-					assert.Equal(t, evt.Type, protocoltypes.TypePeerConnected)
+					assert.Equal(t, evt.Type, protocoltypes.GroupDeviceStatus_TypePeerConnected)
 					connected := &protocoltypes.GroupDeviceStatus_Reply_PeerConnected{}
-					err := connected.Unmarshal(evt.Event)
+					err := proto.Unmarshal(evt.Event, connected)
 					assert.NoError(t, err, fmt.Sprintf("Unmarshal error for client %d", i))
 
 					statusReceivedLock.Lock()
-					statusReceived[i][connected.PeerID] = struct{}{}
+					statusReceived[i][connected.PeerId] = struct{}{}
 					done := len(statusReceived[i]) == ntps-1
 					statusReceivedLock.Unlock()
 
@@ -269,7 +270,7 @@ func TestScenario_MessageAccountGroup(t *testing.T) {
 
 		// Send messages on account group
 		messages := []string{"test1", "test2", "test3"}
-		sendMessageOnGroup(ctx, t, tps, tps, config.AccountGroupPK, messages)
+		sendMessageOnGroup(ctx, t, tps, tps, config.AccountGroupPk, messages)
 	})
 }
 
@@ -286,7 +287,7 @@ func TestScenario_MessageAccountGroup_NonMocked(t *testing.T) {
 
 		// Send messages on account group
 		messages := []string{"test1", "test2", "test3"}
-		sendMessageOnGroup(ctx, t, tps, tps, config.AccountGroupPK, messages)
+		sendMessageOnGroup(ctx, t, tps, tps, config.AccountGroupPk, messages)
 	})
 }
 
@@ -322,7 +323,7 @@ func TestScenario_MessageAccountAndMultiMemberGroups(t *testing.T) {
 
 			// Send messages on account group
 			messages = []string{"account1", "account2", "account3"}
-			sendMessageOnGroup(ctx, t, []*weshnet.TestingProtocol{account}, []*weshnet.TestingProtocol{account}, config.AccountGroupPK, messages)
+			sendMessageOnGroup(ctx, t, []*weshnet.TestingProtocol{account}, []*weshnet.TestingProtocol{account}, config.AccountGroupPk, messages)
 		}
 
 		t.Log("===== Send Messages again on MultiMember Group =====")
@@ -359,7 +360,7 @@ func TestScenario_MessageAccountAndContactGroups(t *testing.T) {
 
 			// Send messages on account group
 			messages = []string{"account1", "account2", "account3"}
-			sendMessageOnGroup(ctx, t, []*weshnet.TestingProtocol{account}, []*weshnet.TestingProtocol{account}, config.AccountGroupPK, messages)
+			sendMessageOnGroup(ctx, t, []*weshnet.TestingProtocol{account}, []*weshnet.TestingProtocol{account}, config.AccountGroupPk, messages)
 		}
 
 		t.Log("===== Send Messages again on Contact Group =====")
@@ -394,7 +395,7 @@ func testingScenario(t *testing.T, tcs []testCase, tf testFunc) {
 			logger, cleanup := testutil.Logger(t)
 			defer cleanup()
 
-			mn := libp2p_mocknet.New()
+			mn := mocknet.New()
 			defer mn.Close()
 
 			opts := weshnet.TestingOpts{
@@ -443,7 +444,7 @@ func testingScenarioNonMocked(t *testing.T, tcs []testCase, tf testFunc) {
 			logger, cleanup := testutil.Logger(t)
 			defer cleanup()
 
-			mn := libp2p_mocknet.New()
+			mn := mocknet.New()
 			defer mn.Close()
 
 			opts := weshnet.TestingOpts{
@@ -506,7 +507,7 @@ func addAsContact(ctx context.Context, t *testing.T, senders, receivers []*weshn
 			}
 
 			receiverSharableContact := &protocoltypes.ShareableContact{
-				PK:                   receiverCfg.AccountPK,
+				Pk:                   receiverCfg.AccountPk,
 				PublicRendezvousSeed: receiverRDVSeed,
 			}
 
@@ -516,8 +517,8 @@ func addAsContact(ctx context.Context, t *testing.T, senders, receivers []*weshn
 			})
 
 			// Check if sender and receiver are the same account, should return the right error and skip
-			if bytes.Equal(senderCfg.AccountPK, receiverCfg.AccountPK) {
-				require.Equal(t, errcode.LastCode(err), errcode.ErrContactRequestSameAccount)
+			if bytes.Equal(senderCfg.AccountPk, receiverCfg.AccountPk) {
+				require.Equal(t, errcode.LastCode(err), errcode.ErrCode_ErrContactRequestSameAccount)
 				continue
 			}
 
@@ -539,7 +540,7 @@ func addAsContact(ctx context.Context, t *testing.T, senders, receivers []*weshn
 			}
 
 			if receiverWasSender && senderWasReceiver {
-				require.Equal(t, errcode.LastCode(err), errcode.ErrContactRequestContactAlreadyAdded)
+				require.Equal(t, errcode.LastCode(err), errcode.ErrCode_ErrContactRequestContactAlreadyAdded)
 				continue
 			}
 
@@ -552,7 +553,7 @@ func addAsContact(ctx context.Context, t *testing.T, senders, receivers []*weshn
 			// Receiver subscribes to handle incoming contact request
 			subCtx, subCancel := context.WithCancel(ctx)
 			subReceiver, err := receiver.Client.GroupMetadataList(subCtx, &protocoltypes.GroupMetadataList_Request{
-				GroupPK: receiverCfg.AccountGroupPK,
+				GroupPk: receiverCfg.AccountGroupPk,
 			})
 			require.NoError(t, err)
 			found := false
@@ -566,16 +567,16 @@ func addAsContact(ctx context.Context, t *testing.T, senders, receivers []*weshn
 
 				require.NoError(t, err)
 
-				if evt == nil || evt.Metadata.EventType != protocoltypes.EventTypeAccountContactRequestIncomingReceived {
+				if evt == nil || evt.Metadata.EventType != protocoltypes.EventType_EventTypeAccountContactRequestIncomingReceived {
 					continue
 				}
 
 				req := &protocoltypes.AccountContactRequestIncomingReceived{}
-				err = req.Unmarshal(evt.Event)
+				err = proto.Unmarshal(evt.Event, req)
 
 				require.NoError(t, err)
 
-				if bytes.Equal(senderCfg.AccountPK, req.ContactPK) {
+				if bytes.Equal(senderCfg.AccountPk, req.ContactPk) {
 					found = true
 					break
 				}
@@ -589,7 +590,7 @@ func addAsContact(ctx context.Context, t *testing.T, senders, receivers []*weshn
 
 			// Receiver accepts contact request
 			_, err = receiver.Client.ContactRequestAccept(ctx, &protocoltypes.ContactRequestAccept_Request{
-				ContactPK: senderCfg.AccountPK,
+				ContactPk: senderCfg.AccountPk,
 			})
 
 			require.NoError(t, err)
@@ -599,25 +600,25 @@ func addAsContact(ctx context.Context, t *testing.T, senders, receivers []*weshn
 
 			// Both receiver and sender activate the contact group
 			grpInfo, err := sender.Client.GroupInfo(ctx, &protocoltypes.GroupInfo_Request{
-				ContactPK: receiverCfg.AccountPK,
+				ContactPk: receiverCfg.AccountPk,
 			})
 			require.NoError(t, err)
 
 			_, err = sender.Client.ActivateGroup(ctx, &protocoltypes.ActivateGroup_Request{
-				GroupPK: grpInfo.Group.PublicKey,
+				GroupPk: grpInfo.Group.PublicKey,
 			})
 
 			require.NoError(t, err)
 
 			grpInfo2, err := receiver.Client.GroupInfo(ctx, &protocoltypes.GroupInfo_Request{
-				ContactPK: senderCfg.AccountPK,
+				ContactPk: senderCfg.AccountPk,
 			})
 			require.NoError(t, err)
 
 			require.Equal(t, grpInfo.Group.PublicKey, grpInfo2.Group.PublicKey)
 
 			_, err = receiver.Client.ActivateGroup(ctx, &protocoltypes.ActivateGroup_Request{
-				GroupPK: grpInfo2.Group.PublicKey,
+				GroupPk: grpInfo2.Group.PublicKey,
 			})
 
 			require.NoError(t, err)
@@ -641,7 +642,7 @@ func addAsContact(ctx context.Context, t *testing.T, senders, receivers []*weshn
 func getContactGroup(ctx context.Context, t *testing.T, source *weshnet.TestingProtocol, contact *weshnet.TestingProtocol) *protocoltypes.GroupInfo_Reply {
 	// Get contact group
 	contactGroup, err := source.Client.GroupInfo(ctx, &protocoltypes.GroupInfo_Request{
-		ContactPK: getAccountPubKey(t, contact),
+		ContactPk: getAccountPubKey(t, contact),
 	})
 	require.NoError(t, err)
 	require.NotNil(t, contactGroup)
@@ -713,7 +714,7 @@ func sendMessageOnGroup(ctx context.Context, t *testing.T, senders, receivers []
 			senderID := getAccountB64PubKey(t, sender)
 			for _, message := range messages {
 				_, err := sender.Client.AppMessageSend(ctx, &protocoltypes.AppMessageSend_Request{
-					GroupPK: groupPK,
+					GroupPk: groupPK,
 					Payload: []byte(senderID + " - " + message),
 				})
 
@@ -740,7 +741,7 @@ func sendMessageOnGroup(ctx context.Context, t *testing.T, senders, receivers []
 				defer wg.Done()
 
 				sub, err := receiver.Client.GroupMessageList(subCtx, &protocoltypes.GroupMessageList_Request{
-					GroupPK: groupPK,
+					GroupPk: groupPK,
 				})
 				if !assert.NoError(t, err) {
 					return
@@ -819,7 +820,7 @@ func sendMessageOnGroup(ctx context.Context, t *testing.T, senders, receivers []
 				defer wg.Done()
 
 				req := protocoltypes.GroupMessageList_Request{
-					GroupPK:  groupPK,
+					GroupPk:  groupPK,
 					UntilNow: true,
 				}
 

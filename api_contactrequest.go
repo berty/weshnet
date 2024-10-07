@@ -3,8 +3,8 @@ package weshnet
 import (
 	"context"
 
-	"github.com/gogo/protobuf/proto"
 	"github.com/libp2p/go-libp2p/core/crypto"
+	"google.golang.org/protobuf/proto"
 
 	"berty.tech/weshnet/pkg/errcode"
 	"berty.tech/weshnet/pkg/protocoltypes"
@@ -12,10 +12,10 @@ import (
 )
 
 // ContactRequestReference retrieves the necessary information to create a contact link
-func (s *service) ContactRequestReference(ctx context.Context, _ *protocoltypes.ContactRequestReference_Request) (*protocoltypes.ContactRequestReference_Reply, error) {
+func (s *service) ContactRequestReference(context.Context, *protocoltypes.ContactRequestReference_Request) (*protocoltypes.ContactRequestReference_Reply, error) {
 	accountGroup := s.getAccountGroup()
 	if accountGroup == nil {
-		return nil, errcode.ErrGroupMissing
+		return nil, errcode.ErrCode_ErrGroupMissing
 	}
 
 	enabled, shareableContact := accountGroup.MetadataStore().GetIncomingContactRequestsStatus()
@@ -38,11 +38,11 @@ func (s *service) ContactRequestDisable(ctx context.Context, _ *protocoltypes.Co
 
 	accountGroup := s.getAccountGroup()
 	if accountGroup == nil {
-		return nil, errcode.ErrGroupMissing
+		return nil, errcode.ErrCode_ErrGroupMissing
 	}
 
 	if _, err := accountGroup.MetadataStore().ContactRequestDisable(ctx); err != nil {
-		return nil, errcode.ErrOrbitDBAppend.Wrap(err)
+		return nil, errcode.ErrCode_ErrOrbitDBAppend.Wrap(err)
 	}
 
 	return &protocoltypes.ContactRequestDisable_Reply{}, nil
@@ -55,11 +55,11 @@ func (s *service) ContactRequestEnable(ctx context.Context, _ *protocoltypes.Con
 
 	accountGroup := s.getAccountGroup()
 	if accountGroup == nil {
-		return nil, errcode.ErrGroupMissing
+		return nil, errcode.ErrCode_ErrGroupMissing
 	}
 
 	if _, err := accountGroup.MetadataStore().ContactRequestEnable(ctx); err != nil {
-		return nil, errcode.ErrOrbitDBAppend.Wrap(err)
+		return nil, errcode.ErrCode_ErrOrbitDBAppend.Wrap(err)
 	}
 
 	_, shareableContact := accountGroup.MetadataStore().GetIncomingContactRequestsStatus()
@@ -81,11 +81,11 @@ func (s *service) ContactRequestResetReference(ctx context.Context, _ *protocolt
 
 	accountGroup := s.getAccountGroup()
 	if accountGroup == nil {
-		return nil, errcode.ErrGroupMissing
+		return nil, errcode.ErrCode_ErrGroupMissing
 	}
 
 	if _, err := accountGroup.MetadataStore().ContactRequestReferenceReset(ctx); err != nil {
-		return nil, errcode.ErrOrbitDBAppend.Wrap(err)
+		return nil, errcode.ErrCode_ErrOrbitDBAppend.Wrap(err)
 	}
 
 	_, shareableContact := accountGroup.MetadataStore().GetIncomingContactRequestsStatus()
@@ -109,16 +109,16 @@ func (s *service) ContactRequestSend(ctx context.Context, req *protocoltypes.Con
 
 	shareableContact := req.Contact
 	if shareableContact == nil {
-		return nil, errcode.ErrInvalidInput
+		return nil, errcode.ErrCode_ErrInvalidInput
 	}
 
 	accountGroup := s.getAccountGroup()
 	if accountGroup == nil {
-		return nil, errcode.ErrGroupMissing
+		return nil, errcode.ErrCode_ErrGroupMissing
 	}
 
 	if _, err := accountGroup.MetadataStore().ContactRequestOutgoingEnqueue(ctx, shareableContact, req.OwnMetadata); err != nil {
-		return nil, errcode.ErrOrbitDBAppend.Wrap(err)
+		return nil, errcode.ErrCode_ErrOrbitDBAppend.Wrap(err)
 	}
 
 	return &protocoltypes.ContactRequestSend_Reply{}, nil
@@ -129,23 +129,23 @@ func (s *service) ContactRequestAccept(ctx context.Context, req *protocoltypes.C
 	ctx, _, endSection := tyber.Section(ctx, s.logger, "Accepting contact request")
 	defer func() { endSection(err, "") }()
 
-	pk, err := crypto.UnmarshalEd25519PublicKey(req.ContactPK)
+	pk, err := crypto.UnmarshalEd25519PublicKey(req.ContactPk)
 	if err != nil {
-		return nil, errcode.ErrDeserialization.Wrap(err)
+		return nil, errcode.ErrCode_ErrDeserialization.Wrap(err)
 	}
 
 	group, err := s.secretStore.GetGroupForContact(pk)
 	if err != nil {
-		return nil, errcode.ErrInternal.Wrap(err)
+		return nil, errcode.ErrCode_ErrInternal.Wrap(err)
 	}
 
 	accountGroup := s.getAccountGroup()
 	if accountGroup == nil {
-		return nil, errcode.ErrGroupMissing
+		return nil, errcode.ErrCode_ErrGroupMissing
 	}
 
 	if _, err := accountGroup.MetadataStore().ContactRequestIncomingAccept(ctx, pk); err != nil {
-		return nil, errcode.ErrOrbitDBAppend.Wrap(err)
+		return nil, errcode.ErrCode_ErrOrbitDBAppend.Wrap(err)
 	}
 
 	if err = s.secretStore.PutGroup(ctx, group); err != nil {
@@ -160,18 +160,18 @@ func (s *service) ContactRequestDiscard(ctx context.Context, req *protocoltypes.
 	ctx, _, endSection := tyber.Section(ctx, s.logger, "Discarding contact request")
 	defer func() { endSection(err, "") }()
 
-	pk, err := crypto.UnmarshalEd25519PublicKey(req.ContactPK)
+	pk, err := crypto.UnmarshalEd25519PublicKey(req.ContactPk)
 	if err != nil {
-		return nil, errcode.ErrDeserialization.Wrap(err)
+		return nil, errcode.ErrCode_ErrDeserialization.Wrap(err)
 	}
 
 	accountGroup := s.getAccountGroup()
 	if accountGroup == nil {
-		return nil, errcode.ErrGroupMissing
+		return nil, errcode.ErrCode_ErrGroupMissing
 	}
 
 	if _, err := accountGroup.MetadataStore().ContactRequestIncomingDiscard(ctx, pk); err != nil {
-		return nil, errcode.ErrOrbitDBAppend.Wrap(err)
+		return nil, errcode.ErrCode_ErrOrbitDBAppend.Wrap(err)
 	}
 
 	return &protocoltypes.ContactRequestDiscard_Reply{}, nil
@@ -180,10 +180,10 @@ func (s *service) ContactRequestDiscard(ctx context.Context, req *protocoltypes.
 // ShareContact uses ContactRequestReference to get the contact information for the current account and
 // returns the Protobuf encoding which you can further encode and share. If needed, his will reset the
 // contact request reference and enable contact requests.
-func (s *service) ShareContact(ctx context.Context, req *protocoltypes.ShareContact_Request) (_ *protocoltypes.ShareContact_Reply, err error) {
+func (s *service) ShareContact(ctx context.Context, _ *protocoltypes.ShareContact_Request) (_ *protocoltypes.ShareContact_Reply, err error) {
 	accountGroup := s.getAccountGroup()
 	if accountGroup == nil {
-		return nil, errcode.ErrGroupMissing
+		return nil, errcode.ErrCode_ErrGroupMissing
 	}
 
 	enabled, shareableContact := accountGroup.MetadataStore().GetIncomingContactRequestsStatus()
@@ -196,11 +196,11 @@ func (s *service) ShareContact(ctx context.Context, req *protocoltypes.ShareCont
 	if !enabled || len(rdvSeed) == 0 {
 		// We need to enable and reset the contact request reference.
 		if _, err := accountGroup.MetadataStore().ContactRequestEnable(ctx); err != nil {
-			return nil, errcode.ErrOrbitDBAppend.Wrap(err)
+			return nil, errcode.ErrCode_ErrOrbitDBAppend.Wrap(err)
 		}
 
 		if _, err := accountGroup.MetadataStore().ContactRequestReferenceReset(ctx); err != nil {
-			return nil, errcode.ErrOrbitDBAppend.Wrap(err)
+			return nil, errcode.ErrCode_ErrOrbitDBAppend.Wrap(err)
 		}
 
 		// Refresh the info.
@@ -215,11 +215,11 @@ func (s *service) ShareContact(ctx context.Context, req *protocoltypes.ShareCont
 	// Get the client's AccountPK.
 	member, err := accountGroup.MemberPubKey().Raw()
 	if err != nil {
-		return nil, errcode.ErrSerialization.Wrap(err)
+		return nil, errcode.ErrCode_ErrSerialization.Wrap(err)
 	}
 
 	encodedContact, err := proto.Marshal(&protocoltypes.ShareableContact{
-		PK:                   member,
+		Pk:                   member,
 		PublicRendezvousSeed: rdvSeed,
 	})
 	if err != nil {
@@ -232,7 +232,7 @@ func (s *service) ShareContact(ctx context.Context, req *protocoltypes.ShareCont
 }
 
 // DecodeContact decodes the Protobuf encoding of a shareable contact which was returned by ShareContact.
-func (s *service) DecodeContact(ctx context.Context, req *protocoltypes.DecodeContact_Request) (_ *protocoltypes.DecodeContact_Reply, err error) {
+func (s *service) DecodeContact(_ context.Context, req *protocoltypes.DecodeContact_Request) (_ *protocoltypes.DecodeContact_Reply, err error) {
 	contact := &protocoltypes.ShareableContact{}
 	if err := proto.Unmarshal(req.EncodedContact, contact); err != nil {
 		panic(err)

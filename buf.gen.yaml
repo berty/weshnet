@@ -1,11 +1,12 @@
-version: v1
+version: v2
 plugins:
-  - plugin: gogo
-    out: ./../..
-  - plugin: go-grpc
+  - local: protoc-gen-go
     out: ./
     opt: module=berty.tech/weshnet
-  - plugin: grpc-gateway
+  - local: protoc-gen-go-grpc
+    out: ./
+    opt: module=berty.tech/weshnet
+  - local: protoc-gen-grpc-gateway
     out: ./
     opt:
       - module=berty.tech/weshnet

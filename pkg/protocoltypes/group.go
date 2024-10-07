@@ -16,7 +16,7 @@ import (
 
 func (m *Group) GetSigningPrivKey() (crypto.PrivKey, error) {
 	if len(m.Secret) == 0 {
-		return nil, errcode.ErrMissingInput
+		return nil, errcode.ErrCode_ErrMissingInput
 	}
 
 	edSK := ed25519.NewKeyFromSeed(m.Secret)
@@ -49,16 +49,16 @@ func (m *Group) GetSigningPubKey() (crypto.PubKey, error) {
 func (m *Group) IsValid() error {
 	pk, err := m.GetPubKey()
 	if err != nil {
-		return errcode.ErrDeserialization.Wrap(err)
+		return errcode.ErrCode_ErrDeserialization.Wrap(err)
 	}
 
 	ok, err := pk.Verify(m.Secret, m.SecretSig)
 	if err != nil {
-		return errcode.ErrCryptoSignatureVerification.Wrap(err)
+		return errcode.ErrCode_ErrCryptoSignatureVerification.Wrap(err)
 	}
 
 	if !ok {
-		return errcode.ErrCryptoSignatureVerification
+		return errcode.ErrCode_ErrCryptoSignatureVerification
 	}
 
 	return nil
@@ -86,44 +86,44 @@ const CurrentGroupVersion = 1
 func NewGroupMultiMember() (*Group, crypto.PrivKey, error) {
 	priv, pub, err := crypto.GenerateEd25519Key(crand.Reader)
 	if err != nil {
-		return nil, nil, errcode.ErrCryptoKeyGeneration.Wrap(err)
+		return nil, nil, errcode.ErrCode_ErrCryptoKeyGeneration.Wrap(err)
 	}
 
 	pubBytes, err := pub.Raw()
 	if err != nil {
-		return nil, nil, errcode.ErrSerialization.Wrap(err)
+		return nil, nil, errcode.ErrCode_ErrSerialization.Wrap(err)
 	}
 
 	signing, _, err := crypto.GenerateEd25519Key(crand.Reader)
 	if err != nil {
-		return nil, nil, errcode.ErrCryptoKeyGeneration.Wrap(err)
+		return nil, nil, errcode.ErrCode_ErrCryptoKeyGeneration.Wrap(err)
 	}
 
 	signingBytes, err := cryptoutil.SeedFromEd25519PrivateKey(signing)
 	if err != nil {
-		return nil, nil, errcode.ErrSerialization.Wrap(err)
+		return nil, nil, errcode.ErrCode_ErrSerialization.Wrap(err)
 	}
 
 	skSig, err := priv.Sign(signingBytes)
 	if err != nil {
-		return nil, nil, errcode.ErrCryptoSignature.Wrap(err)
+		return nil, nil, errcode.ErrCode_ErrCryptoSignature.Wrap(err)
 	}
 
 	group := &Group{
 		PublicKey: pubBytes,
 		Secret:    signingBytes,
 		SecretSig: skSig,
-		GroupType: GroupTypeMultiMember,
+		GroupType: GroupType_GroupTypeMultiMember,
 	}
 
 	updateKey, err := group.GetLinkKeyArray()
 	if err != nil {
-		return nil, nil, errcode.ErrCryptoKeyGeneration.Wrap(err)
+		return nil, nil, errcode.ErrCode_ErrCryptoKeyGeneration.Wrap(err)
 	}
 
 	linkKeySig, err := priv.Sign(updateKey[:])
 	if err != nil {
-		return nil, nil, errcode.ErrCryptoSignature.Wrap(err)
+		return nil, nil, errcode.ErrCode_ErrCryptoSignature.Wrap(err)
 	}
 
 	group.LinkKeySig = linkKeySig
@@ -136,7 +136,7 @@ func ComputeLinkKey(publicKey, secret []byte) (*[cryptoutil.KeySize]byte, error)
 
 	kdf := hkdf.New(sha3.New256, secret, nil, publicKey)
 	if _, err := io.ReadFull(kdf, arr[:]); err != nil {
-		return nil, errcode.ErrStreamRead.Wrap(err)
+		return nil, errcode.ErrCode_ErrStreamRead.Wrap(err)
 	}
 
 	return &arr, nil

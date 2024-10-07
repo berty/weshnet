@@ -7,14 +7,14 @@ import (
 	"testing"
 	"time"
 
-	p2pmocknet "github.com/berty/go-libp2p-mock"
-	ggio "github.com/gogo/protobuf/io"
 	p2pcrypto "github.com/libp2p/go-libp2p/core/crypto"
 	p2pnetwork "github.com/libp2p/go-libp2p/core/network"
 	p2ppeer "github.com/libp2p/go-libp2p/core/peer"
+	mocknet "github.com/libp2p/go-libp2p/p2p/net/mock"
 	"github.com/stretchr/testify/require"
 
 	"berty.tech/weshnet/pkg/ipfsutil"
+	"berty.tech/weshnet/pkg/protoio"
 	"berty.tech/weshnet/pkg/tinder"
 )
 
@@ -61,7 +61,7 @@ func newMockedPeer(t *testing.T, ctx context.Context, ipfsOpts *ipfsutil.Testing
 func newMockedHandshake(t *testing.T, ctx context.Context) *mockedHandshake {
 	t.Helper()
 
-	mn := p2pmocknet.New()
+	mn := mocknet.New()
 	t.Cleanup(func() { mn.Close() })
 
 	opts := &ipfsutil.TestingAPIOpts{
@@ -94,8 +94,8 @@ func (mh *mockedHandshake) close(t *testing.T) {
 
 func newTestHandshakeContext(stream p2pnetwork.Stream, ownAccountID p2pcrypto.PrivKey, peerAccountID p2pcrypto.PubKey) *handshakeContext {
 	return &handshakeContext{
-		reader:          ggio.NewDelimitedReader(stream, 2048),
-		writer:          ggio.NewDelimitedWriter(stream),
+		reader:          protoio.NewDelimitedReader(stream, 2048),
+		writer:          protoio.NewDelimitedWriter(stream),
 		ownAccountID:    ownAccountID,
 		peerAccountID:   peerAccountID,
 		sharedEphemeral: &[32]byte{},

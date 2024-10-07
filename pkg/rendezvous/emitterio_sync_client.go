@@ -11,10 +11,10 @@ import (
 	emitter "github.com/berty/emitter-go/v2"
 	rendezvous "github.com/berty/go-libp2p-rendezvous"
 	pb "github.com/berty/go-libp2p-rendezvous/pb"
-	"github.com/golang/protobuf/proto" // nolint:staticcheck // cannot use the new protobuf API while keeping gogoproto
 	"github.com/libp2p/go-libp2p/core/peer"
 	"github.com/multiformats/go-multiaddr"
 	"go.uber.org/zap"
+	"google.golang.org/protobuf/proto"
 )
 
 type SyncClient interface {
@@ -64,7 +64,7 @@ func (e *emitterClient) Close() (err error) {
 
 func (e *emitterClient) subscribeToServerUpdates(inChan chan *registrationMessage, psDetails *EmitterPubSubSubscriptionDetails) (err error) {
 	e.logger.Debug("subscribing", zap.String("chan", psDetails.ChannelName))
-	return e.client.Subscribe(psDetails.ReadKey, psDetails.ChannelName, func(client *emitter.Client, message emitter.Message) {
+	return e.client.Subscribe(psDetails.ReadKey, psDetails.ChannelName, func(_ *emitter.Client, message emitter.Message) {
 		reg := &pb.RegistrationRecord{}
 
 		e.logger.Debug("receiving a message", zap.Any("topic", message.Topic()))
@@ -117,7 +117,7 @@ func (e *emitterClientManager) getClient(psDetails *EmitterPubSubSubscriptionDet
 		return
 	}
 
-	noophandler := func(client *emitter.Client, message emitter.Message) {}
+	noophandler := func(*emitter.Client, emitter.Message) {}
 	cl, err := emitter.Connect(psDetails.ServerAddr, noophandler, emitter.WithLogger(e.logger.Named("cl")))
 	if err != nil {
 		return

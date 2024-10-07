@@ -6,12 +6,12 @@ import (
 	"strings"
 	"time"
 
-	"github.com/gogo/protobuf/proto"
 	"github.com/libp2p/go-libp2p/core/crypto"
 	"github.com/libp2p/go-libp2p/core/network"
 	peer "github.com/libp2p/go-libp2p/core/peer"
 	"go.uber.org/multierr"
 	"go.uber.org/zap"
+	"google.golang.org/protobuf/proto"
 
 	"berty.tech/go-orbit-db/stores/operation"
 	"berty.tech/weshnet/internal/sysutil"
@@ -19,34 +19,34 @@ import (
 	"berty.tech/weshnet/pkg/protocoltypes"
 )
 
-func (s *service) DebugListGroups(req *protocoltypes.DebugListGroups_Request, srv protocoltypes.ProtocolService_DebugListGroupsServer) error {
+func (s *service) DebugListGroups(_ *protocoltypes.DebugListGroups_Request, srv protocoltypes.ProtocolService_DebugListGroupsServer) error {
 	accountGroup := s.getAccountGroup()
 	if accountGroup == nil {
-		return errcode.ErrGroupMissing
+		return errcode.ErrCode_ErrGroupMissing
 	}
 
 	if err := srv.SendMsg(&protocoltypes.DebugListGroups_Reply{
-		GroupPK:   accountGroup.group.PublicKey,
+		GroupPk:   accountGroup.group.PublicKey,
 		GroupType: accountGroup.group.GroupType,
 	}); err != nil {
 		return err
 	}
 
-	for _, c := range accountGroup.MetadataStore().ListContactsByStatus(protocoltypes.ContactStateAdded) {
-		pk, err := crypto.UnmarshalEd25519PublicKey(c.PK)
+	for _, c := range accountGroup.MetadataStore().ListContactsByStatus(protocoltypes.ContactState_ContactStateAdded) {
+		pk, err := crypto.UnmarshalEd25519PublicKey(c.Pk)
 		if err != nil {
-			return errcode.ErrDeserialization.Wrap(err)
+			return errcode.ErrCode_ErrDeserialization.Wrap(err)
 		}
 
 		group, err := s.secretStore.GetGroupForContact(pk)
 		if err != nil {
-			return errcode.ErrCryptoKeyGeneration.Wrap(err)
+			return errcode.ErrCode_ErrCryptoKeyGeneration.Wrap(err)
 		}
 
 		if err := srv.SendMsg(&protocoltypes.DebugListGroups_Reply{
-			GroupPK:   group.PublicKey,
+			GroupPk:   group.PublicKey,
 			GroupType: group.GroupType,
-			ContactPK: c.PK,
+			ContactPk: c.Pk,
 		}); err != nil {
 			return err
 		}
@@ -54,7 +54,7 @@ func (s *service) DebugListGroups(req *protocoltypes.DebugListGroups_Request, sr
 
 	for _, g := range accountGroup.MetadataStore().ListMultiMemberGroups() {
 		if err := srv.SendMsg(&protocoltypes.DebugListGroups_Reply{
-			GroupPK:   g.PublicKey,
+			GroupPk:   g.PublicKey,
 			GroupType: g.GroupType,
 		}); err != nil {
 			return err
@@ -65,17 +65,17 @@ func (s *service) DebugListGroups(req *protocoltypes.DebugListGroups_Request, sr
 }
 
 func (s *service) DebugInspectGroupStore(req *protocoltypes.DebugInspectGroupStore_Request, srv protocoltypes.ProtocolService_DebugInspectGroupStoreServer) error {
-	if req.LogType == protocoltypes.DebugInspectGroupLogTypeUndefined {
-		return errcode.ErrInvalidInput.Wrap(fmt.Errorf("invalid log type specified"))
+	if req.LogType == protocoltypes.DebugInspectGroupLogType_DebugInspectGroupLogTypeUndefined {
+		return errcode.ErrCode_ErrInvalidInput.Wrap(fmt.Errorf("invalid log type specified"))
 	}
 
-	cg, err := s.GetContextGroupForID(req.GroupPK)
+	cg, err := s.GetContextGroupForID(req.GroupPk)
 	if err != nil {
-		return errcode.ErrInvalidInput.Wrap(err)
+		return errcode.ErrCode_ErrInvalidInput.Wrap(err)
 	}
 
 	switch req.LogType {
-	case protocoltypes.DebugInspectGroupLogTypeMessage:
+	case protocoltypes.DebugInspectGroupLogType_DebugInspectGroupLogTypeMessage:
 		for _, e := range cg.messageStore.OpLog().GetEntries().Slice() {
 			var (
 				payload  = []byte(nil)
@@ -86,7 +86,7 @@ func (s *service) DebugInspectGroupStore(req *protocoltypes.DebugInspectGroupSto
 			if evt, err := cg.messageStore.openMessage(srv.Context(), e); err != nil {
 				s.logger.Error("unable to open message", zap.Error(err))
 			} else {
-				devicePK = evt.Headers.DevicePK
+				devicePK = evt.Headers.DevicePk
 				payload = evt.Message
 			}
 
@@ -95,16 +95,16 @@ func (s *service) DebugInspectGroupStore(req *protocoltypes.DebugInspectGroupSto
 			}
 
 			if err := srv.SendMsg(&protocoltypes.DebugInspectGroupStore_Reply{
-				CID:        e.GetHash().Bytes(),
-				ParentCIDs: nexts,
-				DevicePK:   devicePK,
+				Cid:        e.GetHash().Bytes(),
+				ParentCids: nexts,
+				DevicePk:   devicePK,
 				Payload:    payload,
 			}); err != nil {
 				return err
 			}
 		}
 
-	case protocoltypes.DebugInspectGroupLogTypeMetadata:
+	case protocoltypes.DebugInspectGroupLogType_DebugInspectGroupLogTypeMetadata:
 		log := cg.metadataStore.OpLog()
 
 		for _, e := range log.GetEntries().Slice() {
@@ -129,7 +129,7 @@ func (s *service) DebugInspectGroupStore(req *protocoltypes.DebugInspectGroupSto
 					p := proto.Clone(typeData.Message)
 					if err := proto.Unmarshal(metaEvent.Event, p); err == nil {
 						if msg, ok := p.(eventDeviceSigned); ok {
-							devicePK = msg.GetDevicePK()
+							devicePK = msg.GetDevicePk()
 						}
 					}
 				} else {
@@ -142,11 +142,11 @@ func (s *service) DebugInspectGroupStore(req *protocoltypes.DebugInspectGroupSto
 			}
 
 			if err := srv.SendMsg(&protocoltypes.DebugInspectGroupStore_Reply{
-				CID:               e.GetHash().Bytes(),
-				ParentCIDs:        nexts,
+				Cid:               e.GetHash().Bytes(),
+				ParentCids:        nexts,
 				Payload:           payload,
 				MetadataEventType: eventType,
-				DevicePK:          devicePK,
+				DevicePk:          devicePK,
 			}); err != nil {
 				return err
 			}
@@ -164,26 +164,26 @@ func (s *service) DebugGroup(ctx context.Context, request *protocoltypes.DebugGr
 		return nil, err
 	}
 
-	topic := fmt.Sprintf("grp_%s", string(request.GroupPK))
+	topic := fmt.Sprintf("grp_%s", string(request.GroupPk))
 
 	for _, p := range peers {
 		tagInfo := s.ipfsCoreAPI.ConnMgr().GetTagInfo(p.ID())
 		if _, ok := tagInfo.Tags[topic]; ok {
-			rep.PeerIDs = append(rep.PeerIDs, p.ID().String())
+			rep.PeerIds = append(rep.PeerIds, p.ID().String())
 		}
 	}
 
 	return rep, nil
 }
 
-func (s *service) SystemInfo(ctx context.Context, request *protocoltypes.SystemInfo_Request) (*protocoltypes.SystemInfo_Reply, error) {
+func (s *service) SystemInfo(ctx context.Context, _ *protocoltypes.SystemInfo_Request) (*protocoltypes.SystemInfo_Reply, error) {
 	reply := protocoltypes.SystemInfo_Reply{}
 
 	// process
 	process, errs := sysutil.SystemInfoProcess()
 	reply.Process = process
 	reply.Process.StartedAt = s.startedAt.Unix()
-	reply.Process.UptimeMS = time.Since(s.startedAt).Milliseconds()
+	reply.Process.UptimeMs = time.Since(s.startedAt).Milliseconds()
 
 	// gRPC
 	// TODO
@@ -210,10 +210,10 @@ func (s *service) SystemInfo(ctx context.Context, request *protocoltypes.SystemI
 	// OrbitDB
 	accountGroup := s.getAccountGroup()
 	if accountGroup == nil {
-		return nil, errcode.ErrGroupMissing
+		return nil, errcode.ErrCode_ErrGroupMissing
 	}
 	status := accountGroup.metadataStore.ReplicationStatus()
-	reply.OrbitDB = &protocoltypes.SystemInfo_OrbitDB{
+	reply.Orbitdb = &protocoltypes.SystemInfo_OrbitDB{
 		AccountMetadata: &protocoltypes.SystemInfo_OrbitDB_ReplicationStatus{
 			Progress: int64(status.GetProgress()),
 			Maximum:  int64(status.GetMax()),
@@ -232,15 +232,15 @@ func (s *service) SystemInfo(ctx context.Context, request *protocoltypes.SystemI
 	return &reply, nil
 }
 
-func (s *service) PeerList(ctx context.Context, request *protocoltypes.PeerList_Request) (*protocoltypes.PeerList_Reply, error) {
+func (s *service) PeerList(ctx context.Context, _ *protocoltypes.PeerList_Request) (*protocoltypes.PeerList_Reply, error) {
 	reply := protocoltypes.PeerList_Reply{}
 	api := s.IpfsCoreAPI()
 	if api == nil {
-		return nil, errcode.TODO.Wrap(fmt.Errorf("IPFS Core API is not available"))
+		return nil, errcode.ErrCode_TODO.Wrap(fmt.Errorf("IPFS Core API is not available"))
 	}
 	swarmPeers, err := api.Swarm().Peers(ctx) // https://pkg.go.dev/github.com/ipfs/interface-go-ipfs-core#ConnectionInfo
 	if err != nil {
-		return nil, errcode.TODO.Wrap(err)
+		return nil, errcode.ErrCode_TODO.Wrap(err)
 	}
 
 	peers := map[peer.ID]*protocoltypes.PeerList_Peer{}
@@ -248,7 +248,7 @@ func (s *service) PeerList(ctx context.Context, request *protocoltypes.PeerList_
 	// each peer in the swarm should be visible
 	for _, swarmPeer := range swarmPeers {
 		peers[swarmPeer.ID()] = &protocoltypes.PeerList_Peer{
-			ID:     swarmPeer.ID().Pretty(),
+			Id:     swarmPeer.ID().String(),
 			Errors: []string{},
 			Routes: []*protocoltypes.PeerList_Route{},
 		}
@@ -270,7 +270,7 @@ func (s *service) PeerList(ctx context.Context, request *protocoltypes.PeerList_
 		peer, ok := peers[swarmPeer.ID()]
 		if !ok {
 			peer = &protocoltypes.PeerList_Peer{
-				ID:     swarmPeer.ID().Pretty(),
+				Id:     swarmPeer.ID().String(),
 				Errors: []string{},
 				Routes: []*protocoltypes.PeerList_Route{},
 			}
@@ -306,9 +306,9 @@ func (s *service) PeerList(ctx context.Context, request *protocoltypes.PeerList_
 		{
 			switch swarmPeer.Direction() {
 			case network.DirInbound:
-				selectedRoute.Direction = protocoltypes.InboundDir
+				selectedRoute.Direction = protocoltypes.Direction_InboundDir
 			case network.DirOutbound:
-				selectedRoute.Direction = protocoltypes.OutboundDir
+				selectedRoute.Direction = protocoltypes.Direction_OutboundDir
 			}
 		}
 		// streams
@@ -323,7 +323,7 @@ func (s *service) PeerList(ctx context.Context, request *protocoltypes.PeerList_
 						continue
 					}
 					selectedRoute.Streams = append(selectedRoute.Streams, &protocoltypes.PeerList_Stream{
-						ID: string(peerStream),
+						Id: string(peerStream),
 					})
 				}
 			}
@@ -336,21 +336,21 @@ func (s *service) PeerList(ctx context.Context, request *protocoltypes.PeerList_
 		for _, route := range peer.Routes {
 			// FIXME: use the multiaddr library instead of string comparisons
 			if strings.Contains(route.Address, "/quic") {
-				features[protocoltypes.QuicFeature] = true
+				features[protocoltypes.PeerList_QuicFeature] = true
 			}
 			if strings.Contains(route.Address, "/mc/") {
-				features[protocoltypes.BLEFeature] = true
-				features[protocoltypes.WeshFeature] = true
+				features[protocoltypes.PeerList_BLEFeature] = true
+				features[protocoltypes.PeerList_WeshFeature] = true
 			}
 			if strings.Contains(route.Address, "/tor/") {
-				features[protocoltypes.TorFeature] = true
+				features[protocoltypes.PeerList_TorFeature] = true
 			}
 			for _, stream := range route.Streams {
-				if stream.ID == "/wesh/contact_req/1.0.0" {
-					features[protocoltypes.WeshFeature] = true
+				if stream.Id == "/wesh/contact_req/1.0.0" {
+					features[protocoltypes.PeerList_WeshFeature] = true
 				}
-				if stream.ID == "/rendezvous/1.0.0" {
-					features[protocoltypes.WeshFeature] = true
+				if stream.Id == "/rendezvous/1.0.0" {
+					features[protocoltypes.PeerList_WeshFeature] = true
 				}
 			}
 		}
@@ -363,20 +363,20 @@ func (s *service) PeerList(ctx context.Context, request *protocoltypes.PeerList_
 	for _, peer := range peers {
 		// aggregate direction
 		for _, route := range peer.Routes {
-			if route.Direction == protocoltypes.UnknownDir {
+			if route.Direction == protocoltypes.Direction_UnknownDir {
 				continue
 			}
 			switch {
-			case peer.Direction == protocoltypes.UnknownDir: // first route with a direction
+			case peer.Direction == protocoltypes.Direction_UnknownDir: // first route with a direction
 				peer.Direction = route.Direction
-			case peer.Direction == protocoltypes.BiDir: // peer aggregate is already maximal
+			case peer.Direction == protocoltypes.Direction_BiDir: // peer aggregate is already maximal
 				// noop
 			case route.Direction == peer.Direction: // another route with the same direction
 				// noop
-			case route.Direction == protocoltypes.InboundDir && peer.Direction == protocoltypes.OutboundDir:
-				peer.Direction = protocoltypes.BiDir
-			case route.Direction == protocoltypes.OutboundDir && peer.Direction == protocoltypes.InboundDir:
-				peer.Direction = protocoltypes.BiDir
+			case route.Direction == protocoltypes.Direction_InboundDir && peer.Direction == protocoltypes.Direction_OutboundDir:
+				peer.Direction = protocoltypes.Direction_BiDir
+			case route.Direction == protocoltypes.Direction_OutboundDir && peer.Direction == protocoltypes.Direction_InboundDir:
+				peer.Direction = protocoltypes.Direction_BiDir
 			default:
 				peer.Errors = append(peer.Errors, "failed to compute direction aggregate")
 			}

@@ -116,7 +116,7 @@ func NewLogger(streams ...Stream) (*zap.Logger, func(), error) {
 		case typeFile:
 			writer, err := newFileWriteCloser(opts.path, opts.sessionKind)
 			if err != nil {
-				return nil, nil, errcode.TODO.Wrap(err)
+				return nil, nil, errcode.ErrCode_TODO.Wrap(err)
 			}
 			w := zapcore.AddSync(writer)
 			core = zapcore.NewCore(enc, w, config.Level)

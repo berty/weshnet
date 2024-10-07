@@ -45,7 +45,7 @@ func GenerateNonce() (*[NonceSize]byte, error) {
 		err = fmt.Errorf("size read: %d (required %d)", size, NonceSize)
 	}
 	if err != nil {
-		return nil, errcode.ErrCryptoRandomGeneration.Wrap(err)
+		return nil, errcode.ErrCode_ErrCryptoRandomGeneration.Wrap(err)
 	}
 
 	return &nonce, nil
@@ -59,7 +59,7 @@ func GenerateNonceSize(size int) ([]byte, error) {
 		err = fmt.Errorf("size read: %d (required %d)", readSize, size)
 	}
 	if err != nil {
-		return nil, errcode.ErrCryptoRandomGeneration.Wrap(err)
+		return nil, errcode.ErrCode_ErrCryptoRandomGeneration.Wrap(err)
 	}
 
 	return nonce, nil
@@ -69,7 +69,7 @@ func NonceSliceToArray(nonceSlice []byte) (*[NonceSize]byte, error) {
 	var nonceArray [NonceSize]byte
 
 	if l := len(nonceSlice); l != NonceSize {
-		return nil, errcode.ErrInvalidInput.Wrap(fmt.Errorf("invalid nonce size, expected %d bytes, got %d", NonceSize, l))
+		return nil, errcode.ErrCode_ErrInvalidInput.Wrap(fmt.Errorf("invalid nonce size, expected %d bytes, got %d", NonceSize, l))
 	}
 	copy(nonceArray[:], nonceSlice)
 
@@ -80,7 +80,7 @@ func KeySliceToArray(keySlice []byte) (*[KeySize]byte, error) {
 	var keyArray [KeySize]byte
 
 	if l := len(keySlice); l != KeySize {
-		return nil, errcode.ErrInvalidInput.Wrap(fmt.Errorf("unable to convert slice to array, unexpected slice size: %d (expected %d)", l, KeySize))
+		return nil, errcode.ErrCode_ErrInvalidInput.Wrap(fmt.Errorf("unable to convert slice to array, unexpected slice size: %d (expected %d)", l, KeySize))
 	}
 	copy(keyArray[:], keySlice)
 
@@ -90,16 +90,16 @@ func KeySliceToArray(keySlice []byte) (*[KeySize]byte, error) {
 func SeedFromEd25519PrivateKey(key crypto.PrivKey) ([]byte, error) {
 	// Similar to (*ed25519).Seed()
 	if key.Type() != pb.KeyType_Ed25519 {
-		return nil, errcode.ErrInvalidInput
+		return nil, errcode.ErrCode_ErrInvalidInput
 	}
 
 	r, err := key.Raw()
 	if err != nil {
-		return nil, errcode.ErrSerialization.Wrap(err)
+		return nil, errcode.ErrCode_ErrSerialization.Wrap(err)
 	}
 
 	if len(r) != ed25519.PrivateKeySize {
-		return nil, errcode.ErrInvalidInput
+		return nil, errcode.ErrCode_ErrInvalidInput
 	}
 
 	return r[:ed25519.PrivateKeySize-ed25519.PublicKeySize], nil
@@ -125,7 +125,7 @@ func EdwardsToMontgomeryPub(pubKey crypto.PubKey) (*[KeySize]byte, error) {
 	var mongPub [KeySize]byte
 
 	if pubKey.Type() != pb.KeyType_Ed25519 {
-		return nil, errcode.ErrInvalidInput
+		return nil, errcode.ErrCode_ErrInvalidInput
 	}
 
 	rawPublicKey, err := pubKey.Raw()
@@ -148,14 +148,14 @@ func EdwardsToMontgomeryPriv(privKey crypto.PrivKey) (*[KeySize]byte, error) {
 	var mongPriv [KeySize]byte
 
 	if privKey.Type() != pb.KeyType_Ed25519 {
-		return nil, errcode.ErrInvalidInput
+		return nil, errcode.ErrCode_ErrInvalidInput
 	}
 
 	rawPrivateKey, err := privKey.Raw()
 	if err != nil {
-		return nil, errcode.ErrSerialization.Wrap(err)
+		return nil, errcode.ErrCode_ErrSerialization.Wrap(err)
 	} else if len(rawPrivateKey) != ed25519.PrivateKeySize {
-		return nil, errcode.ErrInvalidInput
+		return nil, errcode.ErrCode_ErrInvalidInput
 	}
 
 	PrivateKeyToCurve25519(&mongPriv, rawPrivateKey)
@@ -212,7 +212,7 @@ func AESGCMDecrypt(key, data []byte) ([]byte, error) {
 // AESCTRStream returns a CTR stream that can be used to produce ciphertext without padding.
 func AESCTRStream(key, iv []byte) (cipher.Stream, error) {
 	if key == nil || iv == nil {
-		return nil, errcode.ErrInvalidInput
+		return nil, errcode.ErrCode_ErrInvalidInput
 	}
 
 	blockCipher, err := aes.NewCipher(key)

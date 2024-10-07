@@ -8,7 +8,7 @@ import (
 
 	ds "github.com/ipfs/go-datastore"
 	ds_sync "github.com/ipfs/go-datastore/sync"
-	ipfs_interface "github.com/ipfs/interface-go-ipfs-core"
+	coreiface "github.com/ipfs/kubo/core/coreiface"
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
 
@@ -131,14 +131,14 @@ func (s *oosmService) Status() (Status, error) {
 	return Status{}, nil
 }
 
-func (s *oosmService) IpfsCoreAPI() ipfs_interface.CoreAPI {
+func (s *oosmService) IpfsCoreAPI() coreiface.CoreAPI {
 	return nil
 }
 
 func (s *oosmService) OutOfStoreReceive(ctx context.Context, request *protocoltypes.OutOfStoreReceive_Request) (*protocoltypes.OutOfStoreReceive_Reply, error) {
 	outOfStoreMessage, group, clearPayload, alreadyDecrypted, err := s.secretStore.OpenOutOfStoreMessage(ctx, request.Payload)
 	if err != nil {
-		return nil, errcode.ErrCryptoDecrypt.Wrap(err)
+		return nil, errcode.ErrCode_ErrCryptoDecrypt.Wrap(err)
 	}
 
 	return &protocoltypes.OutOfStoreReceive_Reply{

@@ -9,9 +9,9 @@ import (
 	emitter "github.com/berty/emitter-go/v2"
 	rendezvous "github.com/berty/go-libp2p-rendezvous"
 	pb "github.com/berty/go-libp2p-rendezvous/pb"
-	"github.com/golang/protobuf/proto" // nolint:staticcheck // cannot use the new protobuf API while keeping gogoproto
 	"github.com/libp2p/go-libp2p/core/peer"
 	"go.uber.org/zap"
+	"google.golang.org/protobuf/proto"
 )
 
 const EmitterServiceType = "emitter-io"
@@ -70,6 +70,7 @@ func NewEmitterServer(serverAddr string, adminKey string, options *EmitterOption
 	return ps, nil
 }
 
+// nolint:revive
 func (p *EmitterPubSub) Register(pid peer.ID, ns string, addrs [][]byte, ttlAsSeconds int, counter uint64) {
 	p.logger.Debug("register", zap.String("pid", pid.String()), zap.String("ns", ns))
 

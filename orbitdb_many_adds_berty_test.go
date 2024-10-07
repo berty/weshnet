@@ -76,7 +76,7 @@ func testAddBerty(ctx context.Context, t *testing.T, node ipfsutil.CoreAPIMock, 
 		amountCurrentlyFound++
 	}
 
-	sub, err := gc.MessageStore().EventBus().Subscribe(new(protocoltypes.GroupMessageEvent))
+	sub, err := gc.MessageStore().EventBus().Subscribe(new(*protocoltypes.GroupMessageEvent))
 	require.NoError(t, err)
 	defer sub.Close()
 

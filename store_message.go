@@ -8,11 +8,12 @@ import (
 	"sync"
 
 	"github.com/ipfs/go-cid"
-	coreapi "github.com/ipfs/interface-go-ipfs-core"
+	coreiface "github.com/ipfs/kubo/core/coreiface"
 	"github.com/libp2p/go-libp2p/core/crypto"
 	"github.com/libp2p/go-libp2p/core/event"
 	"github.com/libp2p/go-libp2p/p2p/host/eventbus"
 	"go.uber.org/zap"
+	"google.golang.org/protobuf/proto"
 
 	ipfslog "berty.tech/go-ipfs-log"
 	"berty.tech/go-ipfs-log/identityprovider"
@@ -64,7 +65,7 @@ func (m *MessageStore) setLogger(l *zap.Logger) {
 
 func (m *MessageStore) openMessage(ctx context.Context, e ipfslog.Entry) (*protocoltypes.GroupMessageEvent, error) {
 	if e == nil {
-		return nil, errcode.ErrInvalidInput
+		return nil, errcode.ErrCode_ErrInvalidInput
 	}
 
 	op, err := operation.ParseOperation(e)
@@ -75,12 +76,12 @@ func (m *MessageStore) openMessage(ctx context.Context, e ipfslog.Entry) (*proto
 
 	env, headers, err := m.secretStore.OpenEnvelopeHeaders(op.GetValue(), m.group)
 	if err != nil {
-		return nil, errcode.ErrCryptoDecrypt.Wrap(err)
+		return nil, errcode.ErrCode_ErrCryptoDecrypt.Wrap(err)
 	}
 
-	devicePublicKey, err := crypto.UnmarshalEd25519PublicKey(headers.DevicePK)
+	devicePublicKey, err := crypto.UnmarshalEd25519PublicKey(headers.DevicePk)
 	if err != nil {
-		return nil, errcode.ErrDeserialization.Wrap(err)
+		return nil, errcode.ErrCode_ErrDeserialization.Wrap(err)
 	}
 
 	if !m.secretStore.IsChainKeyKnownForDevice(ctx, m.groupPublicKey, devicePublicKey) {
@@ -140,7 +141,7 @@ func (m *MessageStore) processMessage(ctx context.Context, message *messageItem)
 		return nil, fmt.Errorf("unable to open the envelope: %w", err)
 	}
 
-	err = m.secretStore.UpdateOutOfStoreGroupReferences(ctx, message.headers.DevicePK, message.headers.Counter, m.group)
+	err = m.secretStore.UpdateOutOfStoreGroupReferences(ctx, message.headers.DevicePk, message.headers.Counter, m.group)
 	if err != nil {
 		m.logger.Error("unable to update push group references", zap.Error(err))
 	}
@@ -191,29 +192,29 @@ func (m *MessageStore) processMessageLoop(ctx context.Context, tracer *messageMe
 		m.processDeviceMessagesInQueue(device)
 
 		// emit new message event
-		if err := m.emitters.groupMessage.Emit(*evt); err != nil {
+		if err := m.emitters.groupMessage.Emit(evt); err != nil {
 			m.logger.Warn("unable to emit group message event", zap.Error(err))
 		}
 	}
 }
 
 func (m *MessageStore) getOrCreateDeviceCache(ctx context.Context, message *messageItem, tracer *messageMetricsTracer) (device *groupCache, hasKnownChainKey bool) {
-	devicePublicKeyString := string(message.headers.DevicePK)
+	devicePublicKeyString := string(message.headers.DevicePk)
 
 	m.muDeviceCaches.Lock()
 	defer m.muDeviceCaches.Unlock()
 
 	device, ok := m.deviceCaches[devicePublicKeyString]
 	if !ok {
-		devicePublicKey, err := crypto.UnmarshalEd25519PublicKey(message.headers.DevicePK)
+		devicePublicKey, err := crypto.UnmarshalEd25519PublicKey(message.headers.DevicePk)
 		if err != nil {
-			m.logger.Error("unable to process message, unmarshal of device pk failed", logutil.PrivateBinary("devicepk", message.headers.DevicePK))
+			m.logger.Error("unable to process message, unmarshal of device pk failed", logutil.PrivateBinary("devicepk", message.headers.DevicePk))
 			return nil, false
 		}
 
 		hasSecret := m.secretStore.IsChainKeyKnownForDevice(ctx, m.groupPublicKey, devicePublicKey)
 		device = &groupCache{
-			self:             bytes.Equal(m.currentDevicePublicKeyRaw, message.headers.DevicePK),
+			self:             bytes.Equal(m.currentDevicePublicKeyRaw, message.headers.DevicePk),
 			queue:            newPriorityMessageQueue("undecrypted", tracer),
 			locker:           &sync.RWMutex{},
 			hasKnownChainKey: hasSecret,
@@ -234,7 +235,7 @@ func (m *MessageStore) processDeviceMessagesInQueue(device *groupCache) {
 
 func (m *MessageStore) addToMessageQueue(_ context.Context, e ipfslog.Entry) error {
 	if e == nil {
-		return errcode.ErrInvalidInput
+		return errcode.ErrCode_ErrInvalidInput
 	}
 
 	op, err := operation.ParseOperation(e)
@@ -244,7 +245,7 @@ func (m *MessageStore) addToMessageQueue(_ context.Context, e ipfslog.Entry) err
 
 	env, headers, err := m.secretStore.OpenEnvelopeHeaders(op.GetValue(), m.group)
 	if err != nil {
-		return errcode.ErrCryptoDecrypt.Wrap(err)
+		return errcode.ErrCode_ErrCryptoDecrypt.Wrap(err)
 	}
 
 	msg := &messageItem{
@@ -310,24 +311,25 @@ func (m *MessageStore) AddMessage(ctx context.Context, payload []byte) (operatio
 }
 
 func messageStoreAddMessage(ctx context.Context, g *protocoltypes.Group, m *MessageStore, payload []byte) (operation.Operation, error) {
-	msg, err := (&protocoltypes.EncryptedMessage{
+	msg := &protocoltypes.EncryptedMessage{
 		Plaintext:        payload,
 		ProtocolMetadata: &protocoltypes.ProtocolMetadata{},
-	}).Marshal()
+	}
+	msgBytes, err := proto.Marshal(msg)
 	if err != nil {
-		return nil, errcode.ErrInternal.Wrap(err)
+		return nil, errcode.ErrCode_ErrInternal.Wrap(err)
 	}
 
-	sealedEnvelope, err := m.secretStore.SealEnvelope(ctx, g, msg)
+	sealedEnvelope, err := m.secretStore.SealEnvelope(ctx, g, msgBytes)
 	if err != nil {
-		return nil, errcode.ErrCryptoEncrypt.Wrap(err)
+		return nil, errcode.ErrCode_ErrCryptoEncrypt.Wrap(err)
 	}
 	m.logger.Debug(
 		"Message sealed successfully in secretbox envelope",
 		tyber.FormatStepLogFields(
 			ctx,
 			[]tyber.Detail{
-				{Name: "Cleartext size", Description: fmt.Sprintf("%d bytes", len(msg))},
+				{Name: "Cleartext size", Description: fmt.Sprintf("%d bytes", len(msgBytes))},
 				{Name: "Cyphertext size", Description: fmt.Sprintf("%d bytes", len(sealedEnvelope))},
 			},
 		)...,
@@ -337,7 +339,7 @@ func messageStoreAddMessage(ctx context.Context, g *protocoltypes.Group, m *Mess
 
 	e, err := m.AddOperation(ctx, op, nil)
 	if err != nil {
-		return nil, errcode.ErrOrbitDBAppend.Wrap(err)
+		return nil, errcode.ErrCode_ErrOrbitDBAppend.Wrap(err)
 	}
 	m.logger.Debug(
 		"Envelope added to orbit-DB log successfully",
@@ -346,7 +348,7 @@ func messageStoreAddMessage(ctx context.Context, g *protocoltypes.Group, m *Mess
 
 	op, err = operation.ParseOperation(e)
 	if err != nil {
-		return nil, errcode.ErrOrbitDBDeserialization.Wrap(err)
+		return nil, errcode.ErrCode_ErrOrbitDBDeserialization.Wrap(err)
 	}
 
 	m.logger.Debug(
@@ -359,15 +361,15 @@ func messageStoreAddMessage(ctx context.Context, g *protocoltypes.Group, m *Mess
 
 func constructorFactoryGroupMessage(s *WeshOrbitDB, logger *zap.Logger) iface.StoreConstructor {
 	metricsTracer := newMessageMetricsTracer(s.prometheusRegister)
-	return func(ipfs coreapi.CoreAPI, identity *identityprovider.Identity, addr address.Address, options *iface.NewStoreOptions) (iface.Store, error) {
+	return func(ipfs coreiface.CoreAPI, identity *identityprovider.Identity, addr address.Address, options *iface.NewStoreOptions) (iface.Store, error) {
 		g, err := s.getGroupFromOptions(options)
 		if err != nil {
-			return nil, errcode.ErrInvalidInput.Wrap(err)
+			return nil, errcode.ErrCode_ErrInvalidInput.Wrap(err)
 		}
 
 		groupPublicKey, err := g.GetPubKey()
 		if err != nil {
-			return nil, errcode.ErrDeserialization.Wrap(err)
+			return nil, errcode.ErrCode_ErrDeserialization.Wrap(err)
 		}
 
 		if options.EventBus == nil {
@@ -392,16 +394,16 @@ func constructorFactoryGroupMessage(s *WeshOrbitDB, logger *zap.Logger) iface.St
 			currentMemberDevice, err := s.secretStore.GetOwnMemberDeviceForGroup(g)
 
 			if err != nil {
-				if errcode.Is(err, errcode.ErrInvalidInput) {
+				if errcode.Is(err, errcode.ErrCode_ErrInvalidInput) {
 					replication = true
 				} else {
-					return nil, errcode.ErrOrbitDBInit.Wrap(err)
+					return nil, errcode.ErrCode_ErrOrbitDBInit.Wrap(err)
 				}
 			} else {
 				store.currentDevicePublicKey = currentMemberDevice.Device()
 				store.currentDevicePublicKeyRaw, err = store.currentDevicePublicKey.Raw()
 				if err != nil {
-					return nil, errcode.ErrOrbitDBInit.Wrap(err)
+					return nil, errcode.ErrCode_ErrOrbitDBInit.Wrap(err)
 				}
 			}
 		}
@@ -413,22 +415,22 @@ func constructorFactoryGroupMessage(s *WeshOrbitDB, logger *zap.Logger) iface.St
 			logger.Debug("store message process loop ended", zap.Error(store.ctx.Err()))
 		}()
 
-		if store.emitters.groupMessage, err = store.eventBus.Emitter(new(protocoltypes.GroupMessageEvent)); err != nil {
+		if store.emitters.groupMessage, err = store.eventBus.Emitter(new(*protocoltypes.GroupMessageEvent)); err != nil {
 			store.cancel()
-			return nil, errcode.ErrOrbitDBInit.Wrap(err)
+			return nil, errcode.ErrCode_ErrOrbitDBInit.Wrap(err)
 		}
 
 		// for debug/test purpose
 		if store.emitters.groupCacheMessage, err = store.eventBus.Emitter(new(messageItem)); err != nil {
 			store.cancel()
-			return nil, errcode.ErrOrbitDBInit.Wrap(err)
+			return nil, errcode.ErrCode_ErrOrbitDBInit.Wrap(err)
 		}
 
 		options.Index = basestore.NewNoopIndex
 
 		if err := store.InitBaseStore(ipfs, identity, addr, options); err != nil {
 			store.cancel()
-			return nil, errcode.ErrOrbitDBInit.Wrap(err)
+			return nil, errcode.ErrCode_ErrOrbitDBInit.Wrap(err)
 		}
 
 		if replication {
@@ -485,31 +487,31 @@ func constructorFactoryGroupMessage(s *WeshOrbitDB, logger *zap.Logger) iface.St
 func (m *MessageStore) GetMessageByCID(c cid.Cid) (operation.Operation, error) {
 	logEntry, ok := m.OpLog().Get(c)
 	if !ok {
-		return nil, errcode.ErrInvalidInput.Wrap(fmt.Errorf("unable to find message entry"))
+		return nil, errcode.ErrCode_ErrInvalidInput.Wrap(fmt.Errorf("unable to find message entry"))
 	}
 
 	op, err := operation.ParseOperation(logEntry)
 	if err != nil {
-		return nil, errcode.ErrDeserialization.Wrap(err)
+		return nil, errcode.ErrCode_ErrDeserialization.Wrap(err)
 	}
 
 	return op, nil
 }
 
-func (m *MessageStore) GetOutOfStoreMessageEnvelope(ctx context.Context, c cid.Cid) (*protocoltypes.OutOfStoreMessageEnvelope, error) {
+func (m *MessageStore) GetOutOfStoreMessageEnvelope(_ context.Context, c cid.Cid) (*protocoltypes.OutOfStoreMessageEnvelope, error) {
 	op, err := m.GetMessageByCID(c)
 	if err != nil {
-		return nil, errcode.ErrInvalidInput.Wrap(err)
+		return nil, errcode.ErrCode_ErrInvalidInput.Wrap(err)
 	}
 
 	env, headers, err := m.secretStore.OpenEnvelopeHeaders(op.GetValue(), m.group)
 	if err != nil {
-		return nil, errcode.ErrDeserialization.Wrap(err)
+		return nil, errcode.ErrCode_ErrDeserialization.Wrap(err)
 	}
 
 	sealedMessageEnvelope, err := m.secretStore.SealOutOfStoreMessageEnvelope(c, env, headers, m.group)
 	if err != nil {
-		return nil, errcode.ErrInternal.Wrap(err)
+		return nil, errcode.ErrCode_ErrInternal.Wrap(err)
 	}
 
 	return sealedMessageEnvelope, nil

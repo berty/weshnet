@@ -22,17 +22,17 @@ import (
 func FilterGroupForReplication(m *protocoltypes.Group) (*protocoltypes.Group, error) {
 	groupSigPK, err := m.GetSigningPubKey()
 	if err != nil {
-		return nil, errcode.TODO.Wrap(err)
+		return nil, errcode.ErrCode_TODO.Wrap(err)
 	}
 
 	groupSigPKBytes, err := groupSigPK.Raw()
 	if err != nil {
-		return nil, errcode.ErrSerialization.Wrap(err)
+		return nil, errcode.ErrCode_ErrSerialization.Wrap(err)
 	}
 
 	linkKey, err := m.GetLinkKeyArray()
 	if err != nil {
-		return nil, errcode.TODO.Wrap(err)
+		return nil, errcode.ErrCode_TODO.Wrap(err)
 	}
 
 	return &protocoltypes.Group{
@@ -47,31 +47,31 @@ func (s *service) ReplicationServiceRegisterGroup(ctx context.Context, request *
 	ctx, _, endSection := tyber.Section(ctx, s.logger, "Registering replication service for group")
 	defer func() { endSection(err, "") }()
 
-	if request.GroupPK == nil {
-		return nil, errcode.ErrInvalidInput.Wrap(fmt.Errorf("invalid GroupPK"))
+	if request.GroupPk == nil {
+		return nil, errcode.ErrCode_ErrInvalidInput.Wrap(fmt.Errorf("invalid GroupPK"))
 	}
 
 	if request.Token == "" {
-		return nil, errcode.ErrInvalidInput.Wrap(fmt.Errorf("invalid token"))
+		return nil, errcode.ErrCode_ErrInvalidInput.Wrap(fmt.Errorf("invalid token"))
 	}
 
 	if request.ReplicationServer == "" {
-		return nil, errcode.ErrInvalidInput.Wrap(fmt.Errorf("invalid replication server"))
+		return nil, errcode.ErrCode_ErrInvalidInput.Wrap(fmt.Errorf("invalid replication server"))
 	}
 
-	gc, err := s.GetContextGroupForID(request.GroupPK)
+	gc, err := s.GetContextGroupForID(request.GroupPk)
 	if err != nil {
-		return nil, errcode.ErrInvalidInput.Wrap(err)
+		return nil, errcode.ErrCode_ErrInvalidInput.Wrap(err)
 	}
 
 	replGroup, err := FilterGroupForReplication(gc.group)
 	if err != nil {
-		return nil, errcode.TODO.Wrap(err)
+		return nil, errcode.ErrCode_TODO.Wrap(err)
 	}
 
 	accountGroup := s.getAccountGroup()
 	if accountGroup == nil {
-		return nil, errcode.ErrGroupMissing
+		return nil, errcode.ErrCode_ErrGroupMissing
 	}
 
 	gopts := []grpc.DialOption{
@@ -87,9 +87,9 @@ func (s *service) ReplicationServiceRegisterGroup(ctx context.Context, request *
 		gopts = append(gopts, grpc.WithTransportCredentials(tlsconfig))
 	}
 
-	cc, err := grpc.DialContext(context.Background(), request.ReplicationServer, gopts...)
+	cc, err := grpc.NewClient("passthrough://"+request.ReplicationServer, gopts...)
 	if err != nil {
-		return nil, errcode.ErrStreamWrite.Wrap(err)
+		return nil, errcode.ErrCode_ErrStreamWrite.Wrap(err)
 	}
 
 	client := replicationtypes.NewReplicationServiceClient(cc)
@@ -97,12 +97,12 @@ func (s *service) ReplicationServiceRegisterGroup(ctx context.Context, request *
 	if _, err = client.ReplicateGroup(ctx, &replicationtypes.ReplicationServiceReplicateGroup_Request{
 		Group: replGroup,
 	}); err != nil {
-		return nil, errcode.ErrServiceReplicationServer.Wrap(err)
+		return nil, errcode.ErrCode_ErrServiceReplicationServer.Wrap(err)
 	}
 
-	s.logger.Info("group will be replicated", logutil.PrivateString("public-key", base64.RawURLEncoding.EncodeToString(request.GroupPK)))
+	s.logger.Info("group will be replicated", logutil.PrivateString("public-key", base64.RawURLEncoding.EncodeToString(request.GroupPk)))
 
-	if _, err := gc.metadataStore.SendGroupReplicating(ctx, request.AuthenticationURL, request.ReplicationServer); err != nil {
+	if _, err := gc.metadataStore.SendGroupReplicating(ctx, request.AuthenticationUrl, request.ReplicationServer); err != nil {
 		s.logger.Error("error while notifying group about replication", zap.Error(err))
 	}
 

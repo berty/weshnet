@@ -9,7 +9,6 @@ import (
 	"sync"
 	"time"
 
-	ggio "github.com/gogo/protobuf/io"
 	"github.com/libp2p/go-libp2p/core/discovery"
 	"github.com/libp2p/go-libp2p/core/event"
 	"github.com/libp2p/go-libp2p/core/host"
@@ -25,6 +24,7 @@ import (
 	ble "berty.tech/weshnet/pkg/ble-driver"
 	"berty.tech/weshnet/pkg/logutil"
 	mc "berty.tech/weshnet/pkg/multipeer-connectivity-driver"
+	"berty.tech/weshnet/pkg/protoio"
 )
 
 const (
@@ -74,7 +74,7 @@ func newLinkedCache() *linkedCache {
 	}
 }
 
-func NewLocalDiscovery(logger *zap.Logger, host host.Host, rng *rand.Rand) (*LocalDiscovery, error) {
+func NewLocalDiscovery(logger *zap.Logger, host host.Host, _ *rand.Rand) (*LocalDiscovery, error) {
 	ctx, cancel := context.WithCancel(context.Background())
 	ld := &LocalDiscovery{
 		rootctx:    ctx,
@@ -140,7 +140,7 @@ func (ld *LocalDiscovery) Advertise(ctx context.Context, cid string, opts ...dis
 	return ttl, nil
 }
 
-func (ld *LocalDiscovery) FindPeers(ctx context.Context, cid string, opts ...discovery.Option) (<-chan peer.AddrInfo, error) {
+func (ld *LocalDiscovery) FindPeers(_ context.Context, cid string, opts ...discovery.Option) (<-chan peer.AddrInfo, error) {
 	// Get options
 	var options discovery.Options
 	err := options.Apply(opts...)
@@ -283,7 +283,7 @@ func (ld *LocalDiscovery) getLocalReccord() *Records {
 	return &Records{Records: records}
 }
 
-func (ld *LocalDiscovery) Unregister(ctx context.Context, cid string, _ ...discovery.Option) error {
+func (ld *LocalDiscovery) Unregister(_ context.Context, cid string, _ ...discovery.Option) error {
 	ld.muRecs.Lock()
 	delete(ld.recs, cid)
 	ld.muRecs.Unlock()
@@ -318,7 +318,7 @@ func (ld *LocalDiscovery) sendRecordsToProximityPeers(ctx context.Context, recor
 func (ld *LocalDiscovery) handleStream(s network.Stream) {
 	defer s.Reset() // nolint:errcheck
 
-	reader := ggio.NewDelimitedReader(s, network.MessageSizeMax)
+	reader := protoio.NewDelimitedReader(s, 2048)
 	records := Records{}
 	if err := reader.ReadMsg(&records); err != nil {
 		ld.logger.Error("handleStream receive an invalid local record", zap.Error(err))
@@ -375,7 +375,7 @@ func (ld *LocalDiscovery) sendRecordsTo(ctx context.Context, p peer.ID, records 
 	}
 	defer s.Close()
 
-	pbw := ggio.NewDelimitedWriter(s)
+	pbw := protoio.NewDelimitedWriter(s)
 	if err := pbw.WriteMsg(records); err != nil {
 		return fmt.Errorf("write error: %w", err)
 	}

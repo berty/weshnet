@@ -43,7 +43,7 @@ func (k *datastoreKeystore) Delete(name string) error {
 }
 
 func (k *datastoreKeystore) List() ([]string, error) {
-	return nil, errcode.ErrNotImplemented
+	return nil, errcode.ErrCode_ErrNotImplemented
 }
 
 func NewDatastoreKeystore(ds datastore.Datastore) keystore.Keystore {

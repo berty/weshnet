@@ -6,12 +6,12 @@ import (
 	"testing"
 	"time"
 
-	mocknet "github.com/berty/go-libp2p-mock"
 	rendezvous "github.com/berty/go-libp2p-rendezvous"
 	dbrdvp "github.com/berty/go-libp2p-rendezvous/db/sqlite"
 	p2putil "github.com/libp2p/go-libp2p-testing/netutil"
 	"github.com/libp2p/go-libp2p/core/host"
 	"github.com/libp2p/go-libp2p/core/peer"
+	mocknet "github.com/libp2p/go-libp2p/p2p/net/mock"
 	ma "github.com/multiformats/go-multiaddr"
 	"github.com/stretchr/testify/require"
 )

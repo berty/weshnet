@@ -10,12 +10,11 @@ import (
 	"time"
 	"unsafe"
 
-	pubsub_fix "github.com/berty/go-libp2p-pubsub"
 	"github.com/dgraph-io/badger/v2/options"
 	ds "github.com/ipfs/go-datastore"
 	ds_sync "github.com/ipfs/go-datastore/sync"
 	badger "github.com/ipfs/go-ds-badger2"
-	ipfs_interface "github.com/ipfs/interface-go-ipfs-core"
+	coreiface "github.com/ipfs/kubo/core/coreiface"
 	pubsub "github.com/libp2p/go-libp2p-pubsub"
 	"github.com/libp2p/go-libp2p/core/crypto"
 	"github.com/libp2p/go-libp2p/core/event"
@@ -53,7 +52,7 @@ type Service interface {
 
 	Close() error
 	Status() Status
-	IpfsCoreAPI() ipfs_interface.CoreAPI
+	IpfsCoreAPI() coreiface.CoreAPI
 }
 
 type service struct {
@@ -164,7 +163,7 @@ func (opts *Opts) applyDefaults(ctx context.Context) error {
 			Logger: opts.Logger,
 		})
 		if err != nil {
-			return errcode.ErrInternal.Wrap(err)
+			return errcode.ErrCode_ErrInternal.Wrap(err)
 		}
 
 		opts.SecretStore = secretStore
@@ -233,9 +232,9 @@ func (opts *Opts) applyDefaults(ctx context.Context) error {
 	if opts.PubSub == nil {
 		var err error
 
-		popts := []pubsub_fix.Option{
-			pubsub_fix.WithMessageSigning(true),
-			pubsub_fix.WithPeerExchange(true),
+		popts := []pubsub.Option{
+			pubsub.WithMessageSigning(true),
+			pubsub.WithPeerExchange(true),
 		}
 
 		backoffstrat := backoff.NewExponentialBackoff(
@@ -250,10 +249,10 @@ func (opts *Opts) applyDefaults(ctx context.Context) error {
 		}
 
 		adaptater := tinder.NewDiscoveryAdaptater(opts.Logger.Named("disc"), opts.TinderService)
-		popts = append(popts, pubsub_fix.WithDiscovery(adaptater, pubsub_fix.WithDiscoverConnector(backoffconnector)))
+		popts = append(popts, pubsub.WithDiscovery(adaptater, pubsub.WithDiscoverConnector(backoffconnector)))
 
 		// pubsub.DiscoveryPollInterval = m.Node.Protocol.PollInterval
-		ps, err := pubsub_fix.NewGossipSub(ctx, opts.Host, popts...)
+		ps, err := pubsub.NewGossipSub(ctx, opts.Host, popts...)
 		if err != nil {
 			return fmt.Errorf("unable to init gossipsub: %w", err)
 		}
@@ -317,7 +316,7 @@ func NewService(opts Opts) (_ Service, err error) {
 
 	if err := opts.applyDefaults(ctx); err != nil {
 		cancel()
-		return nil, errcode.TODO.Wrap(err)
+		return nil, errcode.ErrCode_TODO.Wrap(err)
 	}
 
 	opts.Logger = opts.Logger.Named("pt")
@@ -336,7 +335,7 @@ func NewService(opts Opts) (_ Service, err error) {
 	accountGroupCtx, err := opts.OrbitDB.openAccountGroup(ctx, dbOpts, opts.IpfsCoreAPI)
 	if err != nil {
 		cancel()
-		return nil, errcode.TODO.Wrap(err)
+		return nil, errcode.ErrCode_TODO.Wrap(err)
 	}
 
 	opts.Logger.Debug("Opened account group", tyber.FormatStepLogFields(ctx, []tyber.Detail{{Name: "AccountGroup", Description: accountGroupCtx.group.String()}})...)
@@ -349,7 +348,7 @@ func NewService(opts Opts) (_ Service, err error) {
 
 		if contactRequestsManager, err = newContactRequestsManager(swiper, accountGroupCtx.metadataStore, opts.IpfsCoreAPI, opts.Logger); err != nil {
 			cancel()
-			return nil, errcode.TODO.Wrap(err)
+			return nil, errcode.ErrCode_TODO.Wrap(err)
 		}
 	} else {
 		opts.Logger.Warn("No tinder driver provided, incoming and outgoing contact requests won't be enabled", tyber.FormatStepLogFields(ctx, []tyber.Detail{})...)
@@ -357,7 +356,7 @@ func NewService(opts Opts) (_ Service, err error) {
 
 	if err := opts.SecretStore.PutGroup(ctx, accountGroupCtx.Group()); err != nil {
 		cancel()
-		return nil, errcode.ErrInternal.Wrap(fmt.Errorf("unable to add account group to group datastore, err: %w", err))
+		return nil, errcode.ErrCode_ErrInternal.Wrap(fmt.Errorf("unable to add account group to group datastore, err: %w", err))
 	}
 
 	s := &service{
@@ -387,7 +386,7 @@ func NewService(opts Opts) (_ Service, err error) {
 	return s, nil
 }
 
-func (s *service) IpfsCoreAPI() ipfs_interface.CoreAPI {
+func (s *service) IpfsCoreAPI() coreiface.CoreAPI {
 	return s.ipfsCoreAPI
 }
 

@@ -60,7 +60,7 @@ func Test_AddMessage_ListMessages_manually_supplying_secrets(t *testing.T) {
 	require.Equal(t, 1, countEntries(out))
 
 	watcherCtx, watcherCancel := context.WithTimeout(ctx, time.Second*5)
-	chSub, err := peers[1].GC.MessageStore().EventBus().Subscribe(new(protocoltypes.GroupMessageEvent))
+	chSub, err := peers[1].GC.MessageStore().EventBus().Subscribe(new(*protocoltypes.GroupMessageEvent))
 	require.NoError(t, err)
 	defer chSub.Close()
 
@@ -141,7 +141,7 @@ func Test_Add_Messages_To_Cache(t *testing.T) {
 	require.NotNil(t, ds0For1)
 
 	cevent, err := peers[0].GC.MessageStore().EventBus().Subscribe(
-		new(protocoltypes.GroupMessageEvent), eventbus.BufSize(entriesCount))
+		new(*protocoltypes.GroupMessageEvent), eventbus.BufSize(entriesCount))
 	require.NoError(t, err)
 
 	cadded, err := peers[1].GC.MessageStore().EventBus().Subscribe(
@@ -191,7 +191,7 @@ func Test_Add_Messages_To_Cache(t *testing.T) {
 	require.NoError(t, err)
 
 	cevent, err = peers[1].GC.MessageStore().EventBus().Subscribe(
-		new(protocoltypes.GroupMessageEvent), eventbus.BufSize(entriesCount))
+		new(*protocoltypes.GroupMessageEvent), eventbus.BufSize(entriesCount))
 	require.NoError(t, err)
 
 	peers[1].GC.MessageStore().ProcessMessageQueueForDevicePK(ctx, dPK0Raw)

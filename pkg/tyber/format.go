@@ -85,7 +85,7 @@ func FormatTraceLogFields(ctx context.Context) []zapcore.Field {
 	}
 }
 
-func FormatEventLogFields(ctx context.Context, details []Detail) []zapcore.Field {
+func FormatEventLogFields(_ context.Context, details []Detail) []zapcore.Field {
 	return []zapcore.Field{
 		zap.String("tyberLogType", string(EventType)),
 		zap.Any("event", Event{
