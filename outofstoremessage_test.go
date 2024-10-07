@@ -9,9 +9,9 @@ import (
 	"github.com/stretchr/testify/require"
 	"google.golang.org/protobuf/proto"
 
-	"berty.tech/weshnet/pkg/protocoltypes"
-	"berty.tech/weshnet/pkg/secretstore"
-	"berty.tech/weshnet/pkg/testutil"
+	"berty.tech/weshnet/v2/pkg/protocoltypes"
+	"berty.tech/weshnet/v2/pkg/secretstore"
+	"berty.tech/weshnet/v2/pkg/testutil"
 )
 
 func Test_sealPushMessage_OutOfStoreReceive(t *testing.T) {

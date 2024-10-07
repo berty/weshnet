@@ -5,9 +5,9 @@ import (
 	"io"
 	"sync"
 
-	"berty.tech/weshnet/pkg/errcode"
-	"berty.tech/weshnet/pkg/protocoltypes"
-	"berty.tech/weshnet/pkg/tyber"
+	"berty.tech/weshnet/v2/pkg/errcode"
+	"berty.tech/weshnet/v2/pkg/protocoltypes"
+	"berty.tech/weshnet/v2/pkg/tyber"
 )
 
 func (s *service) ServiceExportData(_ *protocoltypes.ServiceExportData_Request, server protocoltypes.ProtocolService_ServiceExportDataServer) (err error) {

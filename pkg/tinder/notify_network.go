@@ -10,8 +10,8 @@ import (
 	ma "github.com/multiformats/go-multiaddr"
 	"go.uber.org/zap"
 
-	"berty.tech/weshnet/internal/notify"
-	"berty.tech/weshnet/pkg/logutil"
+	"berty.tech/weshnet/v2/internal/notify"
+	"berty.tech/weshnet/v2/pkg/logutil"
 )
 
 type AddrsFilter = bhost.AddrsFactory

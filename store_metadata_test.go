@@ -17,9 +17,9 @@ import (
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap"
 
-	"berty.tech/weshnet/pkg/ipfsutil"
-	"berty.tech/weshnet/pkg/protocoltypes"
-	"berty.tech/weshnet/pkg/testutil"
+	"berty.tech/weshnet/v2/pkg/ipfsutil"
+	"berty.tech/weshnet/v2/pkg/protocoltypes"
+	"berty.tech/weshnet/v2/pkg/testutil"
 )
 
 func TestMetadataStoreSecret_Basic(t *testing.T) {

@@ -13,11 +13,11 @@ import (
 	"golang.org/x/crypto/nacl/secretbox"
 	"google.golang.org/protobuf/proto"
 
-	"berty.tech/weshnet/internal/datastoreutil"
-	"berty.tech/weshnet/pkg/cryptoutil"
-	"berty.tech/weshnet/pkg/errcode"
-	"berty.tech/weshnet/pkg/ipfsutil"
-	"berty.tech/weshnet/pkg/protocoltypes"
+	"berty.tech/weshnet/v2/internal/datastoreutil"
+	"berty.tech/weshnet/v2/pkg/cryptoutil"
+	"berty.tech/weshnet/v2/pkg/errcode"
+	"berty.tech/weshnet/v2/pkg/ipfsutil"
+	"berty.tech/weshnet/v2/pkg/protocoltypes"
 )
 
 const (

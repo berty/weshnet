@@ -15,8 +15,8 @@ import (
 	"github.com/hyperledger/aries-framework-go/pkg/doc/verifiable"
 	"github.com/piprate/json-gold/ld"
 
-	"berty.tech/weshnet/pkg/errcode"
-	"berty.tech/weshnet/pkg/verifiablecredstypes"
+	"berty.tech/weshnet/v2/pkg/errcode"
+	"berty.tech/weshnet/v2/pkg/verifiablecredstypes"
 )
 
 const DefaultRedirectURI = "berty://vc"

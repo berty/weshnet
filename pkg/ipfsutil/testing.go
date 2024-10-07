@@ -29,8 +29,8 @@ import (
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap"
 
-	ipfs_mobile "berty.tech/weshnet/pkg/ipfsutil/mobile"
-	tinder "berty.tech/weshnet/pkg/tinder"
+	ipfs_mobile "berty.tech/weshnet/v2/pkg/ipfsutil/mobile"
+	tinder "berty.tech/weshnet/v2/pkg/tinder"
 )
 
 // CoreAPIMock implements ipfs.CoreAPI and adds some debugging helpers

@@ -6,9 +6,9 @@ import (
 
 	"github.com/libp2p/go-libp2p/core/crypto"
 
-	"berty.tech/weshnet/pkg/errcode"
-	"berty.tech/weshnet/pkg/protocoltypes"
-	"berty.tech/weshnet/pkg/tyber"
+	"berty.tech/weshnet/v2/pkg/errcode"
+	"berty.tech/weshnet/v2/pkg/protocoltypes"
+	"berty.tech/weshnet/v2/pkg/tyber"
 )
 
 // MultiMemberGroupCreate creates a new MultiMember group

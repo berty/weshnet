@@ -4,8 +4,8 @@ import (
 	"github.com/ipfs/go-cid"
 
 	"berty.tech/go-orbit-db/stores/operation"
-	"berty.tech/weshnet/internal/queue"
-	"berty.tech/weshnet/pkg/protocoltypes"
+	"berty.tech/weshnet/v2/internal/queue"
+	"berty.tech/weshnet/v2/pkg/protocoltypes"
 )
 
 // An Item is something we manage in a priority queue.

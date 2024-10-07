@@ -11,7 +11,7 @@ import (
 	"golang.org/x/crypto/curve25519"
 	"golang.org/x/crypto/ed25519"
 
-	"berty.tech/weshnet/pkg/errcode"
+	"berty.tech/weshnet/v2/pkg/errcode"
 )
 
 // from: https://github.com/agl/ed25519/blob/5312a61534124124185d41f09206b9fef1d88403/extra25519/extra25519_test.go#L16-L30

@@ -11,8 +11,8 @@ import (
 	"berty.tech/go-ipfs-log/enc"
 	"berty.tech/go-ipfs-log/entry"
 	"berty.tech/go-orbit-db/iface"
-	"berty.tech/weshnet/pkg/rendezvous"
-	"berty.tech/weshnet/pkg/secretstore"
+	"berty.tech/weshnet/v2/pkg/rendezvous"
+	"berty.tech/weshnet/v2/pkg/secretstore"
 )
 
 var (

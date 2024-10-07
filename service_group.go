@@ -8,9 +8,9 @@ import (
 	"go.uber.org/zap"
 
 	"berty.tech/go-orbit-db/iface"
-	"berty.tech/weshnet/pkg/errcode"
-	"berty.tech/weshnet/pkg/protocoltypes"
-	"berty.tech/weshnet/pkg/secretstore"
+	"berty.tech/weshnet/v2/pkg/errcode"
+	"berty.tech/weshnet/v2/pkg/protocoltypes"
+	"berty.tech/weshnet/v2/pkg/secretstore"
 )
 
 func (s *service) getContactGroup(key crypto.PubKey) (*protocoltypes.Group, error) {

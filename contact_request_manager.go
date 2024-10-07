@@ -18,13 +18,13 @@ import (
 	"go.uber.org/zap"
 	"google.golang.org/protobuf/proto"
 
-	"berty.tech/weshnet/internal/handshake"
-	"berty.tech/weshnet/pkg/errcode"
-	"berty.tech/weshnet/pkg/ipfsutil"
-	"berty.tech/weshnet/pkg/logutil"
-	"berty.tech/weshnet/pkg/protocoltypes"
-	"berty.tech/weshnet/pkg/protoio"
-	"berty.tech/weshnet/pkg/tyber"
+	"berty.tech/weshnet/v2/internal/handshake"
+	"berty.tech/weshnet/v2/pkg/errcode"
+	"berty.tech/weshnet/v2/pkg/ipfsutil"
+	"berty.tech/weshnet/v2/pkg/logutil"
+	"berty.tech/weshnet/v2/pkg/protocoltypes"
+	"berty.tech/weshnet/v2/pkg/protoio"
+	"berty.tech/weshnet/v2/pkg/tyber"
 )
 
 const contactRequestV1 = "/wesh/contact_req/1.0.0"

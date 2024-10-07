@@ -3,8 +3,8 @@ package weshnet
 import (
 	"github.com/libp2p/go-libp2p/core/crypto"
 
-	"berty.tech/weshnet/pkg/protocoltypes"
-	"berty.tech/weshnet/pkg/secretstore"
+	"berty.tech/weshnet/v2/pkg/protocoltypes"
+	"berty.tech/weshnet/v2/pkg/secretstore"
 )
 
 type AccountKeys interface {

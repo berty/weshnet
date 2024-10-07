@@ -7,7 +7,7 @@
 package outofstoremessagetypes
 
 import (
-	protocoltypes "berty.tech/weshnet/pkg/protocoltypes"
+	protocoltypes "berty.tech/weshnet/v2/pkg/protocoltypes"
 	context "context"
 	grpc "google.golang.org/grpc"
 	codes "google.golang.org/grpc/codes"

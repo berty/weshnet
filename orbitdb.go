@@ -28,12 +28,12 @@ import (
 	"berty.tech/go-orbit-db/iface"
 	"berty.tech/go-orbit-db/pubsub/pubsubcoreapi"
 	"berty.tech/go-orbit-db/stores"
-	"berty.tech/weshnet/pkg/errcode"
-	"berty.tech/weshnet/pkg/ipfsutil"
-	"berty.tech/weshnet/pkg/protocoltypes"
-	"berty.tech/weshnet/pkg/rendezvous"
-	"berty.tech/weshnet/pkg/secretstore"
-	"berty.tech/weshnet/pkg/tyber"
+	"berty.tech/weshnet/v2/pkg/errcode"
+	"berty.tech/weshnet/v2/pkg/ipfsutil"
+	"berty.tech/weshnet/v2/pkg/protocoltypes"
+	"berty.tech/weshnet/v2/pkg/rendezvous"
+	"berty.tech/weshnet/v2/pkg/secretstore"
+	"berty.tech/weshnet/v2/pkg/tyber"
 )
 
 type GroupOpenMode uint64

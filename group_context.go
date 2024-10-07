@@ -13,11 +13,11 @@ import (
 	"google.golang.org/protobuf/proto"
 
 	"berty.tech/go-orbit-db/stores"
-	"berty.tech/weshnet/pkg/errcode"
-	"berty.tech/weshnet/pkg/ipfsutil"
-	"berty.tech/weshnet/pkg/logutil"
-	"berty.tech/weshnet/pkg/protocoltypes"
-	"berty.tech/weshnet/pkg/secretstore"
+	"berty.tech/weshnet/v2/pkg/errcode"
+	"berty.tech/weshnet/v2/pkg/ipfsutil"
+	"berty.tech/weshnet/v2/pkg/logutil"
+	"berty.tech/weshnet/v2/pkg/protocoltypes"
+	"berty.tech/weshnet/v2/pkg/secretstore"
 )
 
 type GroupContext struct {

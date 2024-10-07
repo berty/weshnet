@@ -8,7 +8,7 @@ import (
 
 	"berty.tech/go-orbit-db/address"
 	"berty.tech/go-orbit-db/cache"
-	"berty.tech/weshnet/internal/datastoreutil"
+	"berty.tech/weshnet/v2/internal/datastoreutil"
 )
 
 type datastoreCache struct {

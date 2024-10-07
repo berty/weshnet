@@ -9,7 +9,7 @@ import (
 	"github.com/libp2p/go-libp2p/core/peer"
 	"go.uber.org/zap"
 
-	"berty.tech/weshnet/pkg/logutil"
+	"berty.tech/weshnet/v2/pkg/logutil"
 )
 
 var _ discovery.Discovery = (*DiscoveryAdaptater)(nil)

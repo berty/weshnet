@@ -8,9 +8,9 @@ import (
 	"google.golang.org/protobuf/proto"
 
 	ipfslog "berty.tech/go-ipfs-log"
-	"berty.tech/weshnet/pkg/cryptoutil"
-	"berty.tech/weshnet/pkg/errcode"
-	"berty.tech/weshnet/pkg/protocoltypes"
+	"berty.tech/weshnet/v2/pkg/cryptoutil"
+	"berty.tech/weshnet/v2/pkg/errcode"
+	"berty.tech/weshnet/v2/pkg/protocoltypes"
 )
 
 var eventTypesMapper = map[protocoltypes.EventType]struct {

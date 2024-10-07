@@ -15,11 +15,11 @@ import (
 
 	orbitdb "berty.tech/go-orbit-db"
 	"berty.tech/go-orbit-db/pubsub/pubsubraw"
-	"berty.tech/weshnet/pkg/ipfsutil"
-	"berty.tech/weshnet/pkg/protocoltypes"
-	"berty.tech/weshnet/pkg/secretstore"
-	"berty.tech/weshnet/pkg/testutil"
-	"berty.tech/weshnet/pkg/tinder"
+	"berty.tech/weshnet/v2/pkg/ipfsutil"
+	"berty.tech/weshnet/v2/pkg/protocoltypes"
+	"berty.tech/weshnet/v2/pkg/secretstore"
+	"berty.tech/weshnet/v2/pkg/testutil"
+	"berty.tech/weshnet/v2/pkg/tinder"
 )
 
 func Test_service_exportAccountKeys(t *testing.T) {

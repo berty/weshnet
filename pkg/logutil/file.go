@@ -14,7 +14,7 @@ import (
 	"go.uber.org/multierr"
 	"moul.io/u"
 
-	"berty.tech/weshnet/pkg/errcode"
+	"berty.tech/weshnet/v2/pkg/errcode"
 )
 
 func newFileWriteCloser(target, kind string) (io.WriteCloser, error) {

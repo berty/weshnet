@@ -23,11 +23,11 @@ import (
 	"berty.tech/go-orbit-db/stores"
 	"berty.tech/go-orbit-db/stores/basestore"
 	"berty.tech/go-orbit-db/stores/operation"
-	"berty.tech/weshnet/pkg/errcode"
-	"berty.tech/weshnet/pkg/logutil"
-	"berty.tech/weshnet/pkg/protocoltypes"
-	"berty.tech/weshnet/pkg/secretstore"
-	"berty.tech/weshnet/pkg/tyber"
+	"berty.tech/weshnet/v2/pkg/errcode"
+	"berty.tech/weshnet/v2/pkg/logutil"
+	"berty.tech/weshnet/v2/pkg/protocoltypes"
+	"berty.tech/weshnet/v2/pkg/secretstore"
+	"berty.tech/weshnet/v2/pkg/tyber"
 )
 
 // FIXME: replace cache by a circular buffer to avoid an attack by RAM saturation

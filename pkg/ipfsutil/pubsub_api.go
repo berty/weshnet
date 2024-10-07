@@ -10,7 +10,7 @@ import (
 	p2p_peer "github.com/libp2p/go-libp2p/core/peer"
 	"go.uber.org/zap"
 
-	"berty.tech/weshnet/pkg/logutil"
+	"berty.tech/weshnet/v2/pkg/logutil"
 )
 
 type PubSubAPI struct {

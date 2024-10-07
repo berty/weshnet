@@ -14,9 +14,9 @@ import (
 	"google.golang.org/protobuf/proto"
 
 	"berty.tech/go-orbit-db/stores/operation"
-	"berty.tech/weshnet/internal/sysutil"
-	"berty.tech/weshnet/pkg/errcode"
-	"berty.tech/weshnet/pkg/protocoltypes"
+	"berty.tech/weshnet/v2/internal/sysutil"
+	"berty.tech/weshnet/v2/pkg/errcode"
+	"berty.tech/weshnet/v2/pkg/protocoltypes"
 )
 
 func (s *service) DebugListGroups(_ *protocoltypes.DebugListGroups_Request, srv protocoltypes.ProtocolService_DebugListGroupsServer) error {

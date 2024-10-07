@@ -13,7 +13,7 @@ import (
 	"moul.io/u"
 	"moul.io/zapring"
 
-	"berty.tech/weshnet/pkg/logutil"
+	"berty.tech/weshnet/v2/pkg/logutil"
 )
 
 func TestTypeStd(t *testing.T) {

@@ -16,7 +16,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap"
 
-	berty_rendezvous "berty.tech/weshnet/pkg/rendezvous"
+	berty_rendezvous "berty.tech/weshnet/v2/pkg/rendezvous"
 )
 
 func MakeRendezvousServiceTest(ctx context.Context, host host.Host, path string, rzs ...rendezvous.RendezvousSync) (*rendezvous.RendezvousService, error) {

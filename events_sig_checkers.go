@@ -4,8 +4,8 @@ import (
 	"github.com/libp2p/go-libp2p/core/crypto"
 	"google.golang.org/protobuf/proto"
 
-	"berty.tech/weshnet/pkg/errcode"
-	"berty.tech/weshnet/pkg/protocoltypes"
+	"berty.tech/weshnet/v2/pkg/errcode"
+	"berty.tech/weshnet/v2/pkg/protocoltypes"
 )
 
 type sigChecker func(g *protocoltypes.Group, metadata *protocoltypes.GroupMetadata, message proto.Message) error

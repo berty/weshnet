@@ -13,9 +13,9 @@ import (
 	mocknet "github.com/libp2p/go-libp2p/p2p/net/mock"
 	"github.com/stretchr/testify/require"
 
-	"berty.tech/weshnet/pkg/ipfsutil"
-	"berty.tech/weshnet/pkg/protoio"
-	"berty.tech/weshnet/pkg/tinder"
+	"berty.tech/weshnet/v2/pkg/ipfsutil"
+	"berty.tech/weshnet/v2/pkg/protoio"
+	"berty.tech/weshnet/v2/pkg/tinder"
 )
 
 const testProtocolID = "/berty/handshake_test/1.0.0"

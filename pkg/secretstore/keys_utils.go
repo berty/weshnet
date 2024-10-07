@@ -12,9 +12,9 @@ import (
 	"golang.org/x/crypto/hkdf"
 	"golang.org/x/crypto/sha3"
 
-	"berty.tech/weshnet/pkg/cryptoutil"
-	"berty.tech/weshnet/pkg/errcode"
-	"berty.tech/weshnet/pkg/protocoltypes"
+	"berty.tech/weshnet/v2/pkg/cryptoutil"
+	"berty.tech/weshnet/v2/pkg/errcode"
+	"berty.tech/weshnet/v2/pkg/protocoltypes"
 )
 
 // getEd25519PrivateKeyFromLibP2PFormattedBytes transforms an exported LibP2P

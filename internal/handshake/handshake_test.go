@@ -14,11 +14,11 @@ import (
 	"golang.org/x/crypto/nacl/box"
 	"google.golang.org/protobuf/proto"
 
-	"berty.tech/weshnet/pkg/cryptoutil"
-	"berty.tech/weshnet/pkg/errcode"
-	"berty.tech/weshnet/pkg/ipfsutil"
-	"berty.tech/weshnet/pkg/protoio"
-	"berty.tech/weshnet/pkg/testutil"
+	"berty.tech/weshnet/v2/pkg/cryptoutil"
+	"berty.tech/weshnet/v2/pkg/errcode"
+	"berty.tech/weshnet/v2/pkg/ipfsutil"
+	"berty.tech/weshnet/v2/pkg/protoio"
+	"berty.tech/weshnet/v2/pkg/testutil"
 )
 
 // Request init a handshake with the responder
