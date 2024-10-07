@@ -1,4 +1,4 @@
-module berty.tech/weshnet
+module berty.tech/weshnet/v2
 
 go 1.22
 

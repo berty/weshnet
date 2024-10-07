@@ -17,7 +17,7 @@ import (
 
 	"go.uber.org/zap"
 
-	proximity "berty.tech/weshnet/pkg/proximitytransport"
+	proximity "berty.tech/weshnet/v2/pkg/proximitytransport"
 )
 
 var (

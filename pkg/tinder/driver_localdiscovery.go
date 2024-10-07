@@ -20,11 +20,11 @@ import (
 	manet "github.com/multiformats/go-multiaddr/net"
 	"go.uber.org/zap"
 
-	nearby "berty.tech/weshnet/pkg/androidnearby"
-	ble "berty.tech/weshnet/pkg/ble-driver"
-	"berty.tech/weshnet/pkg/logutil"
-	mc "berty.tech/weshnet/pkg/multipeer-connectivity-driver"
-	"berty.tech/weshnet/pkg/protoio"
+	nearby "berty.tech/weshnet/v2/pkg/androidnearby"
+	ble "berty.tech/weshnet/v2/pkg/ble-driver"
+	"berty.tech/weshnet/v2/pkg/logutil"
+	mc "berty.tech/weshnet/v2/pkg/multipeer-connectivity-driver"
+	"berty.tech/weshnet/v2/pkg/protoio"
 )
 
 const (

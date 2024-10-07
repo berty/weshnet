@@ -16,7 +16,7 @@ import (
 	p2p_peer "github.com/libp2p/go-libp2p/core/peer"
 	"github.com/pkg/errors"
 
-	"berty.tech/weshnet/pkg/errcode"
+	"berty.tech/weshnet/v2/pkg/errcode"
 )
 
 // defaultConnMgrHighWater is the default value for the connection managers

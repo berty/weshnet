@@ -14,10 +14,10 @@ import (
 	"github.com/stretchr/testify/require"
 	"google.golang.org/protobuf/proto"
 
-	"berty.tech/weshnet"
-	"berty.tech/weshnet/pkg/protocoltypes"
-	"berty.tech/weshnet/pkg/secretstore"
-	"berty.tech/weshnet/pkg/testutil"
+	"berty.tech/weshnet/v2"
+	"berty.tech/weshnet/v2/pkg/protocoltypes"
+	"berty.tech/weshnet/v2/pkg/secretstore"
+	"berty.tech/weshnet/v2/pkg/testutil"
 )
 
 func addDummyMemberInMetadataStore(ctx context.Context, t testing.TB, ms *weshnet.MetadataStore, g *protocoltypes.Group, memberPK crypto.PubKey, join bool) crypto.PubKey {

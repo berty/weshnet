@@ -15,7 +15,7 @@ import (
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
 
-	"berty.tech/weshnet/pkg/logutil"
+	"berty.tech/weshnet/v2/pkg/logutil"
 )
 
 // The ProximityTransport is a libp2p transport that initializes NativeDriver.

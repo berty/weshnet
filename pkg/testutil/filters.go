@@ -5,7 +5,7 @@ import (
 
 	"google.golang.org/protobuf/proto"
 
-	"berty.tech/weshnet/pkg/protocoltypes"
+	"berty.tech/weshnet/v2/pkg/protocoltypes"
 )
 
 func TestFilterGroupMetadataPayloadSent(t *testing.T, events <-chan *protocoltypes.GroupMetadataEvent) []*protocoltypes.GroupMetadataPayloadSent {

@@ -7,10 +7,10 @@ import (
 	"strings"
 	"time"
 
-	"berty.tech/weshnet/pkg/bertyvcissuer"
-	"berty.tech/weshnet/pkg/cryptoutil"
-	"berty.tech/weshnet/pkg/errcode"
-	"berty.tech/weshnet/pkg/protocoltypes"
+	"berty.tech/weshnet/v2/pkg/bertyvcissuer"
+	"berty.tech/weshnet/v2/pkg/cryptoutil"
+	"berty.tech/weshnet/v2/pkg/errcode"
+	"berty.tech/weshnet/v2/pkg/protocoltypes"
 )
 
 func (s *service) CredentialVerificationServiceInitFlow(ctx context.Context, request *protocoltypes.CredentialVerificationServiceInitFlow_Request) (*protocoltypes.CredentialVerificationServiceInitFlow_Reply, error) {

@@ -6,7 +6,7 @@ import (
 
 	peer "github.com/libp2p/go-libp2p/core/peer"
 
-	"berty.tech/weshnet/internal/notify"
+	"berty.tech/weshnet/v2/internal/notify"
 )
 
 type ConnectednessType int

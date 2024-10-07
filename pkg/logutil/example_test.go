@@ -1,7 +1,7 @@
 package logutil_test
 
 import (
-	"berty.tech/weshnet/pkg/logutil"
+	"berty.tech/weshnet/v2/pkg/logutil"
 )
 
 func Example_logall() {

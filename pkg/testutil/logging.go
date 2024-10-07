@@ -12,7 +12,7 @@ import (
 	"go.uber.org/zap"
 	"moul.io/zapring"
 
-	"berty.tech/weshnet/pkg/logutil"
+	"berty.tech/weshnet/v2/pkg/logutil"
 )
 
 const defaultLoggingFilters = "info+:bty.test* error+:*,-ipfs*,-*.tyber"

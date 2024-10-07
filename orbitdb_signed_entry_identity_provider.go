@@ -6,7 +6,7 @@ import (
 	"github.com/libp2p/go-libp2p/core/crypto"
 
 	"berty.tech/go-ipfs-log/identityprovider"
-	"berty.tech/weshnet/pkg/errcode"
+	"berty.tech/weshnet/v2/pkg/errcode"
 )
 
 const (

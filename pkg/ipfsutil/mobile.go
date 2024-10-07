@@ -13,7 +13,7 @@ import (
 	host "github.com/libp2p/go-libp2p/core/host"
 	p2p_routing "github.com/libp2p/go-libp2p/core/routing"
 
-	ipfs_mobile "berty.tech/weshnet/pkg/ipfsutil/mobile"
+	ipfs_mobile "berty.tech/weshnet/v2/pkg/ipfsutil/mobile"
 )
 
 type DHTNetworkMode int

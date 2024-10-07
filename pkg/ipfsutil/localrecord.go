@@ -13,7 +13,7 @@ import (
 	mafmt "github.com/multiformats/go-multiaddr-fmt"
 	manet "github.com/multiformats/go-multiaddr/net"
 
-	mc "berty.tech/weshnet/pkg/multipeer-connectivity-driver"
+	mc "berty.tech/weshnet/v2/pkg/multipeer-connectivity-driver"
 )
 
 const recProtocolID = protocol.ID("wesh/p2p/localrecord")

@@ -4,7 +4,7 @@ import (
 	"context"
 	"sync"
 
-	"berty.tech/weshnet/internal/notify"
+	"berty.tech/weshnet/v2/internal/notify"
 )
 
 type NetManager struct {

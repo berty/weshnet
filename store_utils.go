@@ -5,7 +5,7 @@ import (
 	"errors"
 
 	ipliface "berty.tech/go-ipfs-log/iface"
-	"berty.tech/weshnet/pkg/errcode"
+	"berty.tech/weshnet/v2/pkg/errcode"
 )
 
 func getEntriesInRange(entries []ipliface.IPFSLogEntry, since, until []byte) ([]ipliface.IPFSLogEntry, error) {

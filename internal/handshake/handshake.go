@@ -7,10 +7,10 @@ import (
 	p2pcrypto "github.com/libp2p/go-libp2p/core/crypto"
 	"golang.org/x/crypto/nacl/box"
 
-	"berty.tech/weshnet/pkg/cryptoutil"
-	"berty.tech/weshnet/pkg/errcode"
-	"berty.tech/weshnet/pkg/protoio"
-	"berty.tech/weshnet/pkg/tyber"
+	"berty.tech/weshnet/v2/pkg/cryptoutil"
+	"berty.tech/weshnet/v2/pkg/errcode"
+	"berty.tech/weshnet/v2/pkg/protoio"
+	"berty.tech/weshnet/v2/pkg/tyber"
 )
 
 // Constant nonces

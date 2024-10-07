@@ -13,7 +13,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap"
 
-	"berty.tech/weshnet/pkg/testutil"
+	"berty.tech/weshnet/v2/pkg/testutil"
 )
 
 func TestMockedServiceSubscribeMultipleDriver(t *testing.T) {

@@ -3,7 +3,7 @@ package replicationtypes
 import (
 	"encoding/base64"
 
-	"berty.tech/weshnet/pkg/protocoltypes"
+	"berty.tech/weshnet/v2/pkg/protocoltypes"
 )
 
 func (m *ReplicatedGroup) ToGroup() (*protocoltypes.Group, error) {

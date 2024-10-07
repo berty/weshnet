@@ -12,8 +12,8 @@ import (
 	"github.com/stretchr/testify/require"
 
 	ipfslog "berty.tech/go-ipfs-log"
-	"berty.tech/weshnet/pkg/protocoltypes"
-	"berty.tech/weshnet/pkg/testutil"
+	"berty.tech/weshnet/v2/pkg/protocoltypes"
+	"berty.tech/weshnet/v2/pkg/testutil"
 )
 
 func countEntries(out <-chan *protocoltypes.GroupMessageEvent) int {

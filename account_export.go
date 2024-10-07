@@ -18,8 +18,8 @@ import (
 	"google.golang.org/protobuf/proto"
 
 	orbitdb "berty.tech/go-orbit-db"
-	"berty.tech/weshnet/pkg/errcode"
-	"berty.tech/weshnet/pkg/protocoltypes"
+	"berty.tech/weshnet/v2/pkg/errcode"
+	"berty.tech/weshnet/v2/pkg/protocoltypes"
 )
 
 const (

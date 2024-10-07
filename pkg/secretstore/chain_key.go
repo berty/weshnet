@@ -8,9 +8,9 @@ import (
 	"golang.org/x/crypto/nacl/box"
 	"google.golang.org/protobuf/proto"
 
-	"berty.tech/weshnet/pkg/cryptoutil"
-	"berty.tech/weshnet/pkg/errcode"
-	"berty.tech/weshnet/pkg/protocoltypes"
+	"berty.tech/weshnet/v2/pkg/cryptoutil"
+	"berty.tech/weshnet/v2/pkg/errcode"
+	"berty.tech/weshnet/v2/pkg/protocoltypes"
 )
 
 // newDeviceChainKey creates a new random chain key

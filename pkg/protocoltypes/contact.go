@@ -5,7 +5,7 @@ import (
 
 	"github.com/libp2p/go-libp2p/core/crypto"
 
-	"berty.tech/weshnet/pkg/errcode"
+	"berty.tech/weshnet/v2/pkg/errcode"
 )
 
 const RendezvousSeedLength = 32
