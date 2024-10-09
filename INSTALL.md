@@ -37,12 +37,12 @@ If your terminal is bash, enter:
 
 Start a new terminal to get the changes to .zshrc .
 
-### Ubuntu 18.04, 20.04 and 22.04
+### Ubuntu 18.04, 20.04, 22.04 and 24.04
 
 To install asdf, follow instructions at https://asdf-vm.com . In short, in
 a terminal enter:
 
-    sudo apt install curl git
+    sudo apt install curl git build-essential
     git clone https://github.com/asdf-vm/asdf.git ~/.asdf
     echo '. "$HOME/.asdf/asdf.sh"' >> ~/.bashrc
 
