@@ -181,7 +181,7 @@ func (opts *Opts) applyDefaults(ctx context.Context) error {
 			return err
 		}
 
-		mrepo := ipfs_mobile.NewRepoMobile("", repo)
+		mrepo := ipfs_mobile.NewRepoMobile(opts.DatastoreDir, repo)
 		mnode, err = ipfsutil.NewIPFSMobile(ctx, mrepo, &ipfsutil.MobileOptions{})
 		if err != nil {
 			return err
