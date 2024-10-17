@@ -1,13 +1,13 @@
 version: v2
 plugins:
-  - local: protoc-gen-go
-    out: ./
-    opt: module=berty.tech/weshnet
-  - local: protoc-gen-go-grpc
-    out: ./
-    opt: module=berty.tech/weshnet
-  - local: protoc-gen-grpc-gateway
-    out: ./
-    opt:
-      - module=berty.tech/weshnet
-      - generate_unbound_methods=true
+    - local: protoc-gen-go
+      out: ./
+      opt: module=berty.tech/weshnet/v2
+    - local: protoc-gen-go-grpc
+      out: ./
+      opt: module=berty.tech/weshnet/v2
+    - local: protoc-gen-grpc-gateway
+      out: ./
+      opt:
+          - module=berty.tech/weshnet/v2
+          - generate_unbound_methods=true

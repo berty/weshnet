@@ -2,7 +2,7 @@ syntax = "proto3";
 
 package handshake;
 
-option go_package = "berty.tech/weshnet/internal/handshake";
+option go_package = "berty.tech/weshnet/v2/internal/handshake";
 
 message BoxEnvelope {
   bytes box = 1;
