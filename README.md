@@ -21,7 +21,7 @@ Wesh and walk you through some example applications and background of the Wesh p
 import "berty.tech/weshnet"
 ```
 
-Online API documentation is at https://buf.build/berty/weshnet .
+Online API documentation is at https://buf.build/berty-technologies/weshnet .
 
 ## Get the code
 
