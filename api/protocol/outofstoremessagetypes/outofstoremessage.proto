@@ -4,7 +4,7 @@ package weshnet.outofstoremessage.v1;
 
 import "protocoltypes.proto";
 
-option go_package = "berty.tech/weshnet/pkg/outofstoremessagetypes";
+option go_package = "berty.tech/weshnet/v2/pkg/outofstoremessagetypes";
 
 // OutOfStoreMessageService is the service used to open out-of-store messages (e.g. push notifications)
 // It is used to open messages with a lightweight protocol service for mobile backgroup processes.

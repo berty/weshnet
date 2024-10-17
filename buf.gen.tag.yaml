@@ -2,4 +2,4 @@ version: v1
 plugins:
     - name: gotag
       out: ./
-      opt: module=berty.tech/weshnet
+      opt: module=berty.tech/weshnet/v2

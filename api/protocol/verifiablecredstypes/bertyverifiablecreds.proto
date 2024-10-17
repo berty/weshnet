@@ -2,7 +2,7 @@ syntax = "proto3";
 
 package weshnet.account.v1;
 
-option go_package = "berty.tech/weshnet/pkg/verifiablecredstypes";
+option go_package = "berty.tech/weshnet/v2/pkg/verifiablecredstypes";
 
 // StateChallenge serialized and signed state used when requesting a challenge
 message StateChallenge {

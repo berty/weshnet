@@ -2,7 +2,7 @@ syntax = "proto3";
 
 package weshnet.protocol.v1;
 
-option go_package = "berty.tech/weshnet/pkg/protocoltypes";
+option go_package = "berty.tech/weshnet/v2/pkg/protocoltypes";
 
 // ProtocolService is the top-level API to manage the Wesh protocol service.
 // Each active Wesh protocol service is considered as a Wesh device and is associated with a Wesh user.

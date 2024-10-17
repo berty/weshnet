@@ -2,7 +2,7 @@ syntax = "proto3";
 
 package weshnet.errcode;
 
-option go_package = "berty.tech/weshnet/pkg/errcode";
+option go_package = "berty.tech/weshnet/v2/pkg/errcode";
 
 enum ErrCode {
   //----------------
