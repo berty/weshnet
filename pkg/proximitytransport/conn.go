@@ -51,7 +51,7 @@ func newConn(ctx context.Context, t *proximityTransport, remoteMa ma.Multiaddr, 
 		return nil, fmt.Errorf("invalid network direction")
 	}
 
-	connScope, err := t.rcmgr.OpenConnection(netdir, false, remoteMa)
+	connScope, err := t.swarm.ResourceManager().OpenConnection(netdir, false, remoteMa)
 	if err != nil {
 		return nil, fmt.Errorf("resource manager blocked connection : %w", err)
 	}
