@@ -162,7 +162,7 @@ func mergeAddrInfos(prevAi, newAi peer.AddrInfo) *peer.AddrInfo {
 	return nil
 }
 
-// mergeAddrs merges input address lists, leave only unique addresses
+// uniqueAddrs merges input address lists, leave only unique addresses
 func uniqueAddrs(addrss ...[]ma.Multiaddr) (uniqueAddrs []ma.Multiaddr) {
 	exists := make(map[string]bool)
 	for _, addrs := range addrss {
