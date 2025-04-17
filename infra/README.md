@@ -1,4 +1,5 @@
 # How to deploy a weshnet infrastructure
+
 ## Rendez-vous point and emitter.io services
 
 Execute the following command to generate a new private key for the rendez-vous point service:
@@ -31,7 +32,7 @@ make up
 
 The relay service helps to connect peers behind NATs.
 
-Firstly, edit the configuration file in `relay/config.json` with your public IP address in the `Network/AnnouceAddrs` section.
+Firstly, edit the configuration file in `relay/config.json` with your public IP address in the `Network/AnnounceAddrs` section.
 
 To deploy your own relay:
 
