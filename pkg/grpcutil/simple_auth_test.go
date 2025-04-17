@@ -22,7 +22,7 @@ func validateToken(token string) bool {
 	return token == testGoodToken
 }
 
-// exampleAuthFunc is used by a middleware to authenticate requests
+// testAuthFunc is used by a middleware to authenticate requests
 func testAuthFunc(ctx context.Context) (context.Context, error) {
 	token, err := grpc_auth.AuthFromMD(ctx, "bearer")
 	if err != nil {
