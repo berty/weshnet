@@ -1,5 +1,4 @@
-# How to deploy a weshnet infrastucture
-
+# How to deploy a weshnet infrastructure
 ## Rendez-vous point and emitter.io services
 
 Execute the following command to generate a new private key for the rendez-vous point service:
