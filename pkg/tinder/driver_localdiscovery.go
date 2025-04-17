@@ -215,7 +215,9 @@ func (ld *LocalDiscovery) Subscribe(ctx context.Context, cid string, opts ...dis
 		cache.cond.Broadcast()
 	}()
 
+	cache.Lock()
 	current := cache.queue.Front()
+	cache.Unlock()
 	counter := 0
 
 	go func() {

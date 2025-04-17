@@ -26,7 +26,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Setup asdf
-        uses: asdf-vm/actions/setup@v1
+        uses: asdf-vm/actions/setup@9cd779f40fe38688dd19505ccbc4eaaf018b44e7
+        with:
+          asdf_version: 0.16.7
 
       - name: Setup Graphviz
         uses: ts-graphviz/setup-graphviz@v1
@@ -45,10 +47,10 @@ jobs:
           asdf reshim golang
 
       - name: Cache go modules
-        uses: actions/cache@v2.1.6
+        uses: actions/cache@v4
         with:
           path: ~/go/pkg/mod
-          key:          ${{ runner.os }}-go-${{ env.go_version }}-${{ env.json_cache-versions_go }}-${{ hashFiles('**/go.sum') }}
+          key: ${{ runner.os }}-go-${{ env.go_version }}-${{ env.json_cache-versions_go }}-${{ hashFiles('**/go.sum') }}
           restore-keys: ${{ runner.os }}-go-${{ env.go_version }}-${{ env.json_cache-versions_go }}-
 
       - name: Run benchmark
@@ -64,11 +66,11 @@ jobs:
         if: github.event_name == 'pull_request'
 
       - name: Cache go modules (main)
-        uses: actions/cache@v2.1.6
+        uses: actions/cache@v4
         if: github.event_name == 'pull_request'
         with:
           path: ~/go/pkg/mod
-          key:          ${{ runner.os }}-go-${{ env.go_version }}-${{ env.json_cache-versions_go }}-${{ hashFiles('**/go.sum') }}
+          key: ${{ runner.os }}-go-${{ env.go_version }}-${{ env.json_cache-versions_go }}-${{ hashFiles('**/go.sum') }}
           restore-keys: ${{ runner.os }}-go-${{ env.go_version }}-${{ env.json_cache-versions_go }}-
 
       - name: Run benchmark (main)
@@ -151,7 +153,6 @@ jobs:
             <li><a href="./head/mem/source/">Source</a></li>
           </ul>
           EOF
-
 
       - name: Generate pprof html files (PR)
         if: github.event_name == 'pull_request'

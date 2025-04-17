@@ -1,0 +1,28 @@
+{
+  "RelayV2": {
+    "Enabled": true,
+    "Resources": {
+      "Limit": null
+    }
+  },
+  "RelayV1": {
+    "Enabled": true,
+    "Resources": {
+      "MaxCircuits": 2048,
+      "MaxCircuitsPerPeer": 128,
+      "BufferSize": 4096
+    }
+  },
+  "Network": {
+    "AnnounceAddrs": [
+      "/ip4/<ip_address>/tcp/6363",
+      "/ip4/<ip_address>/udp/6363/quic"
+    ],
+    "ListenAddrs": [
+      "/ip4/0.0.0.0/udp/6363/quic",
+      "/ip6/::/udp/6363/quic",
+      "/ip4/0.0.0.0/tcp/6363",
+      "/ip6/::/tcp/6363"
+    ]
+  }
+}

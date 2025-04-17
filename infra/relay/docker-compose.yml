@@ -1,0 +1,15 @@
+version: '3.7'
+
+services:
+  relay:
+    image: relay
+    restart: on-failure
+    volumes:
+      - ./config.json:/etc/daemon-config.json
+      - ./data:/etc/daemon
+    command:
+      - -id=/etc/daemon/id.key
+      - -config=/etc/daemon-config.json
+    ports:
+      - 6363:6363
+      - 6363:6363/udp

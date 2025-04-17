@@ -1,0 +1,44 @@
+version: "3.7"
+
+services:
+  rdvp:
+    image: bertytech/berty:kubo-v0.29.0
+    restart: on-failure
+    environment:
+      - RDVP_PK
+      - EMITTER_SECRET_KEY
+    network_mode: bridge
+    entrypoint: rdvp
+    links:
+      - emitter
+    expose:
+      - 8888
+    ports:
+      - 4040:4040
+      - 4040:4040/udp
+    command:
+      - serve
+      - "-log.format=json"
+      - "-log.filters=debug+:*"
+      - "--db=:memory:"
+      - "--pk=$RDVP_PK"
+      - "-metrics=:8888"
+      - "-l=/ip4/0.0.0.0/tcp/4040,/ip4/0.0.0.0/udp/4040/quic-v1"
+      - "-announce=/ip4/${ANNOUNCE_SERVER}/tcp/4040,/ip4/${ANNOUNCE_SERVER}/udp/4040/quic-v1"
+      - "-emitter-admin-key=$EMITTER_SECRET_KEY"
+      - "-emitter-public-addr=tcp://${ANNOUNCE_SERVER}:9494"
+      - "-emitter-server=tcp://emitter:9494"
+
+  emitter:
+    image: emitter/server:v3.1
+    container_name: emitter
+    restart: unless-stopped
+    network_mode: bridge
+    ports:
+      - 9494:9494
+    expose:
+      - 9494
+      # - 4000 # for cluster usage
+    environment:
+      - EMITTER_LICENSE
+      - EMITTER_LISTEN=:9494
