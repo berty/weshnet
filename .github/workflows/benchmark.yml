@@ -45,10 +45,10 @@ jobs:
           asdf reshim golang
 
       - name: Cache go modules
-        uses: actions/cache@v2.1.6
+        uses: actions/cache@v4
         with:
           path: ~/go/pkg/mod
-          key:          ${{ runner.os }}-go-${{ env.go_version }}-${{ env.json_cache-versions_go }}-${{ hashFiles('**/go.sum') }}
+          key: ${{ runner.os }}-go-${{ env.go_version }}-${{ env.json_cache-versions_go }}-${{ hashFiles('**/go.sum') }}
           restore-keys: ${{ runner.os }}-go-${{ env.go_version }}-${{ env.json_cache-versions_go }}-
 
       - name: Run benchmark
@@ -64,11 +64,11 @@ jobs:
         if: github.event_name == 'pull_request'
 
       - name: Cache go modules (main)
-        uses: actions/cache@v2.1.6
+        uses: actions/cache@v4
         if: github.event_name == 'pull_request'
         with:
           path: ~/go/pkg/mod
-          key:          ${{ runner.os }}-go-${{ env.go_version }}-${{ env.json_cache-versions_go }}-${{ hashFiles('**/go.sum') }}
+          key: ${{ runner.os }}-go-${{ env.go_version }}-${{ env.json_cache-versions_go }}-${{ hashFiles('**/go.sum') }}
           restore-keys: ${{ runner.os }}-go-${{ env.go_version }}-${{ env.json_cache-versions_go }}-
 
       - name: Run benchmark (main)
@@ -151,7 +151,6 @@ jobs:
             <li><a href="./head/mem/source/">Source</a></li>
           </ul>
           EOF
-
 
       - name: Generate pprof html files (PR)
         if: github.event_name == 'pull_request'
