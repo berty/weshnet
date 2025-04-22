@@ -1,4 +1,4 @@
-# How to deploy a weshnet infrastructure
+# How to deploy weshnet infrastructure
 
 ## Rendez-vous point and emitter.io services
 
