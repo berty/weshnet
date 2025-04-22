@@ -13,7 +13,7 @@ Copy this key to the `RDVP_PK` variable in the `.env` file and add your public I
 
 We also use [emitter.io](https://emitter.io/) as a discovery service.
 
-You have to generate a license and a secret key copy them to the `.env` file. Execute the following command:
+You have to generate a license and a secret key, and copy them to the `.env` file. Execute the following command:
 
 ```sh
 cd rdvp
