@@ -74,7 +74,7 @@ docker compose logs rdvp | grep maddr
 
 For mobile, you can prefer the "quic" multiaddress which looks something like `/ip4/192.168.1.34/udp/4040/quic-v1/p2p/12D3KooWPFQYmKg3KqZkeXyhwTBhpDu1cWNE8VruyxiMiroStNqh` .
 
-To configure Berty Messenger, click the user icon to open Settings. Click Network. Click Rendezvous Point Nodes. Click the + to add a relay node.
+To configure Berty Messenger, click the user icon to open Settings. Click Network. Click Rendezvous Point Nodes. Click the + to add a node.
 
 ## Relay Service
 
@@ -102,7 +102,7 @@ docker compose logs relay | grep -A 3 "Public Addresses"
 
 For mobile, you can prefer the "quic" multiaddress which looks something like `/ip4/192.168.1.34/udp/6363/quic/p2p/12D3KooWKjkkYVJg9RtQCiuV8bKheYB5sgVWSpo6LVyoRHtMZXCF` .
 
-To configure Berty Messenger, click the user icon to open Settings. Click Network. Click Relay Nodes. Click the + to add a relay node.
+To configure Berty Messenger, click the user icon to open Settings. Click Network. Click Relay Nodes. Click the + to add a node.
 
 ## Verifying Your Deployment
 
