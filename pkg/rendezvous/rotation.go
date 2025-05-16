@@ -109,10 +109,7 @@ func (r *RotationInterval) rotate(old *Point, graceperiod time.Duration) *Point 
 	// register new point
 	r.registerPoint(newPoint)
 
-	cleanuptime := time.Until(newPoint.Deadline().Add(graceperiod))
-	if cleanuptime < 0 {
-		cleanuptime = 0
-	}
+	cleanuptime := max(time.Until(newPoint.Deadline().Add(graceperiod)), 0)
 	// cleanup after the grace period
 	time.AfterFunc(cleanuptime, func() {
 		r.muCache.Lock()
