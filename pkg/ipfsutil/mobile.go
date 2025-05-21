@@ -34,6 +34,7 @@ const (
 type Config func(cfg *ipfs_config.Config) ([]p2p.Option, error)
 
 type MobileOptions struct {
+	Logger          *zap.Logger
 	IpfsConfigPatch Config
 	// P2PStaticRelays and PeerStorePeers are only used if IpfsConfigPatch is nil
 	P2PStaticRelays []string
@@ -49,6 +50,10 @@ type MobileOptions struct {
 }
 
 func (o *MobileOptions) fillDefault() {
+	if o.Logger == nil {
+		o.Logger = zap.NewNop()
+	}
+
 	if o.HostOption == nil {
 		o.HostOption = ipfs_p2p.DefaultHostOption
 	}
@@ -153,7 +158,7 @@ func (o *MobileOptions) defaultIpfsConfigPatch(cfg *ipfs_config.Config) ([]p2p.O
 	cfg.Swarm.Transports.Network.Relay = ipfs_cfg.True
 
 	// add static relay
-	pis, err := ParseAndResolveMaddrs(context.TODO(), zap.NewNop(), o.P2PStaticRelays)
+	pis, err := ParseAndResolveMaddrs(context.TODO(), o.Logger, o.P2PStaticRelays)
 	if err != nil {
 		return nil, err
 	}
@@ -167,7 +172,7 @@ func (o *MobileOptions) defaultIpfsConfigPatch(cfg *ipfs_config.Config) ([]p2p.O
 	}
 
 	// prefill peerstore with known rdvp servers
-	peers, err := ParseAndResolveMaddrs(context.TODO(), zap.NewNop(), o.PeerStorePeers)
+	peers, err := ParseAndResolveMaddrs(context.TODO(), o.Logger, o.PeerStorePeers)
 	if err != nil {
 		return nil, err
 	}

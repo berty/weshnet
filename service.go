@@ -194,6 +194,7 @@ func (opts *Opts) applyDefaults(ctx context.Context) error {
 		mrepo := ipfs_mobile.NewRepoMobile(opts.DatastoreDir, repo)
 		// NewIPFSMobile will apply defaults for P2PStaticRelays
 		mnode, err = ipfsutil.NewIPFSMobile(ctx, mrepo, &ipfsutil.MobileOptions{
+			Logger:          opts.Logger,
 			P2PStaticRelays: opts.P2PStaticRelays,
 			PeerStorePeers:  opts.P2PRdvpMaddrs,
 		})
