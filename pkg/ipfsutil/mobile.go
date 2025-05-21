@@ -4,14 +4,21 @@ import (
 	"context"
 	"fmt"
 
+	ipfs_cfg "github.com/ipfs/kubo/config"
 	ipfs_config "github.com/ipfs/kubo/config"
 	ipfs_p2p "github.com/ipfs/kubo/core/node/libp2p"
+	"github.com/libp2p/go-libp2p"
 	p2p "github.com/libp2p/go-libp2p"
 	dht "github.com/libp2p/go-libp2p-kad-dht"
 	p2p_dht "github.com/libp2p/go-libp2p-kad-dht"
 	"github.com/libp2p/go-libp2p-kad-dht/dual"
 	host "github.com/libp2p/go-libp2p/core/host"
+	"github.com/libp2p/go-libp2p/core/peer"
 	p2p_routing "github.com/libp2p/go-libp2p/core/routing"
+	quict "github.com/libp2p/go-libp2p/p2p/transport/quic"
+	"github.com/libp2p/go-libp2p/p2p/transport/quicreuse"
+	tcpt "github.com/libp2p/go-libp2p/p2p/transport/tcp"
+	"go.uber.org/zap"
 
 	ipfs_mobile "berty.tech/weshnet/v2/pkg/ipfsutil/mobile"
 )
@@ -27,7 +34,11 @@ const (
 type Config func(cfg *ipfs_config.Config) ([]p2p.Option, error)
 
 type MobileOptions struct {
+	Logger          *zap.Logger
 	IpfsConfigPatch Config
+	// P2PStaticRelays and PeerStorePeers are only used if IpfsConfigPatch is nil
+	P2PStaticRelays []string
+	PeerStorePeers  []string
 
 	HostOption    ipfs_p2p.HostOption
 	RoutingOption ipfs_p2p.RoutingOption
@@ -39,6 +50,10 @@ type MobileOptions struct {
 }
 
 func (o *MobileOptions) fillDefault() {
+	if o.Logger == nil {
+		o.Logger = zap.NewNop()
+	}
+
 	if o.HostOption == nil {
 		o.HostOption = ipfs_p2p.DefaultHostOption
 	}
@@ -48,7 +63,15 @@ func (o *MobileOptions) fillDefault() {
 	}
 
 	if o.IpfsConfigPatch == nil {
-		o.IpfsConfigPatch = defaultIpfsConfigPatch
+		o.IpfsConfigPatch = o.defaultIpfsConfigPatch
+
+		// P2PStaticRelays and PeerStorePeers are only used by defaultIpfsConfigPatch
+		if o.P2PStaticRelays == nil {
+			o.P2PStaticRelays = []string{DefaultP2PStaticRelay}
+		}
+		if o.PeerStorePeers == nil {
+			o.PeerStorePeers = []string{DefaultP2PRdvpMaddr}
+		}
 	}
 
 	// apply default extras
@@ -125,8 +148,51 @@ func CustomRoutingOption(mode p2p_dht.ModeOpt, net DHTNetworkMode, opts ...p2p_d
 	}
 }
 
-func defaultIpfsConfigPatch(_ *ipfs_config.Config) ([]p2p.Option, error) {
-	return []p2p.Option{}, nil
+func (o *MobileOptions) defaultIpfsConfigPatch(cfg *ipfs_config.Config) ([]p2p.Option, error) {
+	// Imitate berty setupIPFSConfig
+	// https://github.com/berty/berty/blob/5a8b9cb8524c1287ab2533a9e186ac8bde7f2b57/go/internal/initutil/ipfs.go#L474C19-L474C34
+	p2popts := []libp2p.Option{}
+
+	// make sure relay is enabled
+	cfg.Swarm.RelayClient.Enabled = ipfs_cfg.True
+	cfg.Swarm.Transports.Network.Relay = ipfs_cfg.True
+
+	// add static relay
+	pis, err := ParseAndResolveMaddrs(context.TODO(), o.Logger, o.P2PStaticRelays)
+	if err != nil {
+		return nil, err
+	}
+	if len(pis) > 0 {
+		peers := make([]peer.AddrInfo, len(pis))
+		for i, p := range pis {
+			peers[i] = *p
+		}
+
+		p2popts = append(p2popts, libp2p.EnableAutoRelayWithStaticRelays(peers))
+	}
+
+	// prefill peerstore with known rdvp servers
+	peers, err := ParseAndResolveMaddrs(context.TODO(), o.Logger, o.PeerStorePeers)
+	if err != nil {
+		return nil, err
+	}
+	for _, p := range peers {
+		cfg.Peering.Peers = append(cfg.Peering.Peers, *p)
+	}
+
+	// @NOTE(gfanton): disable quic transport so we can init a custom transport
+	// with reusport disabled
+	cfg.Swarm.Transports.Network.QUIC = ipfs_cfg.False
+	p2popts = append(p2popts, libp2p.Transport(quict.NewTransport), libp2p.QUICReuse(quicreuse.NewConnManager, quicreuse.DisableReuseport()))
+
+	// @NOTE(gfanton): disable tcp transport so we can init a custom transport
+	// with reusport disabled
+	cfg.Swarm.Transports.Network.TCP = ipfs_cfg.False
+	p2popts = append(p2popts, libp2p.Transport(tcpt.NewTCPTransport,
+		tcpt.DisableReuseport(),
+	))
+
+	return p2popts, nil
 }
 
 const (

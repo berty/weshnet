@@ -93,8 +93,15 @@ func NewPersistentServiceClient(path string) (ServiceClient, error) {
 		return nil, err
 	}
 
+	var cleanupLogger func()
+	if opts.Logger, cleanupLogger, err = setupDefaultLogger(); err != nil {
+		return nil, fmt.Errorf("uanble to setup logger: %w", err)
+	}
+
 	mrepo := ipfs_mobile.NewRepoMobile(path, repo)
-	mnode, err := ipfsutil.NewIPFSMobile(context.TODO(), mrepo, &ipfsutil.MobileOptions{})
+	mnode, err := ipfsutil.NewIPFSMobile(context.TODO(), mrepo, &ipfsutil.MobileOptions{
+		Logger: opts.Logger,
+	})
 	if err != nil {
 		return nil, err
 	}
@@ -102,11 +109,6 @@ func NewPersistentServiceClient(path string) (ServiceClient, error) {
 	opts.IpfsCoreAPI, err = ipfsutil.NewExtendedCoreAPIFromNode(mnode.IpfsNode)
 	if err != nil {
 		return nil, err
-	}
-
-	var cleanupLogger func()
-	if opts.Logger, cleanupLogger, err = setupDefaultLogger(); err != nil {
-		return nil, fmt.Errorf("uanble to setup logger: %w", err)
 	}
 
 	cl, err := NewServiceClient(opts)
