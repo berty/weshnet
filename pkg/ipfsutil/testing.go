@@ -144,6 +144,8 @@ func TestingCoreAPIUsingMockNet(ctx context.Context, t testing.TB, opts *Testing
 		ExtraOpts: map[string]bool{
 			"pubsub": false,
 		},
+		P2PStaticRelays: []string{},
+		PeerStorePeers:  []string{},
 	})
 	t.Cleanup(func() { mnode.Close() })
 	h := mnode.PeerHost()

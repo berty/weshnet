@@ -20,6 +20,7 @@ import (
 	"github.com/libp2p/go-libp2p/core/event"
 	"github.com/libp2p/go-libp2p/core/host"
 	"github.com/libp2p/go-libp2p/core/network"
+	"github.com/libp2p/go-libp2p/core/peerstore"
 	backoff "github.com/libp2p/go-libp2p/p2p/discovery/backoff"
 	"github.com/libp2p/go-libp2p/p2p/host/eventbus"
 	"github.com/pkg/errors"
@@ -39,6 +40,7 @@ import (
 	"berty.tech/weshnet/v2/pkg/ipfsutil"
 	ipfs_mobile "berty.tech/weshnet/v2/pkg/ipfsutil/mobile"
 	"berty.tech/weshnet/v2/pkg/protocoltypes"
+	"berty.tech/weshnet/v2/pkg/rendezvous"
 	"berty.tech/weshnet/v2/pkg/secretstore"
 	tinder "berty.tech/weshnet/v2/pkg/tinder"
 	"berty.tech/weshnet/v2/pkg/tyber"
@@ -96,6 +98,10 @@ type Opts struct {
 	close              func() error
 	SecretStore        secretstore.SecretStore
 	PrometheusRegister prometheus.Registerer
+	// P2PStaticRelays is only used if IpfsCoreAPI is nil
+	P2PStaticRelays []string
+	// P2PRdvpMaddrs is only used if TinderService is nil
+	P2PRdvpMaddrs []string
 
 	// These are used if OrbitDB is nil.
 	GroupMetadataStoreType string
@@ -169,6 +175,10 @@ func (opts *Opts) applyDefaults(ctx context.Context) error {
 		opts.SecretStore = secretStore
 	}
 
+	if opts.P2PRdvpMaddrs == nil {
+		opts.P2PRdvpMaddrs = []string{ipfsutil.DefaultP2PRdvpMaddr}
+	}
+
 	var mnode *ipfs_mobile.IpfsMobile
 	if opts.IpfsCoreAPI == nil {
 		dsync := opts.RootDatastore
@@ -182,7 +192,11 @@ func (opts *Opts) applyDefaults(ctx context.Context) error {
 		}
 
 		mrepo := ipfs_mobile.NewRepoMobile(opts.DatastoreDir, repo)
-		mnode, err = ipfsutil.NewIPFSMobile(ctx, mrepo, &ipfsutil.MobileOptions{})
+		// NewIPFSMobile will apply defaults for P2PStaticRelays
+		mnode, err = ipfsutil.NewIPFSMobile(ctx, mrepo, &ipfsutil.MobileOptions{
+			P2PStaticRelays: opts.P2PStaticRelays,
+			PeerStorePeers:  opts.P2PRdvpMaddrs,
+		})
 		if err != nil {
 			return err
 		}
@@ -217,6 +231,26 @@ func (opts *Opts) applyDefaults(ctx context.Context) error {
 			return fmt.Errorf("unable to setup tinder localdiscovery: %w", err)
 		}
 		drivers = append(drivers, localdisc)
+
+		// rdvp driver. Imitate berty configIPFSRouting
+		// https://github.com/berty/berty/blob/5a8b9cb8524c1287ab2533a9e186ac8bde7f2b57/go/internal/initutil/ipfs.go#L684
+		rdvpeers, err := ipfsutil.ParseAndResolveMaddrs(ctx, opts.Logger, opts.P2PRdvpMaddrs)
+		if err != nil {
+			return fmt.Errorf("unable to resolve maddrs: %w", err)
+		}
+		addrsFactory := tinder.PublicAddrsOnlyFactory
+		if len(rdvpeers) > 0 {
+			for _, peer := range rdvpeers {
+				opts.Host.Peerstore().AddAddrs(peer.ID, peer.Addrs, peerstore.PermanentAddrTTL)
+				emitterclient := rendezvous.NewEmitterClient(&rendezvous.EmitterClientOptions{
+					Logger: opts.Logger,
+				})
+
+				// mqttclient := rendezvous.NewMQTTClient(logger, baseopts)
+				udisc := tinder.NewRendezvousDiscovery(opts.Logger, opts.Host, peer.ID, addrsFactory, rng, emitterclient)
+				drivers = append(drivers, udisc)
+			}
+		}
 
 		if mnode != nil {
 			dhtdisc := tinder.NewRoutingDiscoveryDriver("dht", mnode.DHT)
