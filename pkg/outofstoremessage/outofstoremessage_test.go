@@ -1,4 +1,4 @@
-package weshnet
+package outofstoremessage
 
 import (
 	"context"
@@ -9,6 +9,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"google.golang.org/protobuf/proto"
 
+	"berty.tech/weshnet/v2"
 	"berty.tech/weshnet/v2/pkg/protocoltypes"
 	"berty.tech/weshnet/v2/pkg/secretstore"
 	"berty.tech/weshnet/v2/pkg/testutil"
@@ -18,10 +19,10 @@ func Test_sealPushMessage_OutOfStoreReceive(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	tp, cancel := NewTestingProtocol(ctx, t, &TestingOpts{}, nil)
+	tp, cancel := weshnet.NewTestingProtocol(ctx, t, &weshnet.TestingOpts{}, nil)
 	defer cancel()
 
-	g, _, err := NewGroupMultiMember()
+	g, _, err := weshnet.NewGroupMultiMember()
 	require.NoError(t, err)
 
 	s := tp.Service
@@ -38,7 +39,7 @@ func Test_sealPushMessage_OutOfStoreReceive(t *testing.T) {
 	_, err = s.ActivateGroup(ctx, &protocoltypes.ActivateGroup_Request{GroupPk: gPKRaw})
 	require.NoError(t, err)
 
-	gc, err := s.(ServiceMethods).GetContextGroupForID(g.PublicKey)
+	gc, err := s.(weshnet.ServiceMethods).GetContextGroupForID(g.PublicKey)
 	require.NoError(t, err)
 
 	otherSecretStore, cancel := createVirtualOtherPeerSecrets(t, ctx, gc)
@@ -85,10 +86,10 @@ func Test_OutOfStoreMessageFlow(t *testing.T) {
 	logger, cleanup := testutil.Logger(t)
 	defer cleanup()
 
-	tp, cancel := NewTestingProtocol(ctx, t, &TestingOpts{Logger: logger}, nil)
+	tp, cancel := weshnet.NewTestingProtocol(ctx, t, &weshnet.TestingOpts{Logger: logger}, nil)
 	defer cancel()
 
-	g, _, err := NewGroupMultiMember()
+	g, _, err := weshnet.NewGroupMultiMember()
 	require.NoError(t, err)
 
 	s := tp.Service
@@ -134,7 +135,7 @@ func Test_OutOfStoreMessageFlow(t *testing.T) {
 	require.Equal(t, message, encryptedMessage.Plaintext)
 }
 
-func createVirtualOtherPeerSecrets(t testing.TB, ctx context.Context, gc *GroupContext) (secretstore.SecretStore, func()) {
+func createVirtualOtherPeerSecrets(t testing.TB, ctx context.Context, gc *weshnet.GroupContext) (secretstore.SecretStore, func()) {
 	secretStore, err := secretstore.NewInMemSecretStore(nil)
 	require.NoError(t, err)
 
@@ -145,7 +146,7 @@ func createVirtualOtherPeerSecrets(t testing.TB, ctx context.Context, gc *GroupC
 	// Manually adding another member to the group
 	otherMD, err := secretStore.GetOwnMemberDeviceForGroup(gc.Group())
 	require.NoError(t, err)
-	_, err = MetadataStoreAddDeviceToGroup(ctx, gc.MetadataStore(), gc.Group(), otherMD)
+	_, err = weshnet.MetadataStoreAddDeviceToGroup(ctx, gc.MetadataStore(), gc.Group(), otherMD)
 	require.NoError(t, err)
 
 	memberDevice, err := gc.SecretStore().GetOwnMemberDeviceForGroup(gc.Group())
@@ -154,7 +155,7 @@ func createVirtualOtherPeerSecrets(t testing.TB, ctx context.Context, gc *GroupC
 	ds, err := secretStore.GetShareableChainKey(ctx, gc.Group(), memberDevice.Member())
 	require.NoError(t, err)
 
-	_, err = MetadataStoreSendSecret(ctx, gc.MetadataStore(), gc.Group(), otherMD, memberDevice.Member(), ds)
+	_, err = weshnet.MetadataStoreSendSecret(ctx, gc.MetadataStore(), gc.Group(), otherMD, memberDevice.Member(), ds)
 	require.NoError(t, err)
 
 	time.Sleep(time.Millisecond * 200)
