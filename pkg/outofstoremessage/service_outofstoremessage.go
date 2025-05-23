@@ -1,4 +1,4 @@
-package weshnet
+package outofstoremessage
 
 import (
 	"context"
@@ -12,6 +12,7 @@ import (
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
 
+	"berty.tech/weshnet/v2"
 	"berty.tech/weshnet/v2/pkg/errcode"
 	"berty.tech/weshnet/v2/pkg/grpcutil"
 	"berty.tech/weshnet/v2/pkg/outofstoremessagetypes"
@@ -89,7 +90,7 @@ func (c *oosmClient) Close() error {
 }
 
 func newClientFromService(ctx context.Context, s *grpc.Server, svc OOSMService, opts ...grpc.DialOption) (OOSMServiceClient, error) {
-	bl := grpcutil.NewBufListener(ClientBufferSize)
+	bl := grpcutil.NewBufListener(weshnet.ClientBufferSize)
 	cc, err := bl.NewClientConn(ctx, opts...)
 	if err != nil {
 		return nil, err
@@ -127,8 +128,8 @@ func (s *oosmService) Close() error {
 	return nil
 }
 
-func (s *oosmService) Status() (Status, error) {
-	return Status{}, nil
+func (s *oosmService) Status() (weshnet.Status, error) {
+	return weshnet.Status{}, nil
 }
 
 func (s *oosmService) IpfsCoreAPI() coreiface.CoreAPI {
