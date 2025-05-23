@@ -28,6 +28,32 @@ type ServiceClient interface {
 	io.Closer
 }
 
+type ServiceOption func(*Opts) error
+
+// WithLogger sets the given logger
+var WithLogger = func(l *zap.Logger) ServiceOption {
+	return func(s *Opts) error {
+		s.Logger = l
+		return nil
+	}
+}
+
+// WithP2PStaticRelays sets the given P2P static relays
+var WithP2PStaticRelays = func(p []string) ServiceOption {
+	return func(s *Opts) error {
+		s.P2PStaticRelays = p
+		return nil
+	}
+}
+
+// WithP2PRdvpMaddrs sets the given P2P rendezvous point addresses
+var WithP2PRdvpMaddrs = func(p []string) ServiceOption {
+	return func(s *Opts) error {
+		s.P2PRdvpMaddrs = p
+		return nil
+	}
+}
+
 // NewServiceClient initializes a new ServiceClient using the opts.
 // If opts.RootDatastore is nil and opts.DatastoreDir is "" or InMemoryDirectory, then set
 // opts.RootDatastore to an in-memory data store. Otherwise, if opts.RootDatastore is nil then set
@@ -70,8 +96,14 @@ func NewServiceClient(opts Opts) (ServiceClient, error) {
 // This creates a new Wesh account where the key store is in memory. (If you don't
 // export the data then it is lost when you call Close(). ) The IPFS node, cached data,
 // and configuration are also in memory.
-func NewInMemoryServiceClient() (ServiceClient, error) {
+func NewInMemoryServiceClient(options ...ServiceOption) (ServiceClient, error) {
 	var opts Opts
+	for _, opt := range options {
+		if err := opt(&opts); err != nil {
+			return nil, err
+		}
+	}
+
 	opts.DatastoreDir = InMemoryDirectory
 	return NewServiceClient(opts)
 }
@@ -83,8 +115,13 @@ func NewInMemoryServiceClient() (ServiceClient, error) {
 // if the persistent storage files already exist, then this opens them to use the existing Wesh
 // account and peer identity. This returns a gRPC ServiceClient which uses a direct in-memory
 // connection. When finished, you must call Close().
-func NewPersistentServiceClient(path string) (ServiceClient, error) {
+func NewPersistentServiceClient(path string, options ...ServiceOption) (ServiceClient, error) {
 	var opts Opts
+	for _, opt := range options {
+		if err := opt(&opts); err != nil {
+			return nil, err
+		}
+	}
 
 	opts.DatastoreDir = path
 
@@ -94,13 +131,17 @@ func NewPersistentServiceClient(path string) (ServiceClient, error) {
 	}
 
 	var cleanupLogger func()
-	if opts.Logger, cleanupLogger, err = setupDefaultLogger(); err != nil {
-		return nil, fmt.Errorf("uanble to setup logger: %w", err)
+	if opts.Logger == nil {
+		if opts.Logger, cleanupLogger, err = setupDefaultLogger(); err != nil {
+			return nil, fmt.Errorf("uanble to setup logger: %w", err)
+		}
 	}
 
 	mrepo := ipfs_mobile.NewRepoMobile(path, repo)
 	mnode, err := ipfsutil.NewIPFSMobile(context.TODO(), mrepo, &ipfsutil.MobileOptions{
-		Logger: opts.Logger,
+		Logger:          opts.Logger,
+		P2PStaticRelays: opts.P2PStaticRelays,
+		PeerStorePeers:  opts.P2PRdvpMaddrs,
 	})
 	if err != nil {
 		return nil, err
