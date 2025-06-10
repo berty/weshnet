@@ -107,7 +107,7 @@ type NewSecretStoreOptions struct {
 	// defaults to PrecomputeMessageKeyCount
 	PreComputedKeysCount int
 
-	// PreComputedKeysCount specifies the number of out of store references
+	// PrecomputeOutOfStoreGroupRefsCount specifies the number of out of store references
 	// to precompute, defaults to PrecomputeOutOfStoreGroupRefsCount
 	PrecomputeOutOfStoreGroupRefsCount int
 
