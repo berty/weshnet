@@ -72,9 +72,16 @@ Print the multiaddress of the rendez-vous point service with:
 docker compose logs rdvp | grep maddr
 ```
 
-For mobile, you can prefer the "quic" multiaddress which looks something like `/ip4/192.168.1.34/udp/4040/quic-v1/p2p/12D3KooWPFQYmKg3KqZkeXyhwTBhpDu1cWNE8VruyxiMiroStNqh` .
+For mobile, you can prefer the "quic" multiaddress which looks something like `/ip4/51.15.25.200/udp/4040/quic-v1/p2p/12D3KooWPFQYmKg3KqZkeXyhwTBhpDu1cWNE8VruyxiMiroStNqh` .
 
 To configure Berty Messenger, click the user icon to open Settings. Click Network. Click Rendezvous Point Nodes. Click the + to add a node.
+
+To configure your Wesh app, create the service client with the `WithP2PRdvpMaddrs` option. For example:
+```go
+	client1, err := weshnet.NewPersistentServiceClient("data1", weshnet.WithP2PRdvpMaddrs([]string{
+		"/ip4/51.15.25.200/udp/4040/quic-v1/p2p/12D3KooWPFQYmKg3KqZkeXyhwTBhpDu1cWNE8VruyxiMiroStNq",
+	}))
+```
 
 ## Relay Service
 
@@ -100,9 +107,16 @@ Print the multiaddress of the relay service with:
 docker compose logs relay | grep -A 3 "Public Addresses"
 ```
 
-For mobile, you can prefer the "quic" multiaddress which looks something like `/ip4/192.168.1.34/udp/6363/quic/p2p/12D3KooWKjkkYVJg9RtQCiuV8bKheYB5sgVWSpo6LVyoRHtMZXCF` .
+For mobile, you can prefer the "quic" multiaddress which looks something like `/ip4/51.15.25.200/udp/6363/quic/p2p/12D3KooWKjkkYVJg9RtQCiuV8bKheYB5sgVWSpo6LVyoRHtMZXCF` .
 
 To configure Berty Messenger, click the user icon to open Settings. Click Network. Click Relay Nodes. Click the + to add a node.
+
+To configure your Wesh app, create the service client with the `WithP2PStaticRelays` option. For example:
+```go
+	client1, err := weshnet.NewPersistentServiceClient("data1", weshnet.WithP2PStaticRelays([]string{
+		"/ip4/51.15.25.200/udp/6363/quic/p2p/12D3KooWKjkkYVJg9RtQCiuV8bKheYB5sgVWSpo6LVyoRHtMZXCF",
+	}))
+```
 
 ## Verifying Your Deployment
 
