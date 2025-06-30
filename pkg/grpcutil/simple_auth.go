@@ -10,7 +10,7 @@ const headerAuthorize = "authorization"
 
 var _ credentials.PerRPCCredentials = (*unsecureSimpleAuthAccess)(nil)
 
-// unsecureSimpleUAuthAccess supplies PerRPCCredentials from a given token.
+// unsecureSimpleAuthAccess supplies PerRPCCredentials from a given token.
 type unsecureSimpleAuthAccess struct {
 	token  string
 	scheme string
