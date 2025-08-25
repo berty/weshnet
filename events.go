@@ -53,7 +53,7 @@ func newEventContext(eventID cid.Cid, parentIDs []cid.Cid, g *protocoltypes.Grou
 	}
 }
 
-// FIXME(gfanton): getParentsCID use a lot of ressources
+// FIXME(gfanton): getParentsCID use a lot of resources
 // nolint:unused
 func getParentsForCID(log ipfslog.Log, c cid.Cid) []cid.Cid {
 	if log == nil {
@@ -92,7 +92,7 @@ func newGroupMetadataEventFromEntry(_ ipfslog.Log, e ipfslog.Entry, metadata *pr
 		return nil, errcode.ErrCode_ErrSerialization
 	}
 
-	// TODO(gfanton): getParentsCID use a lot of ressources, disable it until we need it
+	// TODO(gfanton): getParentsCID use a lot of resources, disable it until we need it
 	// evtCtx := newEventContext(e.GetHash(), getParentsForCID(log, e.GetHash()), group, attachmentsCIDs)
 	evtCtx := newEventContext(e.GetHash(), []cid.Cid{}, g)
 

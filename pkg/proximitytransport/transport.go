@@ -180,7 +180,7 @@ func (t *proximityTransport) Listen(localMa ma.Multiaddr) (tpt.Listener, error) 
 
 // ReceiveFromPeer is called by native driver when peer's device sent data.
 // If the connection is not found, data is added in the transport cache level.
-// If the connection is not actived yet, data is added in the connection cache level.
+// If the connection is not activated yet, data is added in the connection cache level.
 // Cache are circular buffer, avoiding RAM memory attack.
 func (t *proximityTransport) ReceiveFromPeer(remotePID string, payload []byte) {
 	t.logger.Debug("ReceiveFromPeer()", zap.String("remotePID", remotePID), logutil.PrivateBinary("payload", payload))

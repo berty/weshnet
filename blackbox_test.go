@@ -39,7 +39,7 @@ func TestTestingClient_impl(t *testing.T) {
 }
 
 func ExampleNewInMemoryServiceClient_basic() {
-	// disable ressources manager for test
+	// disable resources manager for test
 	os.Setenv("LIBP2P_RCMGR", "false")
 
 	ctx, cancel := context.WithCancel(context.Background())
@@ -67,7 +67,7 @@ func ExampleNewInMemoryServiceClient_basic() {
 }
 
 func ExampleNewPersistentServiceClient_basic() {
-	// disable ressources manager for test
+	// disable resources manager for test
 	os.Setenv("LIBP2P_RCMGR", "false")
 
 	ctx, cancel := context.WithCancel(context.Background())
@@ -122,7 +122,7 @@ func ExampleNewPersistentServiceClient_basic() {
 }
 
 func ExampleNewServiceClient_basic() {
-	// disable ressources manager for test
+	// disable resources manager for test
 	os.Setenv("LIBP2P_RCMGR", "false")
 
 	ctx, cancel := context.WithCancel(context.Background())
@@ -150,7 +150,7 @@ func ExampleNewServiceClient_basic() {
 }
 
 func ExampleNewService_basic() {
-	// disable ressources manager for test
+	// disable resources manager for test
 	os.Setenv("LIBP2P_RCMGR", "false")
 
 	ctx, cancel := context.WithCancel(context.Background())

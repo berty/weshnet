@@ -145,7 +145,7 @@ func (gc *GroupContext) ActivateGroupContext(contactPK crypto.PubKey) (err error
 		}()
 	}
 
-	// send secret and register key from existing memebers.
+	// send secret and register key from existing members.
 	// we should wait until all the events have been retreived.
 	{
 		var wgExistingMembers sync.WaitGroup

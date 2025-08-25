@@ -18,7 +18,7 @@ func TestClient_impl(t *testing.T) {
 }
 
 func TestEmptyArgs(t *testing.T) {
-	// disable ressources manager for test
+	// disable resources manager for test
 	os.Setenv("LIBP2P_RCMGR", "false")
 
 	// initialize new client
