@@ -129,12 +129,12 @@ func (pss *pubsubSubscriptionAPI) Next(ctx context.Context) (coreiface.PubSubMes
 	return &pubsubMessageAPI{m}, nil
 }
 
-// // PubSubMessage is a single PubSub message
+// PubSubMessage is a single PubSub message
 type pubsubMessageAPI struct {
 	*p2p_pubsub.Message
 }
 
-// // From returns id of a peer from which the message has arrived
+// From returns id of a peer from which the message has arrived
 func (psm *pubsubMessageAPI) From() p2p_peer.ID {
 	return psm.Message.GetFrom()
 }

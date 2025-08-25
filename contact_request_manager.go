@@ -393,7 +393,7 @@ func (c *contactRequestsManager) enqueueRequest(ctx context.Context, to *protoco
 			if err = c.SendContactRequest(ctx, to, otherPK, peer); err != nil {
 				c.logger.Warn("unable to send contact request", zap.Error(err))
 			} else {
-				// succefully send contact request, leave the loop and cancel lookup
+				// successfully send contact request, leave the loop and cancel lookup
 				break
 			}
 
