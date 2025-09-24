@@ -103,7 +103,7 @@ func (cl *ConnLifecycle) monitorAppState(ctx context.Context) {
 }
 
 func (cl *ConnLifecycle) dropUnavailableConn() {
-	cl.logger.Debug("droping unavailable conn")
+	cl.logger.Debug("dropping unavailable conn")
 
 	peers := make(map[peer.ID]struct{})
 	for _, c := range cl.h.Network().Conns() {
