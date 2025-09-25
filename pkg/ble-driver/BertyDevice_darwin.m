@@ -80,7 +80,7 @@ CBService *getService(NSArray *services, NSString *uuid) {
             [BleManager.peerUUID UUIDString]: [NSMutableData data],
         } retain];
 
-        // put inside incoming message arrived before handsake is completed
+        // put inside incoming message arrived before handshake is completed
         _dataCache = [[CircularQueue alloc] initWithCapacity:10];
 
         _writerLatch = [[NSObject alloc] init];
@@ -300,7 +300,7 @@ CBService *getService(NSArray *services, NSString *uuid) {
     if (service == nil) {
         return;
     }
-    [self.logger d:@"didModifyServices: devive=%@ service=%@", [self.logger SensitiveNSObject:[self getIdentifier]], invalidatedServices];
+    [self.logger d:@"didModifyServices: device=%@ service=%@", [self.logger SensitiveNSObject:[self getIdentifier]], invalidatedServices];
 
     [self.manager disconnect:self];
 }
@@ -399,7 +399,7 @@ CBService *getService(NSArray *services, NSString *uuid) {
 
                 [toSend release];
 
-                // don't write EOD is error occured
+                // don't write EOD is error occurred
                 if (!success) {
                     [self.logger e:@"writeToCharacteristic error: device=%@: cancellation of the following writes", [self.logger SensitiveNSObject:[self getIdentifier]]];
                     return FALSE;
@@ -645,7 +645,7 @@ CBService *getService(NSArray *services, NSString *uuid) {
             [countDownLatch await];
             [countDownLatch release];
         } else {
-            [self.logger d:@"negotiateL2cap: device=%@: central peripheral doesn't support L2CAP, aborting negotation", [self.logger SensitiveNSObject:[self getIdentifier]]];
+            [self.logger d:@"negotiateL2cap: device=%@: central peripheral doesn't support L2CAP, aborting negotiation", [self.logger SensitiveNSObject:[self getIdentifier]]];
             success = TRUE; // return TRUE to continue connection without L2cap
         }
     } else {
@@ -783,7 +783,7 @@ CBService *getService(NSArray *services, NSString *uuid) {
     self.l2capHandshakeLatch = [[CountDownLatch alloc] initCount:1];
 
     self.l2capHandshakeBlock = dispatch_block_create(DISPATCH_BLOCK_INHERIT_QOS_CLASS, ^{
-        [self.logger e:@"testL2cap: device=%@: timout hired", [self.logger SensitiveNSObject:[self getIdentifier]]];
+        [self.logger e:@"testL2cap: device=%@: timeout hired", [self.logger SensitiveNSObject:[self getIdentifier]]];
         [self.l2capHandshakeLatch countDown];
     });
     dispatch_after(dispatch_time(DISPATCH_TIME_NOW, 10 * NSEC_PER_SEC), dispatch_get_main_queue(), self.l2capHandshakeBlock);
