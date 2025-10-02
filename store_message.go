@@ -330,7 +330,7 @@ func messageStoreAddMessage(ctx context.Context, g *protocoltypes.Group, m *Mess
 			ctx,
 			[]tyber.Detail{
 				{Name: "Cleartext size", Description: fmt.Sprintf("%d bytes", len(msgBytes))},
-				{Name: "Cyphertext size", Description: fmt.Sprintf("%d bytes", len(sealedEnvelope))},
+				{Name: "Ciphertext size", Description: fmt.Sprintf("%d bytes", len(sealedEnvelope))},
 			},
 		)...,
 	)

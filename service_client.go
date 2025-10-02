@@ -80,7 +80,7 @@ func NewServiceClient(opts Opts) (ServiceClient, error) {
 
 	c, err := NewClientFromService(ctx, s, svc)
 	if err != nil {
-		return nil, fmt.Errorf("uanble to create client from server: %w", err)
+		return nil, fmt.Errorf("unable to create client from server: %w", err)
 	}
 
 	return &serviceClient{
@@ -133,7 +133,7 @@ func NewPersistentServiceClient(path string, options ...ServiceOption) (ServiceC
 	var cleanupLogger func()
 	if opts.Logger == nil {
 		if opts.Logger, cleanupLogger, err = setupDefaultLogger(); err != nil {
-			return nil, fmt.Errorf("uanble to setup logger: %w", err)
+			return nil, fmt.Errorf("unable to setup logger: %w", err)
 		}
 	}
 
