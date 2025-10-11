@@ -130,7 +130,7 @@ func (s *Swiper) WatchTopic(ctx context.Context, topic, seed []byte) <-chan peer
 
 			bstrat := s.backoffFactory()
 
-			// store watch peers informations to be later use by the refresh method to force a lookup
+			// store watch peers information to be later used by the refresh method to force a lookup
 			s.muRequest.Lock()
 			wctx, cancel := context.WithCancel(ctx)
 			s.inprogressLookup[base64.StdEncoding.EncodeToString(topic)] = &swiperRequest{
