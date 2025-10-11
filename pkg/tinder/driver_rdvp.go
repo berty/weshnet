@@ -145,10 +145,7 @@ func (c *rendezvousDiscovery) findPeers(ctx context.Context, topic string, limit
 	}
 
 	// Randomize and fill channel with available records
-	count := len(cache.recs)
-	if limit < count {
-		count = limit
-	}
+	count := min(limit, len(cache.recs))
 
 	chPeer := make(chan peer.AddrInfo, count)
 
