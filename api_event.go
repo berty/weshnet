@@ -185,7 +185,7 @@ func (s *service) GroupMessageList(req *protocoltypes.GroupMessageList_Request, 
 	}
 
 	// Subscribe to new message events and stream them if requested
-	// listPreviouseMessageDone := false
+	// listPreviousMessageDone := false
 	for {
 		var event interface{}
 		select {
