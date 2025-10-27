@@ -14,7 +14,7 @@ NB: It is obviously out of the question to use the data provided by a single pee
 
 ## Why?
 
-A particular device could have an unsafe PRNG for some reason. Mixing random data provided by different devices should prevent an attack baased on PNRG weaknesses specific to a particular device.
+A particular device could have an unsafe PRNG for some reason. Mixing random data provided by different devices should prevent an attack based on PNRG weaknesses specific to a particular device.
 
 
 ## To be considered
