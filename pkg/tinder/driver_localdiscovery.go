@@ -114,10 +114,7 @@ func (ld *LocalDiscovery) Advertise(ctx context.Context, cid string, opts ...dis
 		limit = maxLimit
 	}
 
-	ttl := options.Ttl
-	if ttl <= minTTL {
-		ttl = minTTL
-	}
+	ttl := max(options.Ttl, minTTL)
 
 	expire := time.Now().Add(ttl)
 
@@ -160,10 +157,7 @@ func (ld *LocalDiscovery) FindPeers(_ context.Context, cid string, opts ...disco
 
 	if cache, ok := ld.caches[cid]; ok {
 		cache.Lock()
-		size := len(cache.recs)
-		if size > limit {
-			size = limit
-		}
+		size := min(len(cache.recs), limit)
 
 		out = make(chan peer.AddrInfo, size) // make the channel
 
