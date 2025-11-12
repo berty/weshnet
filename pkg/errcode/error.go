@@ -3,6 +3,7 @@ package errcode
 import (
 	"fmt"
 	"io"
+	"slices"
 
 	"golang.org/x/xerrors"
 	"google.golang.org/grpc/codes"
@@ -43,12 +44,7 @@ func Codes(err error) []ErrCode {
 // Has returns true if one of the error is or contains (wraps) an expected errcode
 func Has(err error, code WithCode) bool {
 	codeCode := code.Code()
-	for _, otherCode := range Codes(err) {
-		if otherCode == codeCode {
-			return true
-		}
-	}
-	return false
+	return slices.Contains(Codes(err), codeCode)
 }
 
 // Is returns true if the top-level error (it doesn't unwrap it) is actually an ErrCode of the same value
