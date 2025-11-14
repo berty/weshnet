@@ -6,6 +6,7 @@ import (
 	"encoding/hex"
 	"fmt"
 	"math/rand"
+	"slices"
 	"sync"
 	"time"
 
@@ -449,11 +450,8 @@ func (ld *LocalDiscovery) monitorConnection(ctx context.Context) error {
 					ld.handleConnection(ctx, evt.Peer)
 				}
 			case event.EvtPeerProtocolsUpdated:
-				for _, added := range evt.Added {
-					if added == recProtocolID {
-						ld.handleConnection(ctx, evt.Peer)
-						break
-					}
+				if slices.Contains(evt.Added, recProtocolID) {
+					ld.handleConnection(ctx, evt.Peer)
 				}
 			}
 		}

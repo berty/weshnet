@@ -6,6 +6,7 @@ import (
 	"encoding/base64"
 	"fmt"
 	"io"
+	"slices"
 	"strings"
 
 	coreiface "github.com/ipfs/kubo/core/coreiface"
@@ -427,13 +428,7 @@ func (m *MetadataStore) ListContactsByStatus(states ...protocoltypes.ContactStat
 	contacts := []*protocoltypes.ShareableContact(nil)
 
 	for _, c := range idx.contacts {
-		hasState := false
-		for _, s := range states {
-			if c.state == s {
-				hasState = true
-				break
-			}
-		}
+		hasState := slices.Contains(states, c.state)
 
 		if hasState {
 			contacts = append(contacts, c.contact)
@@ -876,13 +871,7 @@ func (m *MetadataStore) getContactStatus(pk crypto.PubKey) protocoltypes.Contact
 func (m *MetadataStore) checkContactStatus(pk crypto.PubKey, states ...protocoltypes.ContactState) bool {
 	contactStatus := m.getContactStatus(pk)
 
-	for _, s := range states {
-		if contactStatus == s {
-			return true
-		}
-	}
-
-	return false
+	return slices.Contains(states, contactStatus)
 }
 
 type EventMetadataReceived struct {
@@ -1027,19 +1016,19 @@ func constructorFactoryGroupMetadata(s *WeshOrbitDB, logger *zap.Logger) iface.S
 
 func (m *MetadataStore) initEmitter() (err error) {
 	if m.emitters.metadataReceived, err = m.eventBus.Emitter(new(EventMetadataReceived)); err != nil {
-		return
+		return err
 	}
 
 	if m.emitters.groupMetadata, err = m.eventBus.Emitter(new(*protocoltypes.GroupMetadataEvent)); err != nil {
-		return
+		return err
 	}
 
-	return
+	return err
 }
 
 func genNewSeed() (seed []byte, err error) {
 	seed, err = io.ReadAll(io.LimitReader(crand.Reader, protocoltypes.RendezvousSeedLength))
-	return
+	return seed, err
 }
 
 func (m *MetadataStore) Close() error {

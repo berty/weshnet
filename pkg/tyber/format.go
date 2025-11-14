@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"slices"
 
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
@@ -52,12 +53,7 @@ const (
 var KnownLogTypes = []LogType{TraceType, StepType, EventType, SubscribeType}
 
 func (lt LogType) IsKnown() bool {
-	for _, vlt := range KnownLogTypes {
-		if lt == vlt {
-			return true
-		}
-	}
-	return false
+	return slices.Contains(KnownLogTypes, lt)
 }
 
 type StatusType string

@@ -3,6 +3,7 @@ package bertyvcissuer
 import (
 	"crypto/ed25519"
 	"fmt"
+	"slices"
 	"strings"
 
 	"github.com/hyperledger/aries-framework-go/pkg/doc/signature/verifier"
@@ -18,13 +19,7 @@ func embeddedPublicKeyFetcher(issuerID string, allowList []string) (*verifier.Pu
 	}
 
 	if len(allowList) > 0 {
-		found := false
-		for _, allowed := range allowList {
-			if allowed == issuerID {
-				found = true
-				break
-			}
-		}
+		found := slices.Contains(allowList, issuerID)
 
 		if !found {
 			return nil, errcode.ErrCode_ErrServicesDirectoryInvalidVerifiedCredentialID.Wrap(fmt.Errorf("issuer is not allowed"))

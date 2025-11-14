@@ -3,6 +3,7 @@ package tinder
 import (
 	"context"
 	"fmt"
+	"slices"
 	"sync"
 	"time"
 
@@ -130,10 +131,8 @@ func (s *MockDriverServer) WaitForPeer(topic string, p peer.ID, timeout time.Dur
 		}
 
 		// send peers
-		for _, upeer := range updated {
-			if upeer == p {
-				return nil
-			}
+		if slices.Contains(updated, p) {
+			return nil
 		}
 	}
 }
