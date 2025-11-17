@@ -10,7 +10,6 @@ import (
 	"github.com/libp2p/go-libp2p"
 	p2p "github.com/libp2p/go-libp2p"
 	dht "github.com/libp2p/go-libp2p-kad-dht"
-	p2p_dht "github.com/libp2p/go-libp2p-kad-dht"
 	"github.com/libp2p/go-libp2p-kad-dht/dual"
 	host "github.com/libp2p/go-libp2p/core/host"
 	"github.com/libp2p/go-libp2p/core/peer"
@@ -59,7 +58,7 @@ func (o *MobileOptions) fillDefault() {
 	}
 
 	if o.RoutingOption == nil {
-		o.RoutingOption = CustomRoutingOption(p2p_dht.ModeClient, DHTNetworkDual, p2p_dht.Concurrency(2))
+		o.RoutingOption = CustomRoutingOption(dht.ModeClient, DHTNetworkDual, dht.Concurrency(2))
 	}
 
 	if o.IpfsConfigPatch == nil {
@@ -135,13 +134,13 @@ func NewIPFSMobile(ctx context.Context, repo *ipfs_mobile.RepoMobile, opts *Mobi
 	return ipfs_mobile.NewNode(ctx, &ipfsconfig)
 }
 
-func CustomRoutingOption(mode p2p_dht.ModeOpt, net DHTNetworkMode, opts ...p2p_dht.Option) func(args ipfs_p2p.RoutingOptionArgs) (p2p_routing.Routing, error) {
+func CustomRoutingOption(mode dht.ModeOpt, net DHTNetworkMode, opts ...dht.Option) func(args ipfs_p2p.RoutingOptionArgs) (p2p_routing.Routing, error) {
 	return func(args ipfs_p2p.RoutingOptionArgs) (p2p_routing.Routing, error) {
 		opts = append(opts,
-			p2p_dht.Mode(mode),
-			p2p_dht.Datastore(args.Datastore),
-			p2p_dht.Validator(args.Validator),
-			p2p_dht.BootstrapPeers(args.BootstrapPeers...),
+			dht.Mode(mode),
+			dht.Datastore(args.Datastore),
+			dht.Validator(args.Validator),
+			dht.BootstrapPeers(args.BootstrapPeers...),
 		)
 
 		return newDualDHT(args.Ctx, args.Host, net, opts...)
