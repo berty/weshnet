@@ -1,5 +1,4 @@
 //go:build darwin && cgo && !catalyst && !noproximitytransport
-// +build darwin,cgo,!catalyst,!noproximitytransport
 
 package mc
 
