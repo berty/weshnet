@@ -1,5 +1,4 @@
 //go:build android && !noproximitytransport
-// +build android,!noproximitytransport
 
 package ble
 
