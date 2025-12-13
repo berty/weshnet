@@ -66,7 +66,7 @@ func NewOutOfStoreMessageServiceClient(opts ...OOSMOption) (OOSMServiceClient, e
 
 	c, err := newClientFromService(ctx, s, svc)
 	if err != nil {
-		return nil, fmt.Errorf("uanble to create client from server: %w", err)
+		return nil, fmt.Errorf("unable to create client from server: %w", err)
 	}
 
 	return &oosmServiceClient{
