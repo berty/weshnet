@@ -4,10 +4,8 @@ import (
 	"context"
 	"fmt"
 
-	ipfs_cfg "github.com/ipfs/kubo/config"
 	ipfs_config "github.com/ipfs/kubo/config"
 	ipfs_p2p "github.com/ipfs/kubo/core/node/libp2p"
-	"github.com/libp2p/go-libp2p"
 	p2p "github.com/libp2p/go-libp2p"
 	dht "github.com/libp2p/go-libp2p-kad-dht"
 	"github.com/libp2p/go-libp2p-kad-dht/dual"
@@ -150,11 +148,11 @@ func CustomRoutingOption(mode dht.ModeOpt, net DHTNetworkMode, opts ...dht.Optio
 func (o *MobileOptions) defaultIpfsConfigPatch(cfg *ipfs_config.Config) ([]p2p.Option, error) {
 	// Imitate berty setupIPFSConfig
 	// https://github.com/berty/berty/blob/5a8b9cb8524c1287ab2533a9e186ac8bde7f2b57/go/internal/initutil/ipfs.go#L474C19-L474C34
-	p2popts := []libp2p.Option{}
+	p2popts := []p2p.Option{}
 
 	// make sure relay is enabled
-	cfg.Swarm.RelayClient.Enabled = ipfs_cfg.True
-	cfg.Swarm.Transports.Network.Relay = ipfs_cfg.True
+	cfg.Swarm.RelayClient.Enabled = ipfs_config.True
+	cfg.Swarm.Transports.Network.Relay = ipfs_config.True
 
 	// add static relay
 	pis, err := ParseAndResolveMaddrs(context.TODO(), o.Logger, o.P2PStaticRelays)
@@ -167,7 +165,7 @@ func (o *MobileOptions) defaultIpfsConfigPatch(cfg *ipfs_config.Config) ([]p2p.O
 			peers[i] = *p
 		}
 
-		p2popts = append(p2popts, libp2p.EnableAutoRelayWithStaticRelays(peers))
+		p2popts = append(p2popts, p2p.EnableAutoRelayWithStaticRelays(peers))
 	}
 
 	// prefill peerstore with known rdvp servers
@@ -181,13 +179,13 @@ func (o *MobileOptions) defaultIpfsConfigPatch(cfg *ipfs_config.Config) ([]p2p.O
 
 	// @NOTE(gfanton): disable quic transport so we can init a custom transport
 	// with reusport disabled
-	cfg.Swarm.Transports.Network.QUIC = ipfs_cfg.False
-	p2popts = append(p2popts, libp2p.Transport(quict.NewTransport), libp2p.QUICReuse(quicreuse.NewConnManager, quicreuse.DisableReuseport()))
+	cfg.Swarm.Transports.Network.QUIC = ipfs_config.False
+	p2popts = append(p2popts, p2p.Transport(quict.NewTransport), p2p.QUICReuse(quicreuse.NewConnManager, quicreuse.DisableReuseport()))
 
 	// @NOTE(gfanton): disable tcp transport so we can init a custom transport
 	// with reusport disabled
-	cfg.Swarm.Transports.Network.TCP = ipfs_cfg.False
-	p2popts = append(p2popts, libp2p.Transport(tcpt.NewTCPTransport,
+	cfg.Swarm.Transports.Network.TCP = ipfs_config.False
+	p2popts = append(p2popts, p2p.Transport(tcpt.NewTCPTransport,
 		tcpt.DisableReuseport(),
 	))
 
