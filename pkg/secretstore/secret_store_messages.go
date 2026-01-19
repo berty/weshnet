@@ -502,7 +502,6 @@ func (s *secretStore) putPrecomputedKeysBatched(ctx context.Context, batch datas
 
 func (s *secretStore) putPrecomputedKeysNonBatched(ctx context.Context, groupRaw []byte, deviceRaw []byte, preComputedMessageKeys []computedMessageKey) error {
 	for _, preComputedKey := range preComputedMessageKeys {
-		fmt.Println(">", groupRaw, deviceRaw, preComputedKey.counter)
 		id := dsKeyForPrecomputedMessageKey(groupRaw, deviceRaw, preComputedKey.counter)
 
 		if err := s.datastore.Put(ctx, id, preComputedKey.messageKey[:]); err != nil {
