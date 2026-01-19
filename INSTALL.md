@@ -12,20 +12,17 @@ These are instructions to build weshnet.
 Following are the steps to install each prerequisite (if it's needed for your
 build target).
 
-### macOS 11, macOS 12 and macOS 13
+### macOS 14, macOS 15 and macOS 26
 
 To install the Command Line Developer Tools, in a terminal enter:
 
     xcode-select --install
 
-After the Developer Tools are installed, we need to make sure it is updated. In
-System Preferences, click Software Update and update it if needed.
-
 To install asdf using brew, follow instructions at https://asdf-vm.com . In short,
 first install brew following the instructions at https://brew.sh . Then, in
 a terminal enter:
 
-    brew install asdf
+    brew install asdf gpg
 
 If your terminal is zsh, enter:
 
