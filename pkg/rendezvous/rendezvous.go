@@ -35,10 +35,7 @@ func GenerateRendezvousPointForPeriod(topic, seed []byte, date time.Time) []byte
 	mac := hmac.New(sha256.New, append(topic, seed...))
 	binary.BigEndian.PutUint64(buf, uint64(date.Unix()))
 
-	_, err := mac.Write(buf)
-	if err != nil {
-		panic(err)
-	}
+	mac.Write(buf)
 	sum := mac.Sum(nil)
 
 	return sum

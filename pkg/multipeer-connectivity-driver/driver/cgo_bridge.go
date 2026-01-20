@@ -13,6 +13,7 @@ import "C"
 
 import (
 	"fmt"
+	"os"
 	"unsafe"
 
 	"go.uber.org/zap"
@@ -71,7 +72,7 @@ func MCReceiveFromPeer(remotePID *C.char, payload unsafe.Pointer, length C.int) 
 //export MCLog
 func MCLog(level C.enum_level, message *C.char) { //nolint:golint
 	if Logger == nil {
-		fmt.Println("logger not found")
+		fmt.Fprintf(os.Stderr, "logger not found\n")
 		return
 	}
 
