@@ -14,6 +14,7 @@ import "C"
 
 import (
 	"fmt"
+	"os"
 	"unsafe"
 
 	"go.uber.org/zap"
@@ -97,7 +98,7 @@ func BLEReceiveFromPeer(remotePID *C.char, payload unsafe.Pointer, length C.int)
 //export BLELog
 func BLELog(level C.enum_level, message *C.char) { //nolint:revive
 	if gLogger == nil {
-		fmt.Println("logger not found")
+		fmt.Fprintf(os.Stderr, "logger not found\n")
 		return
 	}
 
