@@ -937,7 +937,7 @@ func constructorFactoryGroupMetadata(s *WeshOrbitDB, logger *zap.Logger) iface.S
 			return store, nil
 		}
 
-		chSub, err := store.eventBus.Subscribe([]interface{}{
+		chSub, err := store.eventBus.Subscribe([]any{
 			new(stores.EventWrite),
 			new(stores.EventReplicated),
 		}, eventbus.BufSize(128))
@@ -953,7 +953,7 @@ func constructorFactoryGroupMetadata(s *WeshOrbitDB, logger *zap.Logger) iface.S
 			defer chSub.Close()
 
 			for {
-				var e interface{}
+				var e any
 				select {
 				case e = <-chSub.Out():
 				case <-ctx.Done():

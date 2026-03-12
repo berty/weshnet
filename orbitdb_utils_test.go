@@ -81,7 +81,7 @@ func waitForBertyEventType(ctx context.Context, t *testing.T, ms *MetadataStore,
 	defer sub.Close()
 
 	for {
-		var e interface{}
+		var e any
 
 		select {
 		case e = <-sub.Out():

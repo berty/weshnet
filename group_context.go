@@ -124,7 +124,7 @@ func (gc *GroupContext) ActivateGroupContext(contactPK crypto.PubKey) (err error
 			defer sub.Close()
 
 			for {
-				var evt interface{}
+				var evt any
 				select {
 				case <-ctx.Done():
 					return
@@ -339,7 +339,7 @@ func (gc *GroupContext) TagGroupContextPeers(ipfsCoreAPI ipfsutil.ExtendedCoreAP
 		defer chSub2.Close()
 
 		for {
-			var e interface{}
+			var e any
 
 			select {
 			case e = <-chSub1.Out():

@@ -498,7 +498,7 @@ func (s *service) startGroupDeviceMonitor() {
 		defer subPeer.Close()
 
 		for {
-			var evt interface{}
+			var evt any
 
 			select {
 			case evt = <-subHead.Out():

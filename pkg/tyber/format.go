@@ -15,7 +15,7 @@ type Detail struct {
 	Description string `json:"description"`
 }
 
-func safeJSONMarshal(v interface{}) string {
+func safeJSONMarshal(v any) string {
 	bs, err := json.MarshalIndent(v, "", "    ")
 	if err != nil {
 		return fmt.Sprintf(`"%s"`, err.Error())
@@ -23,11 +23,11 @@ func safeJSONMarshal(v interface{}) string {
 	return string(bs)
 }
 
-func JSONDetail(name string, val interface{}) Detail {
+func JSONDetail(name string, val any) Detail {
 	return Detail{Name: name, Description: safeJSONMarshal(val)}
 }
 
-func WithJSONDetail(name string, val interface{}) StepMutator {
+func WithJSONDetail(name string, val any) StepMutator {
 	return func(s Step) Step {
 		s.Details = append(s.Details, JSONDetail(name, val))
 		return s

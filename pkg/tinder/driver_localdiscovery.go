@@ -418,7 +418,7 @@ func (ld *LocalDiscovery) handleConnection(ctx context.Context, p peer.ID) {
 }
 
 func (ld *LocalDiscovery) monitorConnection(ctx context.Context) error {
-	sub, err := ld.h.EventBus().Subscribe([]interface{}{
+	sub, err := ld.h.EventBus().Subscribe([]any{
 		new(event.EvtPeerConnectednessChanged),
 		new(event.EvtPeerProtocolsUpdated),
 	}, eventbus.Name("weshnet/tinder/monitor-connection"))
@@ -436,7 +436,7 @@ func (ld *LocalDiscovery) monitorConnection(ctx context.Context) error {
 	go func() {
 		defer sub.Close()
 		for {
-			var e interface{}
+			var e any
 			select {
 			case e = <-sub.Out():
 			case <-ctx.Done():

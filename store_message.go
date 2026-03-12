@@ -437,7 +437,7 @@ func constructorFactoryGroupMessage(s *WeshOrbitDB, logger *zap.Logger) iface.St
 			return store, nil
 		}
 
-		chSub, err := store.EventBus().Subscribe([]interface{}{
+		chSub, err := store.EventBus().Subscribe([]any{
 			new(stores.EventWrite),
 			new(stores.EventReplicated),
 		}, eventbus.Name("weshnet/store-message"), eventbus.BufSize(128))
@@ -448,7 +448,7 @@ func constructorFactoryGroupMessage(s *WeshOrbitDB, logger *zap.Logger) iface.St
 		go func(ctx context.Context) {
 			defer chSub.Close()
 			for {
-				var e interface{}
+				var e any
 				select {
 				case e = <-chSub.Out():
 				case <-ctx.Done():

@@ -145,7 +145,7 @@ func (c *contactRequestsManager) metadataWatcher(ctx context.Context) {
 
 	defer sub.Close()
 	for {
-		var evt interface{}
+		var evt any
 		select {
 		case evt = <-sub.Out():
 		case <-ctx.Done():
