@@ -64,7 +64,7 @@ func (p *PrivateField) PrivateStrings(key string, values []string) zap.Field {
 	return zap.Strings(key, values)
 }
 
-func (p *PrivateField) PrivateAny(key string, value interface{}) zap.Field {
+func (p *PrivateField) PrivateAny(key string, value any) zap.Field {
 	if p.Enabled {
 		return zap.String(key, p.hash(fmt.Sprintf("%+v", value)))
 	}
@@ -104,7 +104,7 @@ func PrivateStringer(key string, value fmt.Stringer) zap.Field {
 	return g.PrivateStringer(key, value)
 }
 
-func PrivateAny(key string, value interface{}) zap.Field {
+func PrivateAny(key string, value any) zap.Field {
 	mu.RLock()
 	g := global
 	mu.RUnlock()

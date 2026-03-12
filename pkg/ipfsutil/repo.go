@@ -173,25 +173,25 @@ func upgradeToPersistentConfig(cfg *ipfs_cfg.Config) (*ipfs_cfg.Config, error) {
 		StorageGCWatermark: 90, // 90%
 		GCPeriod:           "1h",
 		BloomFilterSize:    0,
-		Spec: map[string]interface{}{
+		Spec: map[string]any{
 			"type": "mount",
-			"mounts": []interface{}{
-				map[string]interface{}{
+			"mounts": []any{
+				map[string]any{
 					"mountpoint": "/blocks",
 					"type":       "measure",
 					"prefix":     "flatfs.datastore",
-					"child": map[string]interface{}{
+					"child": map[string]any{
 						"type":      "flatfs",
 						"path":      "blocks",
 						"sync":      true,
 						"shardFunc": "/repo/flatfs/shard/v1/next-to-last/2",
 					},
 				},
-				map[string]interface{}{
+				map[string]any{
 					"mountpoint": "/",
 					"type":       "measure",
 					"prefix":     "leveldb.datastore",
-					"child": map[string]interface{}{
+					"child": map[string]any{
 						"type":        "levelds",
 						"path":        "datastore",
 						"compression": "none",

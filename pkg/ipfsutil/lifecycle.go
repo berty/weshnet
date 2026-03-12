@@ -151,7 +151,7 @@ func (cl *ConnLifecycle) dropUnavailableConn() {
 }
 
 func (cl *ConnLifecycle) monitorPeerOfInterest(ctx context.Context) error {
-	sub, err := cl.h.EventBus().Subscribe([]interface{}{
+	sub, err := cl.h.EventBus().Subscribe([]any{
 		new(EvtPeerTag),
 	}, eventbus.Name("weshnet/lifecycle/monitor-peer-of-interest"))
 	if err != nil {
@@ -169,7 +169,7 @@ func (cl *ConnLifecycle) monitorPeerOfInterest(ctx context.Context) error {
 	go func() {
 		defer sub.Close()
 		for {
-			var e interface{}
+			var e any
 			select {
 			case e = <-sub.Out():
 			case <-ctx.Done():

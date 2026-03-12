@@ -45,7 +45,7 @@ type metadataStoreIndex struct {
 }
 
 //nolint:revive
-func (m *metadataStoreIndex) Get(key string) interface{} {
+func (m *metadataStoreIndex) Get(key string) any {
 	return nil
 }
 

@@ -110,7 +110,7 @@ func Test_AddMessage_ListMessages_manually_supplying_secrets(t *testing.T) {
 
 func bufferCount(buffer *ring.Ring) int {
 	count := 0
-	buffer.Do(func(f interface{}) {
+	buffer.Do(func(f any) {
 		if _, ok := f.(ipfslog.Entry); ok {
 			count++
 		}

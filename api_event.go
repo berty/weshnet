@@ -49,9 +49,9 @@ func (s *service) GroupMetadataList(req *protocoltypes.GroupMetadataList_Request
 	}
 
 	// Subscribe to new metadata events if requested
-	var newEvents <-chan interface{}
+	var newEvents <-chan any
 	if req.UntilId == nil && !req.UntilNow {
-		sub, err := cg.MetadataStore().EventBus().Subscribe([]interface{}{
+		sub, err := cg.MetadataStore().EventBus().Subscribe([]any{
 			// new(stores.EventReplicated),
 			new(*protocoltypes.GroupMetadataEvent),
 		}, eventbus.Name("weshnet/api/group-metadata-list"), eventbus.BufSize(32))
@@ -99,7 +99,7 @@ func (s *service) GroupMetadataList(req *protocoltypes.GroupMetadataList_Request
 
 	// Subscribe to new metadata events and stream them if requested
 	for {
-		var event interface{}
+		var event any
 		select {
 		case <-ctx.Done():
 			return nil
@@ -137,9 +137,9 @@ func (s *service) GroupMessageList(req *protocoltypes.GroupMessageList_Request, 
 	}
 
 	// Subscribe to new message events if requested
-	var newEvents <-chan interface{}
+	var newEvents <-chan any
 	if req.UntilId == nil && !req.UntilNow {
-		messageStoreSub, err := cg.MessageStore().EventBus().Subscribe([]interface{}{
+		messageStoreSub, err := cg.MessageStore().EventBus().Subscribe([]any{
 			new(*protocoltypes.GroupMessageEvent),
 		}, eventbus.Name("weshnet/api/group-message-list"))
 		if err != nil {
@@ -186,7 +186,7 @@ func (s *service) GroupMessageList(req *protocoltypes.GroupMessageList_Request, 
 
 	// Subscribe to new message events and stream them if requested
 	for {
-		var event interface{}
+		var event any
 		select {
 		case <-ctx.Done():
 			return nil

@@ -214,7 +214,7 @@ const (
 func MockBufferSize(size int) discovery.Option {
 	return func(opts *discovery.Options) error {
 		if opts.Other == nil {
-			opts.Other = make(map[interface{}]interface{})
+			opts.Other = make(map[any]any)
 		}
 
 		opts.Other[optionSubscribeBufferSize] = size

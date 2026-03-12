@@ -64,7 +64,7 @@ func LoggerWithRing(t testing.TB) (*zap.Logger, *zapring.Core, func()) {
 	return loggerInstance, loggerRing, loggerCleanup
 }
 
-func LogTree(t *testing.T, log string, indent int, title bool, args ...interface{}) {
+func LogTree(t *testing.T, log string, indent int, title bool, args ...any) {
 	t.Helper()
 	if os.Getenv("SHOW_LOG_TREES") != "1" {
 		return

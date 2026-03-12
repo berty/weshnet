@@ -81,12 +81,12 @@ func (pq *PriorityQueue[T]) Swap(i, j int) {
 	pq.items[i], pq.items[j] = pq.items[j], pq.items[i]
 }
 
-func (pq *PriorityQueue[T]) Push(x interface{}) {
+func (pq *PriorityQueue[T]) Push(x any) {
 	pq.items = append(pq.items, x.(T))
 	pq.metrics.ItemQueued(pq.name, x.(T))
 }
 
-func (pq *PriorityQueue[T]) Pop() (item interface{}) {
+func (pq *PriorityQueue[T]) Pop() (item any) {
 	var null T
 	if n := len(pq.items); n > 0 {
 		item = pq.items[n-1]
