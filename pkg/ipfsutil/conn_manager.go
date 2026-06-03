@@ -134,7 +134,7 @@ func (c *BertyConnManager) computePeerScore(p peer.ID) (old, newScore int) {
 	c.muMarked.Lock()
 
 	old = c.marked[p]
-	if info := c.ConnManager.GetTagInfo(p); info != nil {
+	if info := c.GetTagInfo(p); info != nil {
 		if newScore = info.Value; newScore > 0 {
 			c.marked[p] = newScore
 		} else {

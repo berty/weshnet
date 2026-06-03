@@ -133,7 +133,7 @@ func LogfileList(logDir string) ([]*Logfile, error) {
 			}
 		}
 		for _, file := range logfiles {
-			if file.Time == maxTime {
+			if file.Time.Equal(maxTime) {
 				file.Latest = true
 			}
 		}
@@ -165,7 +165,7 @@ func CurrentLogfilePath(target string) (string, error) {
 	return filename, nil
 }
 
-func LogfileGC(logDir string, max int) error {
+func LogfileGC(logDir string, maxFiles int) error {
 	if !u.DirExists(logDir) {
 		return nil
 	}
@@ -173,7 +173,7 @@ func LogfileGC(logDir string, max int) error {
 	if err != nil {
 		return errcode.ErrCode_TODO.Wrap(err)
 	}
-	if len(files) < max {
+	if len(files) < maxFiles {
 		return nil
 	}
 
@@ -182,7 +182,7 @@ func LogfileGC(logDir string, max int) error {
 	})
 
 	var errs error
-	for i := 0; i < len(files)-max; i++ {
+	for i := 0; i < len(files)-maxFiles; i++ {
 		err := os.Remove(files[i].Path())
 		if err != nil {
 			errs = multierr.Append(errs, err)

@@ -11,7 +11,7 @@ golang 1.26.3
 #-----
 # This is simply the most recent golangci-lint version available to date.
 #-----
-golangci-lint 1.59.1
+golangci-lint 2.12.2
 
 #-----
 # This is simply the most recent jq version available to date.

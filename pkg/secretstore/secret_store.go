@@ -155,7 +155,7 @@ func (s *secretStore) OpenOutOfStoreMessage(ctx context.Context, payload []byte)
 		return nil, nil, nil, false, errcode.ErrCode_ErrCryptoDecrypt.Wrap(err)
 	}
 
-	clear, newlyDecrypted, err := s.OutOfStoreMessageOpen(ctx, oosMessage, groupPublicKey)
+	cleartext, newlyDecrypted, err := s.OutOfStoreMessageOpen(ctx, oosMessage, groupPublicKey)
 	if err != nil {
 		return nil, nil, nil, false, errcode.ErrCode_ErrCryptoDecrypt.Wrap(err)
 	}
@@ -167,7 +167,7 @@ func (s *secretStore) OpenOutOfStoreMessage(ctx context.Context, payload []byte)
 		}
 	}
 
-	return oosMessage, group, clear, !newlyDecrypted, nil
+	return oosMessage, group, cleartext, !newlyDecrypted, nil
 }
 
 func (s *secretStore) decryptOutOfStoreMessageEnv(ctx context.Context, env *protocoltypes.OutOfStoreMessageEnvelope, groupPK crypto.PubKey) (*protocoltypes.OutOfStoreMessage, error) {

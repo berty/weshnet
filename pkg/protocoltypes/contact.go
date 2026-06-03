@@ -37,7 +37,7 @@ func (m *ShareableContact) CheckFormat(options ...ShareableContactOptions) error
 	}
 
 	if l := len(m.PublicRendezvousSeed); l != RendezvousSeedLength {
-		if !(l == 0 && optionMissingRDVSeedAllowed) {
+		if l != 0 || !optionMissingRDVSeedAllowed {
 			return errcode.ErrCode_ErrInvalidInput.Wrap(fmt.Errorf("rendezvous seed length should not be %d", l))
 		}
 	}

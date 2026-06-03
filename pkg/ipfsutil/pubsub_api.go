@@ -41,7 +41,7 @@ func (ps *PubSubAPI) topicJoin(topic string, opts ...p2p_pubsub.TopicOpt) (*p2p_
 		return t, nil
 	}
 
-	if t, err = ps.PubSub.Join(topic, opts...); err != nil {
+	if t, err = ps.Join(topic, opts...); err != nil {
 		return nil, err
 	}
 
@@ -66,7 +66,7 @@ func (ps *PubSubAPI) topicJoin(topic string, opts ...p2p_pubsub.TopicOpt) (*p2p_
 
 // Ls lists subscribed topics by name
 func (ps *PubSubAPI) Ls(context.Context) ([]string, error) {
-	return ps.PubSub.GetTopics(), nil
+	return ps.GetTopics(), nil
 }
 
 // Peers list peers we are currently pubsubbing with
@@ -76,7 +76,7 @@ func (ps *PubSubAPI) Peers(_ context.Context, opts ...coreiface_options.PubSubPe
 		return nil, err
 	}
 
-	return ps.PubSub.ListPeers(s.Topic), nil
+	return ps.ListPeers(s.Topic), nil
 }
 
 var minTopicSize = p2p_pubsub.WithReadiness(p2p_pubsub.MinTopicSize(1))
@@ -115,7 +115,7 @@ type pubsubSubscriptionAPI struct {
 
 // io.Closer
 func (pss *pubsubSubscriptionAPI) Close() (_ error) {
-	pss.Subscription.Cancel()
+	pss.Cancel()
 	return
 }
 
@@ -136,23 +136,23 @@ type pubsubMessageAPI struct {
 
 // From returns id of a peer from which the message has arrived
 func (psm *pubsubMessageAPI) From() p2p_peer.ID {
-	return psm.Message.GetFrom()
+	return psm.GetFrom()
 }
 
 // Data returns the message body
 func (psm *pubsubMessageAPI) Data() []byte {
-	return psm.Message.GetData()
+	return psm.GetData()
 }
 
 // Seq returns message identifier
 func (psm *pubsubMessageAPI) Seq() []byte {
-	return psm.Message.GetSeqno()
+	return psm.GetSeqno()
 }
 
 // // Topics returns list of topics this message was set to
 func (psm *pubsubMessageAPI) Topics() []string {
-	if psm.Message.Topic == nil {
+	if psm.Topic == nil {
 		return nil
 	}
-	return []string{*psm.Message.Topic}
+	return []string{*psm.Topic}
 }
