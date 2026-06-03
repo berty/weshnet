@@ -94,7 +94,7 @@ func CreateBaseConfig() (*ipfs_cfg.Config, error) {
 	c := ipfs_cfg.Config{}
 
 	// set default bootstrap
-	c.Bootstrap = ipfs_cfg.DefaultBootstrapAddresses
+	c.Bootstrap = []string{ipfs_cfg.AutoPlaceholder}
 	c.Peering.Peers = []p2p_peer.AddrInfo{}
 
 	// Identity
