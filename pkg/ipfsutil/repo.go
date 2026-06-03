@@ -121,6 +121,17 @@ func CreateBaseConfig() (*ipfs_cfg.Config, error) {
 		Type: ipfs_cfg.NewOptionalString("dhtclient"),
 	}
 
+	// Bitswap broadcast control (enabled by default since kubo v0.41) reduces
+	// the set of peers a WANT is broadcast to, based on which peers previously
+	// served blocks. In weshnet's small meshes a freshly connected peer has no
+	// such history and would never be asked for blocks, breaking replication.
+	// Disable it to restore the broadcast-to-all-peers behavior.
+	c.Internal.Bitswap = &ipfs_cfg.InternalBitswap{
+		BroadcastControl: &ipfs_cfg.BitswapBroadcastControl{
+			Enable: ipfs_cfg.False,
+		},
+	}
+
 	return &c, nil
 }
 
@@ -167,6 +178,11 @@ func upgradeToPersistentConfig(cfg *ipfs_cfg.Config) (*ipfs_cfg.Config, error) {
 		Strategy: ipfs_cfg.NewOptionalString("all"),
 		DHT: ipfs_cfg.ProvideDHT{
 			Interval: ipfs_cfg.NewOptionalDuration(time.Hour * 12),
+			// The sweeping reprovider (enabled by default since kubo v0.41)
+			// keeps a dedicated keystore datastore whose lock is not released
+			// synchronously on node Close, which breaks reopening a persistent
+			// repo. Keep the classic reprovider behavior instead.
+			SweepEnabled: ipfs_cfg.False,
 		},
 	}
 
