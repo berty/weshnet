@@ -97,6 +97,11 @@ func TestingRepo(t testing.TB, ctx context.Context, datastore ds.Datastore) ipfs
 	c.Identity.PeerID = pid.String()
 	c.Identity.PrivKey = base64.StdEncoding.EncodeToString(privkeyb)
 	c.Swarm.ResourceMgr.Enabled = ipfs_cfg.False
+	c.Internal.Bitswap = &ipfs_cfg.InternalBitswap{
+		BroadcastControl: &ipfs_cfg.BitswapBroadcastControl{
+			Enable: ipfs_cfg.False,
+		},
+	}
 
 	if datastore == nil {
 		datastore = ds.NewMapDatastore()

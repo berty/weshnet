@@ -25,7 +25,7 @@ type extendedCoreAPI struct {
 }
 
 func (e *extendedCoreAPI) ConnMgr() ConnMgr {
-	return e.Host.ConnManager()
+	return e.ConnManager()
 }
 
 func NewExtendedCoreAPI(host ipfs_host.Host, api coreiface.CoreAPI) ExtendedCoreAPI {

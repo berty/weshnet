@@ -59,7 +59,7 @@ func (c *Client) Init(ctx context.Context, bertyURL string, accountPriv crypto.S
 	_ = res.Body.Close()
 
 	if res.StatusCode != http.StatusOK {
-		return "", errcode.ErrCode_ErrInternal.Wrap(fmt.Errorf(string(resBytes)))
+		return "", errcode.ErrCode_ErrInternal.Wrap(fmt.Errorf("%s", string(resBytes)))
 	}
 
 	challengeStruct := &verifiablecredstypes.AccountCryptoChallenge{}

@@ -12,13 +12,15 @@ type RepoConfigPatch func(cfg *ipfs_config.Config) (err error)
 type RepoMobile struct {
 	ipfs_repo.Repo
 
-	Path string
+	repoPath string
 }
+
+func (mr *RepoMobile) Path() string { return mr.repoPath }
 
 func NewRepoMobile(path string, repo ipfs_repo.Repo) *RepoMobile {
 	return &RepoMobile{
-		Repo: repo,
-		Path: path,
+		Repo:     repo,
+		repoPath: path,
 	}
 }
 

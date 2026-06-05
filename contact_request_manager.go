@@ -313,7 +313,7 @@ func (c *contactRequestsManager) registerContactLookup(ctx context.Context, cont
 	key := hex.EncodeToString(contactPK)
 
 	// make sure to only have one process for this pk running
-	ctx, cancel := context.WithCancel(ctx)
+	ctx, cancel := context.WithCancel(ctx) //nolint:gosec // cancel is stored in c.lookupProcess and called by cancelContactLookup
 	if cancelProvious, ok := c.lookupProcess[key]; ok {
 		cancelProvious() // cancel previous lookup if needed
 	}

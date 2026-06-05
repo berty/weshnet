@@ -105,7 +105,7 @@ func NewNode(ctx context.Context, cfg *IpfsConfig) (*IpfsMobile, error) {
 		Routing:                     NewRoutingConfigOption(cfg.RoutingOption, cfg.RoutingConfig),
 		ExtraOpts:                   cfg.ExtraOpts,
 	}
-	os.Setenv("IPFS_PATH", cfg.RepoMobile.Path)
+	os.Setenv("IPFS_PATH", cfg.RepoMobile.Path())
 
 	// create ipfs node
 	inode, err := ipfs_core.NewNode(ctx, buildcfg)
@@ -116,7 +116,7 @@ func NewNode(ctx context.Context, cfg *IpfsConfig) (*IpfsMobile, error) {
 
 	// @TODO: no sure about how to init this, must be another way
 	cctx := ipfs_oldcmds.Context{
-		ConfigRoot: cfg.RepoMobile.Path,
+		ConfigRoot: cfg.RepoMobile.Path(),
 		ReqLog:     &ipfs_oldcmds.ReqLog{},
 		ConstructNode: func() (*ipfs_core.IpfsNode, error) {
 			return inode, nil

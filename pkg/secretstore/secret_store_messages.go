@@ -805,7 +805,7 @@ func (s *secretStore) OutOfStoreMessageOpen(ctx context.Context, envelope *proto
 		}
 	}
 
-	clear, decryptionCtx, err := s.openPayloadWithMessageKey(decryptionCtx, devicePublicKey, envelope.EncryptedPayload, &protocoltypes.MessageHeaders{
+	cleartext, decryptionCtx, err := s.openPayloadWithMessageKey(decryptionCtx, devicePublicKey, envelope.EncryptedPayload, &protocoltypes.MessageHeaders{
 		Counter:  envelope.Counter,
 		DevicePk: envelope.DevicePk,
 		Sig:      envelope.Sig,
@@ -814,7 +814,7 @@ func (s *secretStore) OutOfStoreMessageOpen(ctx context.Context, envelope *proto
 		return nil, false, errcode.ErrCode_ErrCryptoDecrypt.Wrap(err)
 	}
 
-	if ok, err := devicePublicKey.Verify(clear, envelope.Sig); !ok {
+	if ok, err := devicePublicKey.Verify(cleartext, envelope.Sig); !ok {
 		return nil, false, errcode.ErrCode_ErrCryptoSignatureVerification.Wrap(fmt.Errorf("unable to verify message signature"))
 	} else if err != nil {
 		return nil, false, errcode.ErrCode_ErrCryptoSignatureVerification.Wrap(err)
@@ -824,7 +824,7 @@ func (s *secretStore) OutOfStoreMessageOpen(ctx context.Context, envelope *proto
 		return nil, false, errcode.ErrCode_ErrInternal.Wrap(err)
 	}
 
-	return clear, decryptionCtx.newlyDecrypted, nil
+	return cleartext, decryptionCtx.newlyDecrypted, nil
 }
 
 // OutOfStoreGetGroupPublicKeyByGroupReference returns the group public key
