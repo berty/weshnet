@@ -7,7 +7,7 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
-	"sort"
+	"slices"
 	"strings"
 	"time"
 
@@ -177,8 +177,8 @@ func LogfileGC(logDir string, maxFiles int) error {
 		return nil
 	}
 
-	sort.Slice(files, func(i, j int) bool {
-		return files[i].Time.Before(files[j].Time)
+	slices.SortFunc(files, func(a, b *Logfile) int {
+		return a.Time.Compare(b.Time)
 	})
 
 	var errs error
