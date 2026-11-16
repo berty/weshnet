@@ -51,9 +51,13 @@ NS_ASSUME_NONNULL_BEGIN
 @property (nonatomic, strong, nullable) WriteDataCache *writeCache;
 @property (nonatomic, strong, nullable) CountDownLatch *writerLactch;
 @property (readwrite) BOOL writeStatus;
+@property (readwrite) BOOL servicePublished;
+@property (readwrite) BOOL setupDone;
 
 - (instancetype __nonnull) initDriver:(BOOL)useExternalLogger;
 - (void)addService;
+- (void)republishServiceIfNeeded;
+- (void)resetAfterBluetoothOff;
 - (void)startScanning;
 - (void)toggleScanner:(NSTimer *__nonnull)timer;
 - (void)stopScanning;

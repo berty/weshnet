@@ -155,10 +155,72 @@ static inline char itoh(int i) {
     [self.bleOn await:5 withCancelBlock:^{
         [self.logger e:@"addService error: timeout"];
     }];
-    if (self.cmEnable && self.pmEnable) {
+
+    BOOL publish = FALSE;
+    @synchronized (self.pManager) {
+        if (self.cmEnable && self.pmEnable && !self.servicePublished) {
+            self.servicePublished = TRUE;
+            publish = TRUE;
+        }
+    }
+    if (publish) {
         [self.pManager addService:self.bertyService];
         [self.serviceAdded await];
     }
+
+    // from now on, the state callbacks are in charge of (re)publishing the service
+    // when Bluetooth is turned on later
+    @synchronized (self.pManager) {
+        self.setupDone = TRUE;
+    }
+}
+
+// The service is lost when the Bluetooth radio is turned off (or reset): publish it again
+// and start advertising again once the peripheral manager is powered on.
+- (void)republishServiceIfNeeded {
+    BOOL publish = FALSE;
+    @synchronized (self.pManager) {
+        if (self.setupDone && self.pmEnable && !self.servicePublished) {
+            self.servicePublished = TRUE;
+            publish = TRUE;
+        }
+    }
+    if (publish) {
+        [self.logger i:@"republishServiceIfNeeded: publishing the service again"];
+        [self.pManager removeAllServices];
+        [self.pManager addService:self.bertyService];
+    }
+}
+
+// Everything created during a previous Bluetooth session is invalid once the radio has been
+// turned off: the connections are gone without any callback, the scan stopped, advertising
+// stopped. Forget the devices (this also tells the Go side that the peers are lost) so that
+// they can be discovered and dialed again, and reset the scanner state so that it can be
+// started again when Bluetooth is back (before: "scanner is already enabled" forever).
+- (void)resetAfterBluetoothOff {
+    [self.logger i:@"resetAfterBluetoothOff called"];
+
+    NSArray *devices = nil;
+    @synchronized (self.bDevices) {
+        devices = [[NSArray alloc] initWithArray:self.bDevices];
+        [self.bDevices removeAllObjects];
+    }
+    for (BertyDevice *device in devices) {
+        [device closeBertyDevice];
+    }
+    [devices release];
+
+    @synchronized (self.cManager) {
+        self.scanning = FALSE;
+    }
+    dispatch_async(dispatch_get_main_queue(), ^{
+        if (self.scannerTimer != nil) {
+            if ([self.scannerTimer isValid]) {
+                [self.scannerTimer invalidate];
+            }
+            self.scannerTimer = nil;
+        }
+    });
 }
 
 - (void)peripheralManager:(CBPeripheralManager *)peripheral didAddService:(CBService *)service error:(nullable NSError *)error {
@@ -167,6 +229,12 @@ static inline char itoh(int i) {
     }
     [self.logger d:@"didAddService: service=%@", [service.UUID UUIDString]];
     [self.serviceAdded countDown];
+
+    // Bluetooth was turned off and on again: BLEStart is not called again, so start
+    // advertising again here. (On the first start localPID is not set yet, BLEStart does it.)
+    if (error == nil && self.localPID != nil && self.ID != nil) {
+        [self startAdvertising];
+    }
 }
 
 #pragma mark - go called functions
@@ -196,6 +264,9 @@ static inline char itoh(int i) {
 }
 
 - (void)toggleScanner:(NSTimer*)timer {
+    if (!self.cmEnable) {
+        return;
+    }
     if ([self.cManager isScanning]) {
         [self.logger d:@"toggleScanner: disable scanner"];
         [self.cManager stopScan];
@@ -211,7 +282,9 @@ static inline char itoh(int i) {
 
 - (void)stopScanning {
     @synchronized (self.cManager) {
-        if (self.cmEnable && self.scanning) {
+        // no check on cmEnable: if Bluetooth was turned off the timer must still be removed
+        // (it retains the manager and kept firing forever)
+        if (self.scanning) {
             [self.logger d:@"stopScanning called"];
 
             dispatch_async(dispatch_get_main_queue(), ^{
@@ -222,7 +295,7 @@ static inline char itoh(int i) {
                     self.scannerTimer = nil;
                 }
 
-                if ([self.cManager isScanning]) {
+                if (self.cmEnable && [self.cManager isScanning]) {
                     [self.cManager stopScan];
                 }
 
@@ -572,6 +645,16 @@ static inline char itoh(int i) {
         }
     }
     [self.logger i:@"peripheralManagerDidUpdateState: %@", stateString];
+
+    if (peripheral.state == CBManagerStatePoweredOn) {
+        [self republishServiceIfNeeded];
+    } else {
+        // the published service and the advertising are lost with the radio session
+        @synchronized (self.pManager) {
+            self.servicePublished = FALSE;
+        }
+        self.psm = 0;
+    }
     [self.bleOn countDown];
 }
 
@@ -609,6 +692,15 @@ static inline char itoh(int i) {
         }
     }
     [self.logger i:@"centralManagerDidUpdateState: %@", stateString];
+
+    if (central.state == CBManagerStatePoweredOn) {
+        // Bluetooth was off when BLEStart was called, or was turned off and on again
+        if (self.localPID != nil) {
+            [self startScanning];
+        }
+    } else {
+        [self resetAfterBluetoothOff];
+    }
     [self.bleOn countDown];
 }
 
