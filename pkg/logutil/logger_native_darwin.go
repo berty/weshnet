@@ -5,6 +5,7 @@ package logutil
 
 /*
 #import <os/log.h>
+#include <stdlib.h>
 
 const int DEBUG = 0;
 const int INFO = 1;
@@ -31,6 +32,7 @@ import "C"
 
 import (
 	"fmt"
+	"unsafe"
 
 	"go.uber.org/zap/zapcore"
 )
@@ -49,7 +51,12 @@ func NativeLog(logLevel zapcore.Level, namespace string, message string) {
 		level = C.INFO
 	}
 
-	log := C.os_log_create(C.CString(namespace), C.CString(namespace))
+	cNamespace := C.CString(namespace)
+	defer C.free(unsafe.Pointer(cNamespace))
+	cMessage := C.CString(fmt.Sprintf("[%s] %s", logLevel.CapitalString(), message))
+	defer C.free(unsafe.Pointer(cMessage))
 
-	C.os_log_wrapper(level, log, C.CString(fmt.Sprintf("[%s] %s", logLevel.CapitalString(), message)))
+	log := C.os_log_create(cNamespace, cNamespace)
+
+	C.os_log_wrapper(level, log, cMessage)
 }
